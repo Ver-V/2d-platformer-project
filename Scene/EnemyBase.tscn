@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0ioi1n7pmn7f"]
+
+[ext_resource type="Script" uid="uid://jmf64r06lvsx" path="res://Script/enemy_base.gd" id="1_fmlmx"]
+
+[node name="EnemyBase" type="CharacterBody2D"]
+script = ExtResource("1_fmlmx")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="Hurtbox" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+
+[node name="Hitbox" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+
+[node name="InvulnTimer" type="Timer" parent="."]
+wait_time = 0.3
