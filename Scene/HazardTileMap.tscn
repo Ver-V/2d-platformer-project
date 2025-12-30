@@ -1,0 +1,35 @@
+[gd_scene load_steps=5 format=3 uid="uid://c7jx653i6b2k3"]
+
+[ext_resource type="Texture2D" uid="uid://dlu6db0e2r1n1" path="res://Assets/sprites/trap_spikes_anim_strip_7.png" id="1_iyhyp"]
+[ext_resource type="Script" uid="uid://bu3bhy42iigfv" path="res://Scene/tile_map.gd" id="2_oorsw"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_iyhyp"]
+texture = ExtResource("1_iyhyp")
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+2:0/0 = 0
+2:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+3:0/0 = 0
+3:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+4:0/0 = 0
+4:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+4:0/0/custom_data_0 = 10
+5:0/0 = 0
+5:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+6:0/0 = 0
+6:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+
+[sub_resource type="TileSet" id="TileSet_oorsw"]
+physics_layer_0/collision_layer = 1
+custom_data_layer_0/name = "damage"
+custom_data_layer_0/type = 2
+sources/0 = SubResource("TileSetAtlasSource_iyhyp")
+
+[node name="HazardTileMap" type="Node2D"]
+
+[node name="HazardTileMap" type="TileMapLayer" parent="."]
+use_parent_material = true
+tile_set = SubResource("TileSet_oorsw")
+script = ExtResource("2_oorsw")
