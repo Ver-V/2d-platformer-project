@@ -15,7 +15,7 @@ extends Node2D
 @onready var entities: Node2D = $Entities as Node2D
 @onready var cam: Camera2D = $Camera2D as Camera2D
 
-var player: CharacterBody2D = null
+var player: Player = null
 var current_room: Vector2i = Vector2i(-1, -1)
 
 var killed_ids: Dictionary = {}
@@ -30,7 +30,16 @@ func _ready() -> void:
 	if player == null:
 		return
 
+	if not player.died.is_connected(_on_player_died):
+		player.died.connect(_on_player_died)
+
 	snap_to_room(room_from_pos(player.global_position), true)
+
+func _on_player_died() -> void:
+	restart_stage()
+
+func restart_stage() -> void:
+	get_tree().reload_current_scene()
 
 func _physics_process(_delta: float) -> void:
 	if player == null:
@@ -46,9 +55,9 @@ func spawn_player() -> void:
 		return
 
 	var inst: Node = player_scene.instantiate()
-	var p: CharacterBody2D = inst as CharacterBody2D
+	var p: Player = inst as Player
 	if p == null:
-		push_error("Player scene root must be CharacterBody2D.")
+		push_error("Player scene root must be Player (CharacterBody2D with Player.gd).")
 		return
 
 	entities.add_child(p)
