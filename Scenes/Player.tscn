@@ -3,13 +3,13 @@
 [ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/player.gd" id="1_kpjcp"]
 [ext_resource type="Texture2D" uid="uid://biekb7rnwrp8n" path="res://Assets/sprites/knight.png" id="2_kne1u"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_m7jmp"]
-atlas = ExtResource("2_kne1u")
-region = Rect2(32, 0, 32, 32)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_u3cyc"]
 atlas = ExtResource("2_kne1u")
 region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m7jmp"]
+atlas = ExtResource("2_kne1u")
+region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_y2354"]
 atlas = ExtResource("2_kne1u")
@@ -24,10 +24,10 @@ resource_local_to_scene = true
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_m7jmp")
+"texture": SubResource("AtlasTexture_u3cyc")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_u3cyc")
+"texture": SubResource("AtlasTexture_m7jmp")
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_y2354")
@@ -44,12 +44,14 @@ animations = [{
 size = Vector2(9, 13)
 
 [node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 9
 script = ExtResource("1_kpjcp")
 
 [node name="PlayerAni" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_xlvrw")
 animation = &"Stand"
-frame_progress = 0.71330386
+frame_progress = 0.4009654
 speed_scale = 0.7
 
 [node name="PlayerCol" type="CollisionShape2D" parent="."]
