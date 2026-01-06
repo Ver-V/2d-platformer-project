@@ -1,240 +1,183 @@
-extends CharacterBody2D
+extends CombatBody2D
 class_name EnemyBase
 
 signal died(enemy: EnemyBase)
 
+@export_group("Identity")
 @export var persist_id: StringName = &""
-@export var contact_tick: float = 0.75
+
+@export_group("Stats")
 @export var max_hp_base: int = 10
 @export var contact_damage_base: int = 1
 @export var move_speed_base: float = 80.0
+@export var contact_knockback_x: float = 320.0
+@export var contact_knockback_y: float = -240.0
 
-@export var invuln_time: float = 0.08
+@export_group("Combat")
+@export var invuln_time: float = 0.7
 @export var blink_interval: float = 0.05
-
 @export var knockback_resist: float = 0.0
-@export var knockback_cooldown: float = 0.12
-@export var knockback_decay: float = 2200.0
+@export var knockback_cooldown: float = 0.7
+@export var knockback_decay: float = 2600.0
+@export var contact_tick: float = 1.0
 
+@export_group("Behavior")
 @export var disable_when_inactive: bool = true
 
-@onready var body_shape: CollisionShape2D = $CollisionShape2D as CollisionShape2D
-@onready var hurtbox: Area2D = $Hurtbox as Area2D
-@onready var hitbox: Area2D = $Hitbox as Area2D
-@onready var invuln_timer: Timer = $InvulnTimer as Timer
-@onready var floor_ray: RayCast2D = $FloorRay as RayCast2D
-@onready var detect_area: Area2D = $DetectArea as Area2D
-@onready var sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+@onready var hurtbox: Area2D = $Hurtbox
+@onready var hitbox: Area2D = $Hitbox
+@onready var body_shape: CollisionShape2D = $CollisionShape2D
+@onready var detect_area: Area2D = $DetectArea
+@onready var sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
+@onready var floor_ray: RayCast2D = get_node_or_null("FloorRay")
 
-var max_hp: int = 10
-var hp: int = 10
-var contact_damage: int = 10
-var move_speed: float = 150.0
+var contact_damage: int = 0
+var move_speed: float = 0.0
 var _touching: Dictionary = {}
 var home_position: Vector2 = Vector2.ZERO
-
-var _invuln: bool = false
 var _active: bool = true
 var target: Node2D = null
-var knockback_vel: Vector2 = Vector2.ZERO
-var _kb_left: float = 0.0
-var _blink_accum: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemies")
 	home_position = global_position
 	max_hp = max_hp_base
+	hp = max_hp
 	contact_damage = contact_damage_base
 	move_speed = move_speed_base
 
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.body_exited.connect(_on_hitbox_body_exited)
-	
-	invuln_timer.one_shot = true
-	invuln_timer.timeout.connect(_on_invuln_timeout)
-	
-	if detect_area != null:
+
+	if detect_area:
 		detect_area.body_entered.connect(_on_detect_entered)
 		detect_area.body_exited.connect(_on_detect_exited)
-		
-	add_to_group("enemies")
+
 	set_active(false)
-	
-	if sprite != null:
-		sprite.play()
+	if sprite: sprite.play()
 
+# --- Overrides ---
+func get_invuln_time() -> float: return invuln_time
+func get_blink_interval() -> float: return blink_interval
+func get_knockback_decay() -> float: return knockback_decay
+func get_knockback_resist() -> float: return knockback_resist
+func get_knockback_cooldown() -> float: return knockback_cooldown
+func get_blink_node() -> CanvasItem: return sprite
+
+func _on_death() -> void:
+	died.emit(self)
+	queue_free()
+
+func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false) -> bool:
+	if not _active: return false
+	return super.apply_damage(amount, knockback, ignore_cd)
+
+# --- Logic ---
 func _process(delta: float) -> void:
-	if _kb_left > 0.0:
-		_kb_left -= delta
-		if _kb_left < 0.0:
-			_kb_left = 0.0
+	super._process(delta) # 깜빡임, 넉백 쿨타임 처리
+	if not _active: return
 
-	if _invuln and sprite != null:
-		_blink_accum += delta
-		if _blink_accum >= blink_interval:
-			_blink_accum = 0.0
-			sprite.visible = not sprite.visible
-	
-
-	if not _active:
-		return
-	if contact_damage <= 0:
-		return
-	if contact_tick <= 0.0:
-		return
-
-	for b in _touching.keys():
-		if b == null:
-			continue
-		var t: float = float(_touching[b])
-		t += delta
-		if t >= contact_tick:
-			t -= contact_tick
-			_apply_contact_damage_once(b)
-		_touching[b] = t
+	# 지속 접촉 데미지 처리
+	if contact_damage > 0 and contact_tick > 0.0:
+		var removed_keys := []
+		for b in _touching.keys():
+			# 객체가 유효한지 확인 (중요!)
+			if not is_instance_valid(b):
+				removed_keys.append(b)
+				continue
+			
+			var t: float = float(_touching[b])
+			t += delta
+			if t >= contact_tick:
+				t = 0.0 # 틱 리셋
+				_apply_contact_damage_once(b)
+			_touching[b] = t
 		
-func _physics_process(delta: float) -> void:
-	knockback_vel = knockback_vel.move_toward(Vector2.ZERO, knockback_decay * delta)
+		# 유효하지 않은 키 정리
+		for k in removed_keys:
+			_touching.erase(k)
 
-	var kb: Vector2 = knockback_vel
+func _physics_process(delta: float) -> void:
+	if not _active: return
+	
+	# 넉백 적용
+	var kb: Vector2 = update_knockback(delta)
 	velocity += kb
 	move_and_slide()
 	velocity -= kb
+
+# --- Collision Callbacks ---
+func _on_hurtbox_area_entered(a: Area2D) -> void:
+	if not _active or is_invulnerable(): return
 	
+	# 데미지/넉백 정보 추출 (메타데이터 or 메서드)
+	var dmg: int = 0
+	if a.has_method("get_damage"): dmg = int(a.call("get_damage"))
+	elif a.has_meta("damage"): dmg = int(a.get_meta("damage"))
+	
+	if dmg <= 0: return
+
+	var kb: Vector2 = Vector2.ZERO
+	if a.has_method("get_knockback"): kb = a.call("get_knockback")
+	elif a.has_meta("knockback"): kb = a.get_meta("knockback")
+
+	apply_damage(dmg, kb)
+
+func _on_hitbox_body_entered(b: Node) -> void:
+	if not _active or contact_damage <= 0 or b == null: return
+	_touching[b] = 0.0 # 닿자마자
+	_apply_contact_damage_once(b)
+
+func _on_hitbox_body_exited(b: Node) -> void:
+	if _touching.has(b): _touching.erase(b)
+
+func _apply_contact_damage_once(b: Node) -> void:
+	if not is_instance_valid(b): return
+	
+	var did_dmg: bool = false
+	
+	# CombatBody2D 타입을 우선 체크 (가장 깔끔)
+	if b is CombatBody2D:
+		var dx: float = b.global_position.x - global_position.x
+		var k_dir := Vector2(1.0 if dx >= 0.0 else -1.0, 0.0)
+		var k_vec := Vector2(k_dir.x * contact_knockback_x, contact_knockback_y)
+		did_dmg = b.apply_damage(contact_damage, k_vec)
+	
+	# 그 외 (has_method로 fallback)
+	elif b.has_method("apply_damage"):
+		b.call("apply_damage", contact_damage)
+		did_dmg = true
+	
+	# 데미지를 입혔는데 넉백 메서드가 따로 있는 경우 (CombatBody2D가 아닌 경우)
+	if did_dmg and not (b is CombatBody2D) and b.has_method("apply_knockback") and b is Node2D:
+		var dx: float = b.global_position.x - global_position.x
+		var k_dir := Vector2(1.0 if dx >= 0.0 else -1.0, 0.0)
+		b.call("apply_knockback", k_dir, contact_knockback_x, contact_knockback_y)
+
 func _on_detect_entered(body: Node) -> void:
-	if body != null and body.is_in_group("player") and body is Node2D:
-		target = body as Node2D
-	
+	if body.is_in_group("player") and body is Node2D:
+		target = body
+
 func _on_detect_exited(body: Node) -> void:
 	if body == target:
 		target = null
-		
+
+# ... (나머지 active 설정, ID 로직 등은 기존 유지) ...
 func get_persist_id() -> StringName:
-	if persist_id != &"":
-		return persist_id
-	return StringName(str(get_path()))
+	return persist_id if persist_id != &"" else StringName(str(get_path()))
 
 func set_active(active: bool) -> void:
 	_active = active
 	if disable_when_inactive:
 		set_physics_process(active)
 		set_process(active)
-		hurtbox.monitoring = active
-		hitbox.monitoring = active
-		body_shape.disabled = not active
-
-func apply_difficulty(hp_mult: float, dmg_mult: float, speed_mult: float) -> void:
-	max_hp = max(1, int(round(float(max_hp_base) * hp_mult)))
-	contact_damage = max(0, int(round(float(contact_damage_base) * dmg_mult)))
-	move_speed = float(move_speed_base) * speed_mult
-	hp = clampi(hp, 0, max_hp)
+		hurtbox.set_deferred("monitoring", active)
+		hitbox.set_deferred("monitoring", active)
+		body_shape.set_deferred("disabled", not active)
 
 func reset_to_home(reset_hp: bool = true) -> void:
 	global_position = home_position
 	velocity = Vector2.ZERO
-	knockback_vel = Vector2.ZERO
-	_kb_left = 0.0
-
-	_invuln = false
-	invuln_timer.stop()
-
-	_blink_accum = 0.0
-	if sprite != null:
-		sprite.visible = true
-
-	if reset_hp:
-		hp = max_hp
-
-func apply_knockback(kb: Vector2, ignore_cooldown: bool = false) -> void:
-	if not _active:
-		return
-	if not ignore_cooldown and _kb_left > 0.0:
-		return
-	if kb == Vector2.ZERO:
-		return
-
-	_kb_left = knockback_cooldown
-
-	var resist: float = clamp(knockback_resist, 0.0, 1.0)
-	knockback_vel += kb * (1.0 - resist)
-
-func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_knockback_cooldown: bool = false) -> void:
-	if not _active:
-		return
-	if _invuln:
-		return
-	if amount <= 0:
-		return
-
-	if knockback != Vector2.ZERO:
-		apply_knockback(knockback, ignore_knockback_cooldown)
-
-	hp -= amount
-	if hp <= 0:
-		die()
-		return
-
-	if invuln_time > 0.0:
-		_invuln = true
-		invuln_timer.start(invuln_time)
-
-func die() -> void:
-	died.emit(self)
-	queue_free()
-
-func _on_invuln_timeout() -> void:
-	_invuln = false
-	_blink_accum = 0.0
-	if sprite != null:
-		sprite.visible = true
-
-func _on_hurtbox_area_entered(a: Area2D) -> void:
-	if not _active:
-		return
-	if _invuln:
-		return
-
-	var dmg: int = 0
-	if a.has_method("get_damage"):
-		dmg = int(a.call("get_damage"))
-	elif a.has_meta("damage"):
-		dmg = int(a.get_meta("damage"))
-
-	if dmg <= 0:
-		return
-
-	var kb: Vector2 = Vector2.ZERO
-	if a.has_method("get_knockback"):
-		var v: Variant = a.call("get_knockback")
-		if v is Vector2:
-			kb = v as Vector2
-	elif a.has_meta("knockback"):
-		var mv: Variant = a.get_meta("knockback")
-		if mv is Vector2:
-			kb = mv as Vector2
-
-	take_damage(dmg, kb)
-
-func _on_hitbox_body_entered(b: Node) -> void:
-	if not _active:
-		return
-	if contact_damage <= 0:
-		return
-	if b == null:
-		return
-
-	_touching[b] = 0.0
-	_apply_contact_damage_once(b)
-
-func _on_hitbox_body_exited(b: Node) -> void:
-	if b == null:
-		return
-	if _touching.has(b):
-		_touching.erase(b)
-
-func _apply_contact_damage_once(b: Node) -> void:
-	if b.has_method("apply_damage"):
-		b.call("apply_damage", contact_damage)
-	elif b.has_method("take_damage"):
-		b.call("take_damage", contact_damage)
+	reset_combat_state()
+	if reset_hp: hp = max_hp

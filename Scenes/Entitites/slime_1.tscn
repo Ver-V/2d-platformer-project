@@ -1,6 +1,6 @@
 [gd_scene load_steps=17 format=3 uid="uid://bd1fcbofw2ll8"]
 
-[ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/EnemyBase.tscn" id="1_d5xvo"]
+[ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_d5xvo"]
 [ext_resource type="Texture2D" uid="uid://dh6fdyvr8gdej" path="res://Assets/sprites/slime_green.png" id="2_b7awu"]
 [ext_resource type="Script" uid="uid://dcnt2aa637mxh" path="res://Script/slime.gd" id="2_cbd27"]
 
@@ -106,24 +106,16 @@ frame_progress = 0.11516371
 position = Vector2(0, 6.5)
 shape = SubResource("RectangleShape2D_b7awu")
 
-[node name="Hurtbox" parent="." index="2"]
-collision_layer = 0
-collision_mask = 48
-
 [node name="CollisionShape2D" parent="Hurtbox" index="0"]
 position = Vector2(0, 5)
 shape = SubResource("RectangleShape2D_cbd27")
 
 [node name="Hitbox" parent="." index="3"]
-collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape2D" parent="Hitbox" index="0"]
 position = Vector2(0, 5.5)
 shape = SubResource("RectangleShape2D_f2gu2")
-
-[node name="DetectArea" parent="." index="6"]
-collision_layer = 0
 
 [node name="CollisionShape2D" parent="DetectArea" index="0"]
 position = Vector2(0, 5)
