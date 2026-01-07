@@ -1,11 +1,12 @@
-[gd_scene load_steps=36 format=3 uid="uid://qfh6su8aeoy7"]
+[gd_scene load_steps=38 format=3 uid="uid://qfh6su8aeoy7"]
 
 [ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/player.gd" id="1_kpjcp"]
 [ext_resource type="Texture2D" uid="uid://c8iqt4cdnfujj" path="res://Assets/sprites/knight/ATTACK 3.png" id="2_3wgd0"]
 [ext_resource type="Texture2D" uid="uid://bclhg8okli8q2" path="res://Assets/sprites/knight/JUMP.png" id="3_yu0nx"]
 [ext_resource type="Texture2D" uid="uid://ddona1nmugxmb" path="res://Assets/sprites/knight/WALK.png" id="4_im3yb"]
 [ext_resource type="Texture2D" uid="uid://q0rmgyl3afjh" path="res://Assets/sprites/knight/IDLE.png" id="5_wjsnr"]
-[ext_resource type="Script" uid="uid://b00spr31wmhci" path="res://Scenes/Entitites/sword_hitbox.gd" id="6_yu0nx"]
+[ext_resource type="Script" uid="uid://b00spr31wmhci" path="res://Script/sword_hitbox.gd" id="6_yu0nx"]
+[ext_resource type="Script" uid="uid://dleqtylnlbedr" path="res://Script/hazard_sensor.gd" id="7_im3yb"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_yu0nx"]
 atlas = ExtResource("2_3wgd0")
@@ -214,10 +215,13 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_73fnb"]
-size = Vector2(11, 21)
+size = Vector2(10.900002, 21.900002)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3wgd0"]
-size = Vector2(17.20554, 30.183304)
+size = Vector2(18.111095, 30.742254)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_im3yb"]
+size = Vector2(12, 2)
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
@@ -225,27 +229,34 @@ collision_mask = 73
 script = ExtResource("1_kpjcp")
 
 [node name="PlayerAni" type="AnimatedSprite2D" parent="."]
+position = Vector2(-1.4000014, -21.3)
 scale = Vector2(0.7, 0.7)
 sprite_frames = SubResource("SpriteFrames_xlvrw")
-animation = &"Attack"
-frame = 5
-frame_progress = 1.0
+animation = &"Stand"
 speed_scale = 0.7
 
 [node name="PlayerCol" type="CollisionShape2D" parent="."]
-position = Vector2(-0.5, 10.5)
+position = Vector2(-1, -10.950001)
 shape = SubResource("RectangleShape2D_73fnb")
 
 [node name="AttackPivot" type="Marker2D" parent="."]
-position = Vector2(0, 7)
+position = Vector2(-1.4000015, -14.300001)
 
 [node name="SwordArea" type="Area2D" parent="AttackPivot"]
-position = Vector2(0, -7)
+position = Vector2(1.4000015, 4.300001)
 collision_layer = 16
 collision_mask = 76
 script = ExtResource("6_yu0nx")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackPivot/SwordArea"]
-position = Vector2(13.499999, 7.4999995)
+position = Vector2(14, -4)
 scale = Vector2(1.1042954, 0.8945343)
 shape = SubResource("RectangleShape2D_3wgd0")
+
+[node name="HazardSensor" type="Area2D" parent="."]
+collision_layer = 0
+script = ExtResource("7_im3yb")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HazardSensor"]
+position = Vector2(-1, 0)
+shape = SubResource("RectangleShape2D_im3yb")

@@ -66,7 +66,7 @@ func attack() -> void:
 	
 	# 판정은 0.1초만 유지하고 끄기 (애니메이션보다 짧게)
 	# (취향에 따라 이 부분을 없애고 애니메이션 끝날 때 꺼도 됨)
-	await get_tree().create_timer(0.15).timeout
+	await get_tree().create_timer(0.25).timeout
 	sword_shape.disabled = true
 
 func _on_sword_area_entered(area: Area2D) -> void:

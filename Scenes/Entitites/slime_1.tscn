@@ -1,8 +1,9 @@
-[gd_scene load_steps=17 format=3 uid="uid://bd1fcbofw2ll8"]
+[gd_scene load_steps=18 format=3 uid="uid://bd1fcbofw2ll8"]
 
 [ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_d5xvo"]
 [ext_resource type="Texture2D" uid="uid://dh6fdyvr8gdej" path="res://Assets/sprites/slime_green.png" id="2_b7awu"]
 [ext_resource type="Script" uid="uid://dcnt2aa637mxh" path="res://Script/slime.gd" id="2_cbd27"]
+[ext_resource type="PackedScene" uid="uid://ymvgdewahhcm" path="res://Scenes/Projectile/projectilefire.tscn" id="3_j6rap"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_cbd27"]
 atlas = ExtResource("2_b7awu")
@@ -97,6 +98,9 @@ jump_cooldown = 2.5
 jump_only_when_player_near = true
 jump_chase_speed = 90.0
 jump_chase_time = 0.12
+projectile_scene = ExtResource("3_j6rap")
+shoot_interval = 1.5
+shoot_range = 200.0
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 sprite_frames = SubResource("SpriteFrames_twyhu")
