@@ -1,7 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://c7jx653i6b2k3"]
+[gd_scene load_steps=4 format=3 uid="uid://c7jx653i6b2k3"]
 
 [ext_resource type="Texture2D" uid="uid://dlu6db0e2r1n1" path="res://Assets/sprites/trap_spikes_anim_strip_7.png" id="1_iyhyp"]
-[ext_resource type="Script" uid="uid://bu3bhy42iigfv" path="res://Script/tile_map.gd" id="2_oorsw"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_iyhyp"]
 texture = ExtResource("1_iyhyp")
@@ -11,8 +10,10 @@ texture = ExtResource("1_iyhyp")
 1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 2:0/0 = 0
 2:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+2:0/0/custom_data_0 = 10
 3:0/0 = 0
 3:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+3:0/0/custom_data_0 = 10
 4:0/0 = 0
 4:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 4:0/0/custom_data_0 = 10
@@ -32,4 +33,3 @@ sources/0 = SubResource("TileSetAtlasSource_iyhyp")
 [node name="HazardTileMap" type="TileMapLayer" parent="."]
 use_parent_material = true
 tile_set = SubResource("TileSet_oorsw")
-script = ExtResource("2_oorsw")

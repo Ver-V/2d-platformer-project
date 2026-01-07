@@ -1,0 +1,84 @@
+[gd_scene load_steps=13 format=3 uid="uid://ymvgdewahhcm"]
+
+[ext_resource type="PackedScene" uid="uid://jkpis3cb6bap" path="res://Scenes/Projectile/Projectile.tscn" id="1_s5vc0"]
+[ext_resource type="Texture2D" uid="uid://bgle0wjnyru7b" path="res://Assets/sprites/Fire Effect and Bullet 16x16.png" id="2_amtxl"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_amtxl"]
+atlas = ExtResource("2_amtxl")
+region = Rect2(0, 32, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_enbms"]
+atlas = ExtResource("2_amtxl")
+region = Rect2(0, 48, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t80do"]
+atlas = ExtResource("2_amtxl")
+region = Rect2(0, 64, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2u2sk"]
+atlas = ExtResource("2_amtxl")
+region = Rect2(0, 80, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nuaok"]
+atlas = ExtResource("2_amtxl")
+region = Rect2(0, 96, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hn0q8"]
+atlas = ExtResource("2_amtxl")
+region = Rect2(0, 144, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kwb75"]
+atlas = ExtResource("2_amtxl")
+region = Rect2(0, 128, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2r1xd"]
+atlas = ExtResource("2_amtxl")
+region = Rect2(0, 112, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_3y0gx"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_amtxl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_enbms")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t80do")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2u2sk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nuaok")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hn0q8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kwb75")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2r1xd")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_amtxl"]
+radius = 5.0
+
+[node name="Projectile" instance=ExtResource("1_s5vc0")]
+collision_layer = 64
+collision_mask = 3
+speed = 70.0
+damage = 10
+
+[node name="AnimatedSprite2D" parent="." index="1"]
+sprite_frames = SubResource("SpriteFrames_3y0gx")
+frame_progress = 0.037773192
+
+[node name="CollisionShape2D" parent="." index="2"]
+shape = SubResource("CircleShape2D_amtxl")

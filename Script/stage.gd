@@ -10,7 +10,7 @@ extends Node2D
 
 @export var clear_projectiles_on_room_change: bool = true
 @export var clear_projectiles_outside_current_room: bool = true
-@onready var hazard_layer = $HazardTileMap/HazardTileMap
+
 @onready var spawn_point: Marker2D = $SpawnPoint as Marker2D
 @onready var entities: Node2D = $Entities as Node2D
 @onready var cam: Camera2D = $Camera2D as Camera2D
@@ -26,9 +26,6 @@ func _ready() -> void:
 	spawn_player()
 	register_enemies()
 	assign_persist_ids_by_formula()
-
-	if player != null:
-		hazard_layer.player = player
 
 	if player == null:
 		return
