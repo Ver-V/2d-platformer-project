@@ -69,9 +69,9 @@ func _on_death() -> void:
 	died.emit(self)
 	queue_free()
 
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false) -> bool:
+func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
 	if not _active: return false
-	return super.apply_damage(amount, knockback, ignore_cd)
+	return super.apply_damage(amount, knockback, ignore_cd, or_invuln_time)
 
 # --- Logic ---
 func _process(delta: float) -> void:

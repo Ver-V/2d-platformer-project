@@ -215,13 +215,13 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_73fnb"]
-size = Vector2(10.900002, 21.900002)
+size = Vector2(11.225, 20.45)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3wgd0"]
 size = Vector2(18.111095, 30.742254)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_im3yb"]
-size = Vector2(12, 2)
+size = Vector2(11, 1)
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
@@ -236,7 +236,7 @@ animation = &"Stand"
 speed_scale = 0.7
 
 [node name="PlayerCol" type="CollisionShape2D" parent="."]
-position = Vector2(-1, -10.950001)
+position = Vector2(-1.3874998, -11.225)
 shape = SubResource("RectangleShape2D_73fnb")
 
 [node name="AttackPivot" type="Marker2D" parent="."]
@@ -258,5 +258,5 @@ collision_layer = 0
 script = ExtResource("7_im3yb")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HazardSensor"]
-position = Vector2(-1, 0)
+position = Vector2(-1.5, -0.5)
 shape = SubResource("RectangleShape2D_im3yb")

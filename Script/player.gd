@@ -14,7 +14,7 @@ class_name Player
 @export var max_fall_speed: float = 280.0
 
 @export_group("Combat")
-@export var invuln_time: float = 1.0
+@export var invuln_time: float = 0.8
 @export var blink_interval: float = 0.05
 @export var knockback_decay: float = 1800.0
 @export var is_attacking: bool = false 
@@ -74,9 +74,9 @@ func _on_sword_area_entered(area: Area2D) -> void:
 		var p: Projectile = area as Projectile
 		p.attempt_parry(global_position)
 
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false) -> bool:
+func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
 	# [체크 1] super(부모)를 호출해서 실제 체력을 깎고 결과를 받아야 함!
-	var took_damage = super.apply_damage(amount, knockback, ignore_cd)
+	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time)
 	
 	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
@@ -149,7 +149,7 @@ func _physics_process(delta: float) -> void:
 	_update_animation(dir_input)
 	
 func get_knockback_cooldown() -> float:
-	return 0.4  # 0.3초 뒤에는 바로 움직일 수 있음!
+	return 0.7  # 0.3초 뒤에는 바로 움직일 수 있음!
 	
 # 애니메이션 관리 전용 함수
 func _update_animation(dir_input: float) -> void:
