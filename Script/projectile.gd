@@ -86,7 +86,6 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 func _on_body_entered(body: Node) -> void:
-	print("충돌 감지됨! 대상: ", body.name)
 	# 1. 벽/지형에 닿았을 때 (TileMapLayer 등)
 	if body is TileMapLayer or body is TileMap:
 		_destroy_projectile()

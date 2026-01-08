@@ -67,7 +67,11 @@ func apply_knockback(knock_dir: Vector2, kb_x: float, kb_y: float = 0.0, ignore_
 	apply_knockback_vec(final_vec, ignore_cooldown, cooldown, reset_y)
 
 # --- 데미지 처리 (핵심) ---
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_knockback_cooldown: bool = false) -> bool:
+# CombatBody2D.gd
+
+# 기존 함수: func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_knockback_cooldown: bool = false) -> bool:
+# [수정된 함수] 맨 뒤에 'override_invuln_time' 추가 (기본값 -1.0)
+func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
 	if amount <= 0: return false
 	if is_invulnerable(): return false
 
@@ -75,16 +79,16 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_knockba
 	if hp <= 0:
 		hp = 0
 		_on_death()
-		# 죽었어도 넉백은 적용될 수 있음 (취향 차이)
 		if knockback != Vector2.ZERO:
-			apply_knockback_vec(knockback, ignore_knockback_cooldown, -1.0, true)
+			apply_knockback_vec(knockback, ignore_cd, -1.0, true)
 		return true
 
-	# 살았으면 무적 시간 부여
-	start_invuln(-1.0)
+	# [핵심 수정] 여기에 받아온 시간을 넣어줍니다.
+	# -1.0이면 원래대로 기본값을 쓰고, 값이 들어왔으면(예: 2.0) 그 시간을 씁니다.
+	start_invuln(or_invuln_time)
 	
 	if knockback != Vector2.ZERO:
-		apply_knockback_vec(knockback, ignore_knockback_cooldown, -1.0, true)
+		apply_knockback_vec(knockback, ignore_cd, -1.0, true)
 	
 	return true
 
