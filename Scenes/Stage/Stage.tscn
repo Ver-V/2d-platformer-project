@@ -1,15 +1,16 @@
-[gd_scene load_steps=11 format=4 uid="uid://dfx7ligqjd22g"]
+[gd_scene load_steps=12 format=4 uid="uid://dfx7ligqjd22g"]
 
-[ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/stage.gd" id="1_n37se"]
-[ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="2_v6lqp"]
-[ext_resource type="Texture2D" uid="uid://cgpum4v6rh8hm" path="res://Assets/sprites/world_tileset.png" id="3_qohnl"]
-[ext_resource type="PackedScene" uid="uid://bd1fcbofw2ll8" path="res://Scenes/Entitites/slime_1.tscn" id="3_tifnw"]
-[ext_resource type="Texture2D" uid="uid://cltaftyns351a" path="res://Assets/sprites/tileset.png" id="3_v6lqp"]
-[ext_resource type="Script" uid="uid://cnklf8macledf" path="res://Script/room_grid.gd" id="5_km80h"]
-[ext_resource type="PackedScene" uid="uid://c7jx653i6b2k3" path="res://Scenes/HazardTileMap.tscn" id="6_bgy8v"]
+[ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/stage.gd" id="1_gusuq"]
+[ext_resource type="PackedScene" uid="uid://bd1fcbofw2ll8" path="res://Scenes/Entitites/slime_1.tscn" id="2_l8wo6"]
+[ext_resource type="Texture2D" uid="uid://cltaftyns351a" path="res://Assets/sprites/tileset.png" id="3_2s2j5"]
+[ext_resource type="Texture2D" uid="uid://cgpum4v6rh8hm" path="res://Assets/sprites/world_tileset.png" id="4_jptyp"]
+[ext_resource type="Script" uid="uid://cnklf8macledf" path="res://Script/room_grid.gd" id="5_7nmd1"]
+[ext_resource type="PackedScene" uid="uid://c7jx653i6b2k3" path="res://Scenes/HazardTileMap.tscn" id="6_t88q6"]
+[ext_resource type="PackedScene" uid="uid://byscojtoqo7ad" path="res://Scenes/Player/SavePoint.tscn" id="7_2erbf"]
+[ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Player/Player.tscn" id="8_l8wo6"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qohnl"]
-texture = ExtResource("3_v6lqp")
+texture = ExtResource("3_2s2j5")
 0:0/next_alternative_id = 2
 0:0/0 = 0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
@@ -144,7 +145,7 @@ texture = ExtResource("3_v6lqp")
 5:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_km80h"]
-texture = ExtResource("3_qohnl")
+texture = ExtResource("4_jptyp")
 0:0/0 = 0
 1:0/0 = 0
 2:0/0 = 0
@@ -279,20 +280,20 @@ sources/2 = SubResource("TileSetAtlasSource_qohnl")
 sources/4 = SubResource("TileSetAtlasSource_km80h")
 
 [node name="Stage_01" type="Node2D"]
-script = ExtResource("1_n37se")
-player_scene = ExtResource("2_v6lqp")
+script = ExtResource("1_gusuq")
+player_scene = ExtResource("8_l8wo6")
 
 [node name="Entities" type="Node2D" parent="."]
 
-[node name="Slime2" parent="Entities" instance=ExtResource("3_tifnw")]
+[node name="Slime2" parent="Entities" instance=ExtResource("2_l8wo6")]
 position = Vector2(122, 132)
 slime_move_speed = 60.0
 
-[node name="Slime3" parent="Entities" instance=ExtResource("3_tifnw")]
+[node name="Slime3" parent="Entities" instance=ExtResource("2_l8wo6")]
 position = Vector2(361, 163)
 slime_move_speed = 60.0
 
-[node name="Slime1" parent="Entities" instance=ExtResource("3_tifnw")]
+[node name="Slime1" parent="Entities" instance=ExtResource("2_l8wo6")]
 position = Vector2(379, 68)
 slime_move_speed = 60.0
 
@@ -304,16 +305,20 @@ tile_set = SubResource("TileSet_km80h")
 [node name="Camera2D" type="Camera2D" parent="."]
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(567, 41)
+position = Vector2(530, 50)
 
 [node name="RoomGrid" type="Node2D" parent="."]
 process_mode = 3
-script = ExtResource("5_km80h")
+script = ExtResource("5_7nmd1")
 
-[node name="HazardTileMap" parent="." instance=ExtResource("6_bgy8v")]
+[node name="HazardTileMap" parent="." instance=ExtResource("6_t88q6")]
 
 [node name="HazardTileMap" parent="HazardTileMap" index="0"]
 position = Vector2(2, 0)
 tile_map_data = PackedByteArray("AAAAABUAAAAEAAAAACABABUAAAAEAAAAACACABUAAAAEAAAAACADABUAAAAEAAAAACAEABUAAAAEAAAAACAFABUAAAAEAAAAACAGABUAAAAEAAAAACAHABUAAAAEAAAAACAIABUAAAAEAAAAACAJABUAAAAEAAAAACAKABUAAAAEAAAAACALABUAAAAEAAAAACAMABUAAAAEAAAAACANABUAAAAEAAAAACAOABUAAAAEAAAAACAPABUAAAAEAAAAACAQABUAAAAEAAAAACARABUAAAAEAAAAACASABUAAAAEAAAAACATABUAAAAEAAAAACAUABUAAAAEAAAAACAVABUAAAAEAAAAACAfABUAAAAEAAAAACAgABUAAAAEAAAAACAhABUAAAAEAAAAACAiABUAAAAEAAAAACAjABUAAAAEAAAAACAkABUAAAAEAAAAACAlABUAAAAEAAAAACAmABUAAAAEAAAAACAeABUAAAAEAAAAACAdABUAAAAEAAAAACAGAB4AAAAEAAAAACAHAB4AAAAEAAAAACAIAB4AAAAEAAAAACASACEAAAAEAAAAACATACAAAAAEAAAAACAUACEAAAAEAAAAACAQACEAAAAEAAAAACAWACEAAAAEAAAAACAaACMAAAAEAAAAACAZACMAAAAEAAAAACAYACMAAAAEAAAAACAOACMAAAAEAAAAACA=")
+
+[node name="SavePoint" parent="." instance=ExtResource("7_2erbf")]
+position = Vector2(178, 454)
+collision_mask = 2
 
 [editable path="HazardTileMap"]

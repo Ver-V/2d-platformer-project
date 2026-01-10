@@ -1,0 +1,92 @@
+[gd_scene load_steps=14 format=3 uid="uid://byscojtoqo7ad"]
+
+[ext_resource type="Script" uid="uid://d0gowbrfv5wum" path="res://Script/SavePoint.gd" id="1_kksam"]
+[ext_resource type="Texture2D" uid="uid://dh2okk5r5icwk" path="res://Assets/sprites/save_point_anim_strip_9.png" id="2_bm0t3"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fi6uy"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(0, 0, 12, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_104t2"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(12, 0, 12, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ich4n"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(24, 0, 12, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hq4tk"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(36, 0, 12, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1r6ke"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(48, 0, 12, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fuwyf"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(60, 0, 12, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m2x58"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(72, 0, 12, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mly0u"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(84, 0, 12, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pykiv"]
+atlas = ExtResource("2_bm0t3")
+region = Rect2(96, 0, 12, 20)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_yscrn"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fi6uy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_104t2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ich4n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hq4tk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1r6ke")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fuwyf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m2x58")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mly0u")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pykiv")
+}],
+"loop": true,
+"name": &"default",
+"speed": 7.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_711xn"]
+size = Vector2(10, 18)
+
+[node name="SavePoint" type="Area2D"]
+collision_mask = 2
+script = ExtResource("1_kksam")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_yscrn")
+frame_progress = 0.20975056
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_711xn")
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="."]

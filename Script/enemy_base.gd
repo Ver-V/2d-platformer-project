@@ -1,10 +1,12 @@
 extends CombatBody2D
 class_name EnemyBase
 
+# [시스템 필수] 적이 죽었을 때 Stage 스크립트에게 알리는 신호
 signal died(enemy: EnemyBase)
 
 @export_group("Identity")
-@export var persist_id: StringName = &""
+# [시스템 필수] 세이브/로드 시 나를 구별하는 ID (Stage에서 자동 할당함)
+@export var persist_id: StringName = &"" 
 
 @export_group("Stats")
 @export var max_hp_base: int = 10
@@ -34,30 +36,37 @@ signal died(enemy: EnemyBase)
 var contact_damage: int = 0
 var move_speed: float = 0.0
 var _touching: Dictionary = {}
-var home_position: Vector2 = Vector2.ZERO
+
+# [시스템 필수] 원래 내 집 위치 (방 이동 후 돌아올 곳)
+var home_position: Vector2 = Vector2.ZERO 
 var _active: bool = true
 var target: Node2D = null
 
 func _ready() -> void:
 	add_to_group("enemies")
+	
+	# 태어난 위치를 집으로 기억
 	home_position = global_position
+	
 	max_hp = max_hp_base
 	hp = max_hp
 	contact_damage = contact_damage_base
 	move_speed = move_speed_base
 
-	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
-	hitbox.body_entered.connect(_on_hitbox_body_entered)
-	hitbox.body_exited.connect(_on_hitbox_body_exited)
+	if hurtbox: hurtbox.area_entered.connect(_on_hurtbox_area_entered)
+	if hitbox:
+		hitbox.body_entered.connect(_on_hitbox_body_entered)
+		hitbox.body_exited.connect(_on_hitbox_body_exited)
 
 	if detect_area:
 		detect_area.body_entered.connect(_on_detect_entered)
 		detect_area.body_exited.connect(_on_detect_exited)
 
+	# 시작 시 비활성 상태 (Stage가 알아서 켜줌)
 	set_active(false)
 	if sprite: sprite.play()
 
-# --- Overrides ---
+# --- Overrides (CombatBody2D) ---
 func get_invuln_time() -> float: return invuln_time
 func get_blink_interval() -> float: return blink_interval
 func get_knockback_decay() -> float: return knockback_decay
@@ -66,6 +75,7 @@ func get_knockback_cooldown() -> float: return knockback_cooldown
 func get_blink_node() -> CanvasItem: return sprite
 
 func _on_death() -> void:
+	# [시스템 필수] 죽음 신호를 보내야 Stage가 장부에 기록함
 	died.emit(self)
 	queue_free()
 
@@ -75,14 +85,12 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 
 # --- Logic ---
 func _process(delta: float) -> void:
-	super._process(delta) # 깜빡임, 넉백 쿨타임 처리
+	super._process(delta) 
 	if not _active: return
 
-	# 지속 접촉 데미지 처리
 	if contact_damage > 0 and contact_tick > 0.0:
 		var removed_keys := []
 		for b in _touching.keys():
-			# 객체가 유효한지 확인 (중요!)
 			if not is_instance_valid(b):
 				removed_keys.append(b)
 				continue
@@ -90,28 +98,25 @@ func _process(delta: float) -> void:
 			var t: float = float(_touching[b])
 			t += delta
 			if t >= contact_tick:
-				t = 0.0 # 틱 리셋
+				t = 0.0
 				_apply_contact_damage_once(b)
 			_touching[b] = t
 		
-		# 유효하지 않은 키 정리
 		for k in removed_keys:
 			_touching.erase(k)
 
 func _physics_process(delta: float) -> void:
 	if not _active: return
 	
-	# 넉백 적용
 	var kb: Vector2 = update_knockback(delta)
 	velocity += kb
 	move_and_slide()
 	velocity -= kb
 
-# --- Collision Callbacks ---
+# --- Collision Callbacks (기존 로직 유지) ---
 func _on_hurtbox_area_entered(a: Area2D) -> void:
 	if not _active or is_invulnerable(): return
 	
-	# 데미지/넉백 정보 추출 (메타데이터 or 메서드)
 	var dmg: int = 0
 	if a.has_method("get_damage"): dmg = int(a.call("get_damage"))
 	elif a.has_meta("damage"): dmg = int(a.get_meta("damage"))
@@ -126,7 +131,7 @@ func _on_hurtbox_area_entered(a: Area2D) -> void:
 
 func _on_hitbox_body_entered(b: Node) -> void:
 	if not _active or contact_damage <= 0 or b == null: return
-	_touching[b] = 0.0 # 닿자마자
+	_touching[b] = 0.0
 	_apply_contact_damage_once(b)
 
 func _on_hitbox_body_exited(b: Node) -> void:
@@ -136,20 +141,15 @@ func _apply_contact_damage_once(b: Node) -> void:
 	if not is_instance_valid(b): return
 	
 	var did_dmg: bool = false
-	
-	# CombatBody2D 타입을 우선 체크 (가장 깔끔)
 	if b is CombatBody2D:
 		var dx: float = b.global_position.x - global_position.x
 		var k_dir := Vector2(1.0 if dx >= 0.0 else -1.0, 0.0)
 		var k_vec := Vector2(k_dir.x * contact_knockback_x, contact_knockback_y)
 		did_dmg = b.apply_damage(contact_damage, k_vec)
-	
-	# 그 외 (has_method로 fallback)
 	elif b.has_method("apply_damage"):
 		b.call("apply_damage", contact_damage)
 		did_dmg = true
 	
-	# 데미지를 입혔는데 넉백 메서드가 따로 있는 경우 (CombatBody2D가 아닌 경우)
 	if did_dmg and not (b is CombatBody2D) and b.has_method("apply_knockback") and b is Node2D:
 		var dx: float = b.global_position.x - global_position.x
 		var k_dir := Vector2(1.0 if dx >= 0.0 else -1.0, 0.0)
@@ -163,21 +163,39 @@ func _on_detect_exited(body: Node) -> void:
 	if body == target:
 		target = null
 
-# ... (나머지 active 설정, ID 로직 등은 기존 유지) ...
+# -------------------------------------------------------------------------
+# [시스템 연동용 필수 함수] - Stage 스크립트가 이 함수들을 호출합니다.
+# -------------------------------------------------------------------------
+
+# 1. ID 가져오기 (Stage가 자동 할당한 ID를 반환)
 func get_persist_id() -> StringName:
 	return persist_id if persist_id != &"" else StringName(str(get_path()))
 
+# 2. 방 활성화/비활성화 (플레이어가 방에 들어오거나 나갈 때 호출됨)
 func set_active(active: bool) -> void:
 	_active = active
+	
+	# 비활성화되면 물리 연산, 프로세스, 충돌체 등을 꺼서 리소스 절약
 	if disable_when_inactive:
 		set_physics_process(active)
 		set_process(active)
-		hurtbox.set_deferred("monitoring", active)
-		hitbox.set_deferred("monitoring", active)
-		body_shape.set_deferred("disabled", not active)
+		
+		# deferred로 안전하게 켜고 끄기
+		if hurtbox: hurtbox.set_deferred("monitoring", active)
+		if hitbox: hitbox.set_deferred("monitoring", active)
+		if body_shape: body_shape.set_deferred("disabled", not active)
+		
+	# (선택) 비활성화되면 타겟을 잃어버리게 할지? -> 보통 유지하는 게 낫지만 상황따라 해제
+	if not active:
+		_touching.clear()
 
+# 3. 홈으로 리셋 (플레이어가 다른 방으로 도망갔다가 다시 왔을 때 호출됨)
 func reset_to_home(reset_hp: bool = true) -> void:
-	global_position = home_position
-	velocity = Vector2.ZERO
-	reset_combat_state()
-	if reset_hp: hp = max_hp
+	global_position = home_position # 원래 위치로 이동
+	velocity = Vector2.ZERO         # 속도 멈춤
+	reset_combat_state()            # 넉백/무적 초기화
+	
+	target = null # [중요] 추격하던 타겟 잊어버리기 (안 그러면 리셋되자마자 벽보고 달림)
+	
+	if reset_hp: 
+		hp = max_hp
