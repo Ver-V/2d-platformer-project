@@ -44,6 +44,7 @@ func _ready() -> void:
 		# 새 게임 시작 시 GameManager 정보도 갱신
 		GameManager.player_current_hp = hp
 		GameManager.player_max_hp = max_hp
+		GameManager.update_hp(hp)
 		
 	if sprite != null:
 		sprite.play("Stand") # 시작 시 기본 자세

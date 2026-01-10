@@ -319,6 +319,5 @@ tile_map_data = PackedByteArray("AAAAABUAAAAEAAAAACABABUAAAAEAAAAACACABUAAAAEAAA
 
 [node name="SavePoint" parent="." instance=ExtResource("7_2erbf")]
 position = Vector2(178, 454)
-collision_mask = 2
 
 [editable path="HazardTileMap"]
