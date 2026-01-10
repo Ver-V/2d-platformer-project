@@ -26,8 +26,25 @@ signal died
 func _ready() -> void:
 	# super._ready() 제거됨 (필요 없음)
 	add_to_group("player")
-	max_hp = 100
-	hp = 100
+	
+	# [핵심] 게임 시작 시 체크포인트 확인
+	# "혹시 저장이 되어있고(has_checkpoint), 지금 이 씬이 저장된 그 씬(last_scene_path)인가?"
+	if GameManager.has_checkpoint and GameManager.last_scene_path == get_tree().current_scene.scene_file_path:
+		global_position = GameManager.last_checkpoint_pos
+		
+		# [추가] 로드된 체력 정보 적용 (이게 없으면 HP가 1인 상태로 시작할 수 있음)
+		hp = GameManager.player_current_hp
+		max_hp = GameManager.player_max_hp
+		
+		print("체크포인트 위치로 이동했습니다. HP: ", hp)
+		
+	else:
+		max_hp = 100
+		hp = 100
+		# 새 게임 시작 시 GameManager 정보도 갱신
+		GameManager.player_current_hp = hp
+		GameManager.player_max_hp = max_hp
+		
 	if sprite != null:
 		sprite.play("Stand") # 시작 시 기본 자세
 		if not sprite.animation_finished.is_connected(_on_animation_finished):
@@ -36,12 +53,15 @@ func _ready() -> void:
 	if sword_area != null:
 		sword_area.area_entered.connect(_on_sword_area_entered)
 		sword_shape.disabled = true 
+	
+	GameManager.update_hp(hp)
 		
 # [추가] 애니메이션이 끝났을 때 호출되는 함수
 func _on_animation_finished() -> void:
 	# 공격 모션이 끝까지 재생됐다면 공격 상태 해제
 	if sprite.animation == "Attack":
 		is_attacking = false
+		
 		
 # --- CombatBody2D Overrides ---
 func get_invuln_time() -> float: return invuln_time
@@ -50,7 +70,17 @@ func get_knockback_decay() -> float: return knockback_decay
 func get_blink_node() -> CanvasItem: return sprite
 
 func _on_death() -> void:
+	# 1. 일단 멈춤 (이동, 충돌, 입력 방지)
 	reset_motion()
+	set_physics_process(false)
+	set_process_input(false) # 키 입력도 막아야 함
+	
+	# 2. [중요] 여기서 기다립니다! (아직 살아있을 때)
+	await get_tree().create_timer(0.5).timeout
+	
+	# 3. 다 기다린 뒤에 신호 발송
+	# 아까 Stage 스크립트에서 player.died 신호를 받으면 restart_stage() 하게 되어있죠?
+	# 그러니까 여기서 emit()만 하면 Stage가 알아서 리스폰 시킵니다.
 	died.emit()
 
 func attack() -> void:
@@ -80,6 +110,8 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	
 	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
+		GameManager.update_hp(hp)
+		
 		is_attacking = false
 		sword_shape.set_deferred("disabled", true)
 		
@@ -169,3 +201,4 @@ func _update_animation(dir_input: float) -> void:
 		sprite.play("Run")  # 혹은 "Walk"
 	else:
 		sprite.play("Stand") # 혹은 "Idle"
+		

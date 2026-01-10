@@ -10,7 +10,7 @@ var _reflected: bool = false
 @export_group("Parry")
 @export var is_parryable: bool = false         # 이 옵션을 켜면 패링 가능
 @export var parried_speed_mult: float = 1.5    # 반사되면 속도 1.5배
-@export var parried_color: Color = Color(0.925, 0.473, 0.857, 1.0) # 반사시 색상 변경
+@export var parried_color: Color = Color(0.464, 0.727, 0.67, 1.0) # 반사시 색상 변경
 
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite2D
 
