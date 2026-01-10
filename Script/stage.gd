@@ -39,6 +39,7 @@ func _ready() -> void:
 		snap_to_room(room_from_pos(player.global_position), true)
 	
 	Engine.time_scale = 1.0
+	HUD.visible = true
 
 # --- 플레이어 관련 ---
 
