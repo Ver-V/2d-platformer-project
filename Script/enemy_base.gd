@@ -45,6 +45,10 @@ var target: Node2D = null
 func _ready() -> void:
 	add_to_group("enemies")
 	
+	if GameManager.defeated_mobs.has(persist_id):
+		queue_free()
+		return
+		
 	# 태어난 위치를 집으로 기억
 	home_position = global_position
 	
@@ -52,7 +56,8 @@ func _ready() -> void:
 	hp = max_hp
 	contact_damage = contact_damage_base
 	move_speed = move_speed_base
-
+	
+	
 	if hurtbox: hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	if hitbox:
 		hitbox.body_entered.connect(_on_hitbox_body_entered)

@@ -7,6 +7,7 @@ extends CanvasLayer
 # 라벨들 경로
 @onready var gold_label: Label = $Control/GoldLabel
 @onready var interact_label: Label = $Control/InteractLabel
+@onready var save_panel: HBoxContainer = $Control/SavePanel
 
 # 개별 하트 씬 (Control 노드로 된 파일)
 var heart_scene: PackedScene = preload("res://Scenes/Player/HeartIcon.tscn")
@@ -26,7 +27,8 @@ func _setup_ui() -> void:
 	draw_hearts(GameManager.player_current_hp, GameManager.player_max_hp)
 	_on_gold_changed(GameManager.gold)
 	if interact_label: interact_label.visible = false
-
+	if save_panel: save_panel.visible = false
+	
 func _on_hp_changed(current: int, max_hp: int) -> void:
 	draw_hearts(current, max_hp)
 
@@ -54,7 +56,14 @@ func _on_gold_changed(amount: int) -> void:
 	if gold_label: gold_label.text = " %d" % amount
 
 func _on_interact_msg(msg: String) -> void:
-	interact_label.visible = true
+	if msg == "save_mode":
+		if save_panel: save_panel.visible = true
+		if interact_label: interact_label.visible = false
+	
+	else:
+		if interact_label: interact_label.visible = true
+		if save_panel: save_panel.visible = false
 
 func _on_interact_hide() -> void:
 	if interact_label: interact_label.visible = false
+	if save_panel: save_panel.visible = false

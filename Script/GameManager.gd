@@ -8,14 +8,15 @@ var player_current_hp: int = 100
 var player_damage: int = 10
 var player_parry_damage_multifac: float = 1.5
 var defeated_bosses: Dictionary = {} # 영구 사망 보스 목록
+var defeated_mobs: Array = []
+var pending_status: String = ""
 
-signal gold_changed(current_gold)
+signal gold_changed(amount: int)
 signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
 signal interact_msg_requested(msg)    # [추가] 상호작용 텍스트 띄우기 요청
 signal interact_msg_hidden()          # [추가] 상호작용 텍스트 숨기기 요청
 
 const SAVE_PATH = "user://save_game.json"
-
 
 # 리스폰 중복 방지 플래그
 var is_respawning: bool = false
@@ -24,6 +25,18 @@ var is_respawning: bool = false
 var has_checkpoint: bool = false
 var last_checkpoint_pos: Vector2
 var last_scene_path: String = ""
+
+func add_defeated_mob(id: String) -> void:
+	if not defeated_mobs.has(id):
+		defeated_mobs.append(id)
+		
+# [추가] 휴식 시 호출: 일반 몹 기록만 싹 지움! (이게 핵심!)
+func reset_mobs() -> void:
+	defeated_mobs.clear()
+	
+func add_defeated_boss(id: String) -> void:
+	if not defeated_bosses.has(id):
+		defeated_bosses[id] = true
 
 # --- [함수 1] 돈 추가 ---
 func add_gold(amount: int) -> void:
@@ -67,6 +80,7 @@ func save_game() -> void:
 		"damage": player_damage,
 		"parrydamage": player_parry_damage_multifac,
 		"defeated_bosses": defeated_bosses,
+		"defeated_mobs": defeated_mobs,
 		"has_checkpoint": has_checkpoint,
 		"scene_path": last_scene_path,
 		"pos_x": last_checkpoint_pos.x,
@@ -101,7 +115,7 @@ func load_game() -> bool:
 		player_max_hp = data.get("max_hp", 100)
 		player_damage = data.get("damage", 10)
 		player_parry_damage_multifac = data.get("parrydamage", 1.5)
-		
+		defeated_mobs = data.get("defeated_mobs", [])
 		defeated_bosses = data.get("defeated_bosses", {})
 		has_checkpoint = data.get("has_checkpoint", false)
 		last_scene_path = data.get("scene_path", "")
@@ -109,11 +123,7 @@ func load_game() -> bool:
 		var px = data.get("pos_x", 0.0)
 		var py = data.get("pos_y", 0.0)
 		last_checkpoint_pos = Vector2(px, py)
-		
-		print("게임 데이터 로드 완료! HP:", player_current_hp)
-		
-		# [중요 수정] 여기서 respawn_player()를 또 호출하면 안 됩니다!
-		# respawn_player -> load_game -> respawn_player 순환 호출 구조를 끊습니다.
+
 		return true
 		
 	return false
@@ -126,7 +136,7 @@ func reset_data() -> void:
 	player_parry_damage_multifac = 1.5
 	has_checkpoint = false
 	defeated_bosses = {}
-
+	defeated_mobs = []
 
 # --- [함수 수정] 플레이어 체력 갱신 ---
 # Player 스크립트에서 직접 변수를 바꾸는 대신, 이 함수를 쓰도록 할 겁니다.
@@ -135,6 +145,13 @@ func update_hp(new_hp: int) -> void:
 	# 체력이 변했음을 UI에게 알림
 	hp_changed.emit(player_current_hp, player_max_hp)
 	
+func update_gold(amount: int) -> void:
+	# 2. 값 변경
+	gold += amount
+	
+	# 3. [핵심] "돈 바뀌었으니 UI 업데이트해!"라고 신호 발사
+	gold_changed.emit(gold)
+		
 	
 # --- [추가됨] 실제로 씬을 변경하는 함수들 ---
 # 이 함수들이 없어서 그동안 씬이 바뀌지 않고 멈춰있었던 것입니다.

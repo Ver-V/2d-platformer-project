@@ -5,6 +5,7 @@ class_name Player
 @onready var sword_area: Area2D = $AttackPivot/SwordArea
 @onready var sword_shape: CollisionShape2D = $AttackPivot/SwordArea/CollisionShape2D
 @onready var attack_pivot: Marker2D = $AttackPivot
+@onready var status_label: Label = $StatusLabel
 
 @export_group("Movement")
 @export var movespeed: float = 120.0
@@ -56,6 +57,16 @@ func _ready() -> void:
 		sword_shape.disabled = true 
 	
 	GameManager.update_hp(hp)
+	
+	if GameManager.pending_status != "":
+		await get_tree().create_timer(0.2).timeout 
+		show_status(GameManager.pending_status)
+		GameManager.pending_status = ""
+		
+	velocity = Vector2.ZERO 
+	floor_snap_length = 20.0 
+	apply_floor_snap() # block spawn jump
+	move_and_slide()
 		
 # [추가] 애니메이션이 끝났을 때 호출되는 함수
 func _on_animation_finished() -> void:
@@ -70,6 +81,33 @@ func get_blink_interval() -> float: return blink_interval
 func get_knockback_decay() -> float: return knockback_decay
 func get_blink_node() -> CanvasItem: return sprite
 
+
+func show_popup(text: String, color: Color = Color.YELLOW) -> void:
+	if status_label == null: return
+	
+	# 1. 텍스트랑 색상 설정
+	status_label.text = text
+	status_label.modulate = color # 글자 색상 (기본 노랑)
+	status_label.visible = true
+	
+	# 2. 위치 초기화 (머리 위로)
+	# 원래 위치(Label이 에디터에 있는 위치)를 기준으로 잡거나 상수로 지정
+	status_label.position.y = -45.0 # 머리 위 시작 위치
+	status_label.modulate.a = 1.0   # 투명도 100% (완전 불투명)
+	
+	# 3. 애니메이션 (Tween) - 위로 뜨면서 투명해짐
+	var tween = create_tween()
+	tween.set_parallel(true) # 동시에 실행
+	
+	# 0.8초 동안 Y축으로 -30만큼 더 올라감 (둥둥~)
+	tween.tween_property(status_label, "position:y", -75.0, 1.0).set_trans(Tween.TRANS_SINE)
+	# 0.8초 동안 투명해짐
+	tween.tween_property(status_label, "modulate:a", 0.0, 1.5).set_ease(Tween.EASE_IN)
+	
+	# 애니메이션 끝나면 다시 숨김
+	tween.chain().tween_callback(func(): status_label.visible = false)
+	
+	
 func _on_death() -> void:
 	# 1. 일단 멈춤 (이동, 충돌, 입력 방지)
 	reset_motion()
@@ -203,3 +241,33 @@ func _update_animation(dir_input: float) -> void:
 	else:
 		sprite.play("Stand") # 혹은 "Idle"
 		
+func show_status(action_type: String) -> void:
+	var msg: String = ""
+	var color: Color = Color.WHITE
+	
+	# 상황별로 텍스트와 색상을 여기서 결정합니다 (case 문과 같음)
+	match action_type:
+		"save":
+			msg = "Saved!"
+			color = Color(0.347, 0.824, 0.885, 1.0) # 연두색
+		"heal":
+			msg = "Healed!"
+			color = Color(1.0, 0.3, 0.3) # 빨간색
+		"mana":
+			msg = "Mana Up!"
+			color = Color(0.3, 0.3, 1.0) # 파란색
+		"gold":
+			msg = "+ Gold"
+			color = Color(1.0, 0.8, 0.2) # 금색
+		"key":
+			msg = "Key Found"
+			color = Color(0.8, 0.8, 0.8) # 은색
+		"rest":
+			msg = "Rested"
+			color = Color(0.429, 0.793, 0.33, 1.0)
+		_: # default (그 외 나머지)
+			msg = "!"
+			color = Color.WHITE
+	
+	# 결정된 내용으로 원래 있던 팝업 함수 실행
+	show_popup(msg, color)

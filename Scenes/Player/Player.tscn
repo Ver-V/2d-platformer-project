@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3 uid="uid://qfh6su8aeoy7"]
+[gd_scene load_steps=39 format=3 uid="uid://qfh6su8aeoy7"]
 
 [ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/player.gd" id="1_kpjcp"]
 [ext_resource type="Texture2D" uid="uid://c8iqt4cdnfujj" path="res://Assets/sprites/knight/ATTACK 3.png" id="2_3wgd0"]
@@ -223,6 +223,10 @@ size = Vector2(18.111095, 30.742254)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_im3yb"]
 size = Vector2(11, 1.5)
 
+[sub_resource type="LabelSettings" id="LabelSettings_t26db"]
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
+
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
 collision_mask = 73
@@ -260,3 +264,12 @@ script = ExtResource("7_im3yb")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HazardSensor"]
 position = Vector2(-1.5, -0.75)
 shape = SubResource("RectangleShape2D_im3yb")
+
+[node name="StatusLabel" type="Label" parent="."]
+visible = false
+offset_left = -20.0
+offset_top = -50.0
+offset_right = 20.0
+offset_bottom = -27.0
+label_settings = SubResource("LabelSettings_t26db")
+horizontal_alignment = 1
