@@ -256,9 +256,6 @@ func show_status(action_type: String) -> void:
 		"mana":
 			msg = "Mana Up!"
 			color = Color(0.3, 0.3, 1.0) # 파란색
-		"gold":
-			msg = "+ Gold"
-			color = Color(1.0, 0.8, 0.2) # 금색
 		"key":
 			msg = "Key Found"
 			color = Color(0.8, 0.8, 0.8) # 은색
@@ -271,3 +268,10 @@ func show_status(action_type: String) -> void:
 	
 	# 결정된 내용으로 원래 있던 팝업 함수 실행
 	show_popup(msg, color)
+
+
+func _on_magnet_area_area_entered(area):
+	# 닿은 녀석(area)이 'attract_to'라는 함수를 가지고 있나? (즉, 코인인가?)
+	if area.has_method("attract_to"):
+		# "나(self)한테 빨려와라!" 명령
+		area.attract_to(self)

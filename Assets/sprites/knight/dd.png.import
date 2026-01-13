@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://o1s3vfaxkar0"
-path="res://.godot/imported/Gemini_Generated_Image_wy544bwy544bwy54.png-ddedfd7da21c75d67078f07e819a3483.ctex"
+uid="uid://jlxpbe0j2nkd"
+path="res://.godot/imported/dd.png-0f09bcf3220abf515d33c0fe8c21a436.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/sprites/Gemini_Generated_Image_wy544bwy544bwy54.png"
-dest_files=["res://.godot/imported/Gemini_Generated_Image_wy544bwy544bwy54.png-ddedfd7da21c75d67078f07e819a3483.ctex"]
+source_file="res://Assets/sprites/knight/dd.png"
+dest_files=["res://.godot/imported/dd.png-0f09bcf3220abf515d33c0fe8c21a436.ctex"]
 
 [params]
 

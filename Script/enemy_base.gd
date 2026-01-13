@@ -4,6 +4,9 @@ class_name EnemyBase
 # [시스템 필수] 적이 죽었을 때 Stage 스크립트에게 알리는 신호
 signal died(enemy: EnemyBase)
 
+@export var drop_gold_amount: int = 10 # 기본값
+@export var coin_scene: PackedScene
+
 @export_group("Identity")
 # [시스템 필수] 세이브/로드 시 나를 구별하는 ID (Stage에서 자동 할당함)
 @export var persist_id: StringName = &"" 
@@ -80,8 +83,9 @@ func get_knockback_cooldown() -> float: return knockback_cooldown
 func get_blink_node() -> CanvasItem: return sprite
 
 func _on_death() -> void:
-	# [시스템 필수] 죽음 신호를 보내야 Stage가 장부에 기록함
+	# [시스템 필수] 죽음 신호를 보내야 Stage가 장부에 기록
 	died.emit(self)
+	call_deferred("spawn_gold")
 	queue_free()
 
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
@@ -118,6 +122,54 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	velocity -= kb
 
+func spawn_gold():
+	# 코인 씬이 연결되어 있고, 드랍 금액이 0보다 클 때만 생성
+	if not coin_scene or drop_gold_amount <= 0:
+		return
+		
+	var remaining_gold = drop_gold_amount
+	
+	# 1. 금화 (1000원 단위) 계산
+	var gold_count = remaining_gold / 1000  # 2500 / 1000 = 2개
+	remaining_gold = remaining_gold % 1000  # 나머지 500원
+	
+	# 2. 은화 (100원 단위) 계산
+	var silver_count = remaining_gold / 100 # 500 / 100 = 5개
+	remaining_gold = remaining_gold % 100   # 나머지 0원
+	
+	# 3. 동화 (10원 단위) 계산 (나머지 전부)
+	var bronze_count = remaining_gold / 10
+	
+	# --- 실제 생성 루프 ---
+	
+	# 금화 생성
+	for i in range(gold_count):
+		create_one_coin(1000)
+		
+	# 은화 생성
+	for i in range(silver_count):
+		create_one_coin(100)
+		
+	# 동화 생성
+	for i in range(bronze_count):
+		create_one_coin(10)
+			
+		
+func create_one_coin(amount: int):
+	var coin = coin_scene.instantiate()
+	
+	# 1. 위치 설정 (중요!)
+	# position은 몬스터 발밑(Pivot)입니다.
+	var random_offset = Vector2(randf_range(-20, 20), randf_range(-20, 0))
+	coin.global_position = global_position + random_offset
+	
+	# 2. 맵에 먼저 추가 (그래야 트윈이 돕니다)
+	get_parent().call_deferred("add_child", coin)
+	
+	# 3. [핵심] setup 함수 호출 (다음 프레임에 실행하여 안전하게)
+	# call_deferred를 썼으므로, coin이 트리에 들어간 직후에 setup을 부르도록 합니다.
+	coin.call_deferred("setup", amount)
+	
 # --- Collision Callbacks (기존 로직 유지) ---
 func _on_hurtbox_area_entered(a: Area2D) -> void:
 	if not _active or is_invulnerable(): return
