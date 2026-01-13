@@ -28,14 +28,16 @@ func _process(delta):
 func attract_to(player_node):
 	target_body = player_node
 	
-	# 튀어오르는 애니메이션(Tween)이 있으면 멈춰야 자연스럽게 끌려감
-	# (모든 Tween을 강제로 끊는 코드)
+	# 기존에 튀어오르던 트윈을 강제로 끄기 (Kill)
+	# 그래야 공중에 있다가도 바로 플레이어한테 날아옴
 	var tweens = get_tree().get_processed_tweens()
 	for t in tweens:
-		# 현재 내 객체(self)와 관련된 트윈인지 확인은 어렵지만,
-		# 간단히 구현하려면 그냥 덮어씌우면 됩니다.
-		# 하지만 가장 좋은 건 기존 animate_pop에서 만든 tween 변수를 전역으로 빼서 kill() 하는 것입니다.
-		pass
+		# 이 트윈이 '나(self)'를 움직이고 있다면 죽여라
+		if t.is_valid(): 
+			t.kill()
+			
+	# 즉시 충돌 켜기
+	collision.set_deferred("disabled", false)
 
 func setup(amount: int):
 	gold_amount = amount
@@ -48,56 +50,29 @@ func _animate_pop():
 	var random_x = randf_range(-25, 25)
 	
 	# 2. 튀어오를 높이 (위로 50픽셀)
-	var jump_height = -30.0 
+	var jump_height = -35.0 
 	
 	# 3. 원래 바닥 위치 (착지 지점)
-	var floor_y = position.y
+	var start_y = position.y
+	var land_y = position.y + 10.0
 	
-	# 트윈(애니메이션) 생성
-	var tween = create_tween()
-	tween.set_parallel(true) # 동시에 실행해라!
-	
-	# [X축] 옆으로 스르륵 이동
-	tween.tween_property(self, "position:x", position.x + random_x, 0.5)
-	
-	# [Y축] 위로 솟구쳤다가 (0.25초) -> 바닥으로 쿵 (0.25초)
-	# 4. 위로 점프 (Ease OUT: 속도가 줄어듦)
-	tween.tween_property(self, "position:y", floor_y + jump_height, 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	
-	# 5. 아래로 낙하 (연속 동작을 위해 chain 사용하지 않고 시간차 계산)
-	# 하지만 parallel이라 겹치므로, 별도의 트윈을 하나 더 쓰는 게 안전합니다.
-	# -> 코드를 더 쉽게 하기 위해 시퀀스(순서대로) 방식으로 바꿉니다.
-	
-	_start_jump_sequence(floor_y, jump_height, random_x)
+	_start_jump_sequence(start_y, land_y, jump_height, random_x)
 
-func _start_jump_sequence(floor_y, jump_height, target_x_offset):
-	var tween = create_tween()
-	
-	# 1. 위로 점프하면서 옆으로 이동 (0.3초)
-	tween.set_parallel(true)
-	tween.tween_property(self, "position:y", floor_y + jump_height, 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	tween.tween_property(self, "position:x", position.x + target_x_offset, 0.6) # X는 천천히 계속 이동
-	
-	# 2. 아래로 낙하 (Bounce 효과: 텅~ 텅~ 튀기기)
-	tween.set_parallel(false) # 이제 순서대로
-	# 위 애니메이션이 끝날 때까지 기다리는 대신, chain()을 쓰거나 시간을 맞춥니다.
-	# 여기선 쉬운 구현을 위해 트윈을 쪼갭니다. 
-	
-	# (복잡한 트윈 대신 더 쉬운 방법: 중력 흉내내기)
-	# 아래 코드가 훨씬 자연스럽습니다.
-	tween.kill() # 위 트윈 취소하고 아래 로직으로 갑니다.
-	
-	# --- 진짜 쉬운 팝업 로직 ---
+func _start_jump_sequence(start_y, land_y, jump_height, target_x_offset):
 	var t = create_tween()
-	# 위로 솟구치기 (0.2초)
-	t.tween_property(self, "position:y", floor_y + jump_height, 0.2).set_ease(Tween.EASE_OUT)
-	# 바닥으로 떨어지면서 튕기기 (Bounce) (0.5초)
-	t.tween_property(self, "position:y", floor_y, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BOUNCE)
 	
-	# 동시에 옆으로 퍼지기 (별도 트윈)
+	# 1) 위로 솟구치기 (시작점 -> 점프 높이)
+	t.tween_property(self, "position:y", start_y + jump_height, 0.2).set_ease(Tween.EASE_OUT)
+	
+	# 2) 바닥으로 떨어지기 (점프 높이 -> 착지 위치 land_y)
+	# start_y로 돌아오는 게 아니라, 더 아래인 land_y로 가야 합니다!
+	t.tween_property(self, "position:y", land_y, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BOUNCE)
+	
+	# 3) 동시에 옆으로 퍼지기 (X축)
 	var t_x = create_tween()
 	t_x.tween_property(self, "position:x", position.x + target_x_offset, 0.7)
 	
+	# 4) 다 끝나면 먹을 수 있게 켜기
 	await t.finished
 	collision.disabled = false
 	
@@ -122,6 +97,5 @@ func _on_body_entered(body):
 		GameManager.update_gold(gold_amount)
 
 		# AudioManager.play_sfx("coin_pickup") 
-		
-		# 3. 사라짐
+
 		queue_free()

@@ -73,8 +73,9 @@ radius = 5.0
 [node name="Projectile" instance=ExtResource("1_s5vc0")]
 collision_layer = 64
 collision_mask = 3
-speed = 70.0
-damage = 10
+speed = 150.0
+damage = 20
+parried_color = Color(0.22356191, 0.7480381, 0.77354574, 1)
 
 [node name="AnimatedSprite2D" parent="." index="1"]
 sprite_frames = SubResource("SpriteFrames_3y0gx")

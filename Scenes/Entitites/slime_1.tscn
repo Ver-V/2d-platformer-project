@@ -101,7 +101,6 @@ jump_chase_time = 0.12
 projectile_scene = ExtResource("3_j6rap")
 shoot_interval = 1.5
 shoot_range = 200.0
-drop_gold_amount = 2520
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 sprite_frames = SubResource("SpriteFrames_twyhu")
