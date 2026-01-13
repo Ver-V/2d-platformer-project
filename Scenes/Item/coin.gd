@@ -4,7 +4,7 @@ extends Area2D
 var gold_amount: int = 10 
 var target_body = null # 날아갈 목표(플레이어)
 var speed = 0.0 # 날아가는 속도 (점점 빨라지게)
-
+@onready var anim_player = $AnimationPlayer
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
@@ -104,13 +104,12 @@ func _start_jump_sequence(floor_y, jump_height, target_x_offset):
 	collision.disabled = false
 	
 func _update_color():
-	# 딱 떨어지는 값으로 비교하면 됩니다.
 	if gold_amount >= 1000:
-		sprite.modulate = Color(1.0, 0.85, 0.0) # 금색
+		sprite.modulate = Color(1.0, 0.919, 0.586, 1.0) # 금
 	elif gold_amount >= 100:
-		sprite.modulate = Color(0.85, 0.9, 1.0) # 은색
+		sprite.modulate = Color(0.934, 0.952, 0.998, 1.0) # 은
 	else:
-		sprite.modulate = Color(0.8, 0.5, 0.2) # 동색
+		sprite.modulate = Color(0.652, 0.398, 0.138, 1.0) # 동
 		
 func _on_body_entered(body):
 	# 플레이어가 닿으면
