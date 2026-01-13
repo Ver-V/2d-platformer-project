@@ -2,14 +2,13 @@ extends Area2D
 class_name Projectile
 
 @export_group("Stats")
-@export var speed: float = 100.0
+@export var speed: float = 300.0
 @export var damage: int = 1
 @export var life_time: float = 10.0
 var shooter: Node2D = null # [추가] 나를 쏜 놈을 기억하는 변수
 var _reflected: bool = false
 @export_group("Parry")
 @export var is_parryable: bool = false         # 이 옵션을 켜면 패링 가능
-@export var parried_speed_mult: float = 1.5    # 반사되면 속도 1.5배
 @export var parried_color: Color = Color(0.464, 0.727, 0.67, 1.0) # 반사시 색상 변경
 
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -19,7 +18,7 @@ var _reflected: bool = false
 @export var enemy_homing_speed: float = 2.0 # 적 유도탄의 회전 속도 (너무 빠르면 피하기 힘듦)
 var _is_homing: bool = false   # 현재 유도 모드인가?
 var _homing_target: Node2D = null # 누구를 쫓을 것인가?
-@export var homing_turn_speed: float = 10.0 # 유도 회전 속도 (클수록 급커브 가능)
+@export var homing_turn_speed: float = 5.0 # 유도 회전 속도 (클수록 급커브 가능)
 
 var direction: Vector2 = Vector2.RIGHT
 var velocity: Vector2 = Vector2.ZERO
@@ -137,7 +136,7 @@ func attempt_parry(source_pos: Vector2) -> bool:
 	# (유도탄이라 초기 방향은 크게 중요하지 않지만, 멋을 위해 반대편으로 설정)
 	direction = (global_position - source_pos).normalized()
 	damage = ceil(damage * 1.5)
-	speed *= 2.0 # 유도탄이니까 속도는 2배만 (너무 빠르면 선회하기 힘듦)
+	speed *= 0.75 # 유도탄이니까 속도는 2배만 (너무 빠르면 선회하기 힘듦)
 	velocity = direction * speed  # <-- 이거 꼭 있어야 날아갑니다!
 
 	modulate = Color.CYAN
