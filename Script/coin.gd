@@ -11,8 +11,6 @@ var speed = 0.0 # 날아가는 속도 (점점 빨라지게)
 func _ready():
 	collision.set_deferred("disabled", true)
 	_update_color()
-	if sprite != null :
-		sprite.play("default")
 		
 func _process(delta):
 	# 목표가 생기면 그쪽으로 날아갑니다!
@@ -104,12 +102,19 @@ func _start_jump_sequence(floor_y, jump_height, target_x_offset):
 	collision.disabled = false
 	
 func _update_color():
+	sprite.modulate = Color(1, 1, 1, 1)
 	if gold_amount >= 1000:
-		sprite.modulate = Color(1.0, 0.919, 0.586, 1.0) # 금
+		# 금화: "default" 애니메이션 재생 (이미지가 노란색이니 그대로 둠)
+		sprite.play("default")
+		
 	elif gold_amount >= 100:
-		sprite.modulate = Color(0.934, 0.952, 0.998, 1.0) # 은
+		# 은화: "silver" 애니메이션 재생 (이미지가 은색이니 그대로 둠)
+		sprite.play("silver")
+		
 	else:
-		sprite.modulate = Color(0.652, 0.398, 0.138, 1.0) # 동
+		# 동화: "default"(금화)를 틀어놓고 -> 구리색으로 칠하기!
+		sprite.play("default")
+		sprite.modulate = Color(0.8, 0.5, 0.2) # 구리색 덧칠
 		
 func _on_body_entered(body):
 	# 플레이어가 닿으면
