@@ -127,7 +127,13 @@ func load_game() -> bool:
 		return true
 		
 	return false
+	
+func apply_hitstop(time_scale: float, duration: float):
+	Engine.time_scale = time_scale
+	await get_tree().create_timer(duration, true, false, true).timeout
+	Engine.time_scale = 1.0
 
+	
 func reset_data() -> void:
 	gold = 0
 	player_current_hp = 100

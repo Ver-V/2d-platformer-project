@@ -6,6 +6,10 @@ class_name Player
 @onready var sword_shape: CollisionShape2D = $AttackPivot/SwordArea/CollisionShape2D
 @onready var attack_pivot: Marker2D = $AttackPivot
 @onready var status_label: Label = $StatusLabel
+# 기존 서 있는 충돌체 (이름이 다를 수 있으니 확인하세요!)
+@onready var collision_stand: CollisionShape2D = $PlayerCol
+# [추가] 새로 만든 죽었을 때용 충돌체
+@onready var collision_died: CollisionShape2D = $Collisiondied
 
 @export_group("Movement")
 @export var movespeed: float = 120.0
@@ -20,12 +24,13 @@ class_name Player
 @export var knockback_decay: float = 1800.0
 @export var is_attacking: bool = false 
 @export var attack_cooldown: float = 0.8
+@export var attack_damage: float = 10.0
 var _cooldown_left: float = 0.0
+var is_parry_success: bool = false
 
 signal died
 
 func _ready() -> void:
-	# super._ready() 제거됨 (필요 없음)
 	add_to_group("player")
 	
 	# [핵심] 게임 시작 시 체크포인트 확인
@@ -53,8 +58,15 @@ func _ready() -> void:
 			sprite.animation_finished.connect(_on_animation_finished)
 	
 	if sword_area != null:
+		# 투사체/패링 감지용 (기존에 있던 것)
 		sword_area.area_entered.connect(_on_sword_area_entered)
-		sword_shape.disabled = true 
+		
+		# [추가 2] 적 몸통(Body) 감지용 (칼 데미지 주는 용도)
+		# 이게 연결되어 있어야 적을 때릴 수 있습니다.
+		if not sword_area.body_entered.is_connected(_on_sword_body_entered):
+			sword_area.body_entered.connect(_on_sword_body_entered)
+			
+		sword_shape.disabled = true
 	
 	GameManager.update_hp(hp)
 	
@@ -109,40 +121,68 @@ func show_popup(text: String, color: Color = Color.YELLOW) -> void:
 	
 	
 func _on_death() -> void:
-	# 1. 일단 멈춤 (이동, 충돌, 입력 방지)
-	reset_motion()
+	collision_stand.set_deferred("disabled", true)
+	# 누워있는 납작한 박스 켜기
+	collision_died.set_deferred("disabled", false)
+	velocity.x = 0 
+	reset_combat_state()
+	set_process_input(false)
+	sprite.play("died")
+	
+	# 3. 4초 대기 (납작한 박스가 적용되어 바닥에 착 붙을 겁니다)
+	await get_tree().create_timer(4.0).timeout
+	
 	set_physics_process(false)
-	set_process_input(false) # 키 입력도 막아야 함
-	
-	# 2. [중요] 여기서 기다립니다! (아직 살아있을 때)
-	await get_tree().create_timer(0.5).timeout
-	
-	# 3. 다 기다린 뒤에 신호 발송
-	# 아까 Stage 스크립트에서 player.died 신호를 받으면 restart_stage() 하게 되어있죠?
-	# 그러니까 여기서 emit()만 하면 Stage가 알아서 리스폰 시킵니다.
 	died.emit()
 
 func attack() -> void:
-	if is_attacking or _cooldown_left > 0.0 : return # 이미 공격 중이면 실행 안 함
+	if is_attacking or _cooldown_left > 0.0 : return
 	
 	_cooldown_left = attack_cooldown
-	
 	is_attacking = true
-	sprite.play("Attack") # 반복(Loop)이 꺼져 있어야 함!
+	is_parry_success = false 
 	
-	# --- 공격 판정 (히트박스) ---
+	sprite.play("Attack")
+	
 	sword_shape.disabled = false
-	
-	# 판정은 0.1초만 유지하고 끄기 (애니메이션보다 짧게)
-	# (취향에 따라 이 부분을 없애고 애니메이션 끝날 때 꺼도 됨)
 	await get_tree().create_timer(0.25).timeout
 	sword_shape.disabled = true
 
 func _on_sword_area_entered(area: Area2D) -> void:
 	if area is Projectile:
 		var p: Projectile = area as Projectile
-		p.attempt_parry(global_position)
+		
+		# [수정됨] attempt_parry가 'true'를 반환했을 때만 성공 처리!
+		# 기존에는 그냥 p.attempt_parry(...)라고만 써서 실패해도 성공으로 간주했음
+		if p.attempt_parry(global_position):
+			is_parry_success = true
+			
+			# 성공했을 때만 잠깐 대기 후 히트스탑
+			await get_tree().create_timer(0.05).timeout
+			GameManager.apply_hitstop(0.05, 0.25)
+		
+		# else: 실패한 경우(패링 불가 탄환)에는 아무것도 안 함.
+		# is_parry_success가 false로 유지되므로, 
+		# 칼이 몬스터 몸에 닿았을 때 정상적으로 데미지가 들어감.
+		
+func _on_sword_body_entered(body: Node) -> void:
+	# 1. 적 그룹인지 확인
+	if body.is_in_group("enemies"):
+		await get_tree().process_frame
+		if is_parry_success:
+			return
 
+		if body.has_method("apply_damage"):
+			# 넉백 방향 계산 (플레이어 -> 적)
+			var knock_dir = (body.global_position - global_position).normalized()
+			var knock_force = Vector2(knock_dir.x * 400, -200)
+			body.apply_damage(int(attack_damage), knock_force)
+			GameManager.apply_hitstop(0.2, 0.05)
+			
+		elif body.has_method("take_damage"):
+			body.take_damage(attack_damage, global_position)
+			GameManager.apply_hitstop(0.2, 0.05)
+			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
 	# [체크 1] super(부모)를 호출해서 실제 체력을 깎고 결과를 받아야 함!
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time)
@@ -150,14 +190,27 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
 		GameManager.update_hp(hp)
-		
 		is_attacking = false
 		sword_shape.set_deferred("disabled", true)
+		GameManager.apply_hitstop(0.2, 0.05)
 		
-	# [체크 3] 결과를 반드시 return 해야 함! (tile_map이 이걸 보고 성공 여부를 판단함)
+		# [수정 1] 죽었을 때 확인
+		if hp <= 0:
+			velocity.x = 0 # 좌우 이동만 멈춤 (떨어지는 건 유지!)
+	
 	return took_damage
 	
 func _physics_process(delta: float) -> void:
+	if hp <= 0:
+		# 공중에 떠 있다면? -> 중력 적용!
+		if not is_on_floor():
+			velocity += get_gravity() * delta
+		else:
+			# 바닥에 닿았다면 -> 미끄러짐 방지
+			velocity.x = 0
+			
+		move_and_slide() # [중요] 이게 있어야 실제로 떨어집니다!
+		return # 살았을 때 로직은 실행하지 않고 종료
 	# 쿨타임 감소
 	if _cooldown_left > 0.0:
 		_cooldown_left -= delta
@@ -220,7 +273,7 @@ func _physics_process(delta: float) -> void:
 	_update_animation(dir_input)
 	
 func get_knockback_cooldown() -> float:
-	return 0.7  # 0.3초 뒤에는 바로 움직일 수 있음!
+	return 0.7  # 0.7초 뒤에는 바로 움직일 수 있음!
 	
 # 애니메이션 관리 전용 함수
 func _update_animation(dir_input: float) -> void:

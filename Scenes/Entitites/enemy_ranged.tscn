@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://cm3f8quka772d"]
+
+[ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_eww8j"]
+[ext_resource type="Script" uid="uid://vifmo7ynni6r" path="res://Script/EnemyRanged.gd" id="2_40ktx"]
+[ext_resource type="PackedScene" uid="uid://d888233uuktt" path="res://Scenes/Entitites/ShooterComponent.tscn" id="3_n26m6"]
+
+[node name="EnemyRanged" instance=ExtResource("1_eww8j")]
+script = ExtResource("2_40ktx")
+shoot_interval = 2.0
+shoot_range = 250.0
+shoot_offset = Vector2(0, -10)
+
+[node name="ShooterComponent" parent="." index="0" instance=ExtResource("3_n26m6")]
+
+[node name="LineOfSight" type="RayCast2D" parent="." index="8"]
+
+[node name="Muzzle" type="Marker2D" parent="." index="9"]
