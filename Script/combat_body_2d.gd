@@ -78,9 +78,8 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	hp -= amount
 	if hp <= 0:
 		hp = 0
+		velocity.x = 0
 		_on_death()
-		if knockback != Vector2.ZERO:
-			apply_knockback_vec(knockback, ignore_cd, -1.0, true)
 		return true
 
 	# [핵심 수정] 여기에 받아온 시간을 넣어줍니다.

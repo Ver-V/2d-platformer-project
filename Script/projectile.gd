@@ -115,9 +115,14 @@ func _destroy_projectile() -> void:
 	# 여기서 폭발 이펙트 등을 인스턴스화 할 수 있음
 	queue_free()
 
-# --- 핵심: 패링 함수 ---
-# 플레이어의 칼(Attack Area)이 이 함수를 호출할 것임
-# projectile.gd
+func set_parryable_mode(active: bool, cue_color: Color = Color.YELLOW) -> void:
+	is_parryable = active
+	
+	if active:
+		modulate = cue_color
+		# scale = Vector2(1.2, 1.2) # 필요하면 크기 키우기
+	else:
+		modulate = Color.WHITE
 
 func attempt_parry(source_pos: Vector2) -> bool:
 	if not is_parryable:

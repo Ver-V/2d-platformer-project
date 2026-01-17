@@ -60,8 +60,6 @@ func _ready() -> void:
 	contact_damage = contact_damage_base
 	move_speed = move_speed_base
 	
-	
-	if hurtbox: hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	if hitbox:
 		hitbox.body_entered.connect(_on_hitbox_body_entered)
 		hitbox.body_exited.connect(_on_hitbox_body_exited)
@@ -169,22 +167,6 @@ func create_one_coin(amount: int):
 	# 3. [핵심] setup 함수 호출 (다음 프레임에 실행하여 안전하게)
 	# call_deferred를 썼으므로, coin이 트리에 들어간 직후에 setup을 부르도록 합니다.
 	coin.call_deferred("setup", amount)
-	
-# --- Collision Callbacks (기존 로직 유지) ---
-func _on_hurtbox_area_entered(a: Area2D) -> void:
-	if not _active or is_invulnerable(): return
-	
-	var dmg: int = 0
-	if a.has_method("get_damage"): dmg = int(a.call("get_damage"))
-	elif a.has_meta("damage"): dmg = int(a.get_meta("damage"))
-	
-	if dmg <= 0: return
-
-	var kb: Vector2 = Vector2.ZERO
-	if a.has_method("get_knockback"): kb = a.call("get_knockback")
-	elif a.has_meta("knockback"): kb = a.get_meta("knockback")
-
-	apply_damage(dmg, kb)
 
 func _on_hitbox_body_entered(b: Node) -> void:
 	if not _active or contact_damage <= 0 or b == null: return
