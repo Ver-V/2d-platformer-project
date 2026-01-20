@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://ccvylxygt88mc"]
+
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/ItemData.gd" id="1_4scv1"]
+[ext_resource type="Texture2D" uid="uid://citog4m28u5un" path="res://Assets/sprites/#2 - Transparent & Drop Shadow.png" id="1_47tnu"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_47tnu"]
+atlas = ExtResource("1_47tnu")
+region = Rect2(0, 288, 32, 32)
+
+[resource]
+script = ExtResource("1_4scv1")
+id = "health_potion"
+name = "Healing Potion"
+icon = SubResource("AtlasTexture_47tnu")
+metadata/_custom_type_script = "uid://djy4vfexvhruh"

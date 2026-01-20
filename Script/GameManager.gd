@@ -10,6 +10,7 @@ var player_parry_damage_multifac: float = 1.5
 var defeated_bosses: Dictionary = {} # 영구 사망 보스 목록
 var defeated_mobs: Array = []
 var pending_status: String = ""
+var inventory: Array = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 
 signal gold_changed(amount: int)
 signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
@@ -44,14 +45,34 @@ func add_gold(amount: int) -> void:
 	emit_signal("gold_changed", gold)
 	print("현재 골드: ", gold)
 
-# --- [함수 2] 체크포인트 저장 ---
+# --- [함수 2] 스탯 변경 (추가됨) ---
+# Player가 아닌 GM이 직접 계산을 담당합니다.
+
+func add_player_damage(amount: int) -> void:
+	player_damage += amount
+	print("GM: 공격력이 %d로 변경됨" % player_damage)
+
+func add_parry_ratio(amount: float) -> void:
+	player_parry_damage_multifac += amount
+	print("GM: 패링 배율이 %.1f로 변경됨" % player_parry_damage_multifac)
+
+# --- [함수 3] 체크포인트 저장 ---
 func save_checkpoint(pos: Vector2) -> void:
 	has_checkpoint = true
 	last_checkpoint_pos = pos
 	last_scene_path = get_tree().current_scene.scene_file_path
 	print("저장 완료! 위치:", pos, " / 씬:", last_scene_path)
 
-# --- [함수 3] 플레이어 사망 시 부활 처리 ---
+func add_item(item_data: Dictionary) -> bool:
+	# 빈 칸 찾기
+	for i in range(inventory.size()):
+		if inventory[i] == null:
+			inventory[i] = item_data
+			return true # 저장 성공
+
+	return false # 저장 실패
+	
+# --- [함수 4] 플레이어 사망 시 부활 처리 ---
 func respawn_player() -> void:
 	if is_respawning:
 		return
@@ -73,6 +94,18 @@ func respawn_player() -> void:
 		call_deferred("_reload_scene_safe")
 
 func save_game() -> void:
+	var inventory_save_data = []
+	for item in inventory:
+		if item == null:
+			inventory_save_data.append(null) # 빈칸은 null로
+		else:
+			# 아이템 오브젝트에서 중요한 정보(ID, 개수)만 뽑아서 저장
+			var data = {
+				"id": item.id,       # "potion_red"
+				# 만약 개수가 있다면 "amount": item.amount 도 추가
+			}
+			inventory_save_data.append(data)
+			
 	var save_data = {
 		"gold": gold,
 		"current_hp": player_current_hp,
@@ -84,7 +117,8 @@ func save_game() -> void:
 		"has_checkpoint": has_checkpoint,
 		"scene_path": last_scene_path,
 		"pos_x": last_checkpoint_pos.x,
-		"pos_y": last_checkpoint_pos.y
+		"pos_y": last_checkpoint_pos.y,
+		"inventory": inventory_save_data
 	}
 	
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -120,6 +154,30 @@ func load_game() -> bool:
 		has_checkpoint = data.get("has_checkpoint", false)
 		last_scene_path = data.get("scene_path", "")
 		
+		# 인벤토리 불러오기
+		var loaded_inv_data = data.get("inventory", [])
+		
+		inventory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
+		
+		for i in range(loaded_inv_data.size()):
+			
+			var slot_data = loaded_inv_data[i]
+		
+			if slot_data != null:
+			# 저장된 ID를 가져옴
+				var item_id = slot_data["id"]
+			
+			# 도감(get_item_by_id)을 이용해 실제 아이템(Resource)으로 복구!
+				var real_item = get_item_by_id(item_id)
+			
+				if real_item:
+				# (선택) 개수 복원 로직이 필요하면 real_item.amount = slot_data["amount"]
+					inventory[i] = real_item
+				else:
+					inventory[i] = null
+			else:
+				inventory[i] = null
+		
 		var px = data.get("pos_x", 0.0)
 		var py = data.get("pos_y", 0.0)
 		last_checkpoint_pos = Vector2(px, py)
@@ -133,6 +191,14 @@ func apply_hitstop(time_scale: float, duration: float):
 	await get_tree().create_timer(duration, true, false, true).timeout
 	Engine.time_scale = 1.0
 
+var item_database: Dictionary = {
+	"health_potion": "res://resources/items/health_potion.tres"
+}
+
+func get_item_by_id(item_id: String) -> ItemData:
+	if item_database.has(item_id):
+		return load(item_database[item_id]) # 경로에 있는 파일을 로드해서 줌
+	return null
 	
 func reset_data() -> void:
 	gold = 0
@@ -143,6 +209,7 @@ func reset_data() -> void:
 	has_checkpoint = false
 	defeated_bosses = {}
 	defeated_mobs = []
+	inventory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 
 # --- [함수 수정] 플레이어 체력 갱신 ---
 # Player 스크립트에서 직접 변수를 바꾸는 대신, 이 함수를 쓰도록 할 겁니다.
@@ -160,8 +227,6 @@ func update_gold(amount: int) -> void:
 		
 	
 # --- [추가됨] 실제로 씬을 변경하는 함수들 ---
-# 이 함수들이 없어서 그동안 씬이 바뀌지 않고 멈춰있었던 것입니다.
-
 func _change_scene_safe(path: String) -> void:
 	# 씬 변경 시도
 	get_tree().change_scene_to_file(path)

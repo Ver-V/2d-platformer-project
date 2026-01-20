@@ -35,12 +35,6 @@ func _ready() -> void:
 	
 func _process(delta: float) -> void:
 	super._process(delta)
-	
-	# [추가] 타겟이 없으면, 게임 내의 플레이어를 강제로 찾아서 등록해라!
-	if target == null:
-		var players = get_tree().get_nodes_in_group("player")
-		if players.size() > 0:
-			target = players[0]
 
 	if _jump_left > 0.0:
 		_jump_left -= delta
