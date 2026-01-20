@@ -1,6 +1,7 @@
-[gd_scene load_steps=64 format=3 uid="uid://qfh6su8aeoy7"]
+[gd_scene load_steps=65 format=3 uid="uid://qfh6su8aeoy7"]
 
 [ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/player.gd" id="1_kpjcp"]
+[ext_resource type="PackedScene" uid="uid://b1tnix67gbct2" path="res://Scenes/Player/InventoryUI.tscn" id="2_0kmp4"]
 [ext_resource type="Texture2D" uid="uid://c8iqt4cdnfujj" path="res://Assets/sprites/knight/ATTACK 3.png" id="2_3wgd0"]
 [ext_resource type="Texture2D" uid="uid://bclhg8okli8q2" path="res://Assets/sprites/knight/JUMP.png" id="3_yu0nx"]
 [ext_resource type="Texture2D" uid="uid://ddona1nmugxmb" path="res://Assets/sprites/knight/WALK.png" id="4_im3yb"]
@@ -491,6 +492,9 @@ size = Vector2(24, 8)
 collision_layer = 2
 collision_mask = 73
 script = ExtResource("1_kpjcp")
+
+[node name="InventoryUI" parent="." instance=ExtResource("2_0kmp4")]
+visible = false
 
 [node name="PlayerAni" type="AnimatedSprite2D" parent="."]
 position = Vector2(-1.4000014, -21.3)

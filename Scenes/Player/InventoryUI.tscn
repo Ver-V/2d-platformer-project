@@ -1,0 +1,175 @@
+[gd_scene load_steps=15 format=3 uid="uid://b1tnix67gbct2"]
+
+[ext_resource type="Script" uid="uid://4g87ffp1ejuy" path="res://Script/inventory_ui.gd" id="1_nwg6v"]
+[ext_resource type="Texture2D" uid="uid://b0g63twpy1bt5" path="res://Assets/sprites/inventory.png" id="1_uggrm"]
+[ext_resource type="PackedScene" uid="uid://dt18ia74utxnr" path="res://Scenes/Player/Slot.tscn" id="2_d7s18"]
+[ext_resource type="FontFile" uid="uid://cxqe7fhd3sbpr" path="res://Assets/fonts/PixelOperator8-Bold.ttf" id="2_kd7m4"]
+[ext_resource type="FontFile" uid="uid://dexfxct02yiks" path="res://Assets/fonts/PixelOperator8.ttf" id="3_d7s18"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_nwg6v"]
+font = ExtResource("2_kd7m4")
+font_size = 8
+
+[sub_resource type="LabelSettings" id="LabelSettings_jos1c"]
+font = ExtResource("3_d7s18")
+font_size = 8
+
+[sub_resource type="LabelSettings" id="LabelSettings_nehv6"]
+font = ExtResource("2_kd7m4")
+font_size = 8
+
+[sub_resource type="LabelSettings" id="LabelSettings_p7xya"]
+font = ExtResource("3_d7s18")
+font_size = 8
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_nwg6v"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jos1c"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_nehv6"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_p7xya"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h82ei"]
+
+[node name="InventoryUI" type="CanvasLayer"]
+script = ExtResource("1_nwg6v")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 172.0
+offset_top = -80.0
+offset_right = 212.0
+offset_bottom = -40.0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TextureRect" type="TextureRect" parent="Control"]
+layout_mode = 1
+offset_left = 140.0
+offset_top = -1.0
+offset_right = 320.0
+offset_bottom = 119.0
+texture = ExtResource("1_uggrm")
+
+[node name="GridContainer" type="GridContainer" parent="Control/TextureRect"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 24.0
+offset_right = 173.0
+offset_bottom = 127.0
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 5
+
+[node name="Slot" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot2" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot3" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot4" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot5" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot6" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot7" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot8" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot9" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot10" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot11" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot12" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot13" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot14" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Slot15" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="Control/TextureRect"]
+layout_mode = 0
+offset_left = -140.0
+offset_top = 1.0
+offset_right = 1.0
+offset_bottom = 119.0
+mouse_filter = 2
+
+[node name="TextureRect" type="TextureRect" parent="Control/TextureRect/Panel"]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 37.0
+offset_bottom = 35.0
+stretch_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/TextureRect/Panel"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 39.0
+offset_right = 77.0
+offset_bottom = 85.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/TextureRect/Panel/HBoxContainer"]
+layout_mode = 2
+
+[node name="GoldLabel" type="Label" parent="Control/TextureRect/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Gold:"
+label_settings = SubResource("LabelSettings_nwg6v")
+
+[node name="HpLabel" type="Label" parent="Control/TextureRect/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Currenthp:"
+label_settings = SubResource("LabelSettings_jos1c")
+
+[node name="AtkLabel" type="Label" parent="Control/TextureRect/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Damage:"
+label_settings = SubResource("LabelSettings_nehv6")
+
+[node name="ParryDmgLabel" type="Label" parent="Control/TextureRect/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "ParryMulti: "
+label_settings = SubResource("LabelSettings_p7xya")
+
+[node name="Button" type="Button" parent="Control"]
+process_mode = 3
+z_index = 100
+custom_minimum_size = Vector2(15, 15)
+layout_mode = 0
+offset_left = 304.0
+offset_top = 16.0
+offset_right = 320.0
+offset_bottom = 32.0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_nwg6v")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_jos1c")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_nehv6")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_p7xya")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_h82ei")
+action_mode = 0
+
+[connection signal="pressed" from="Control/Button" to="." method="_on_button_pressed"]

@@ -25,6 +25,7 @@ class_name Player
 @export var is_attacking: bool = false 
 @export var attack_cooldown: float = 0.8
 @export var attack_damage: float = 10.0
+@export var player_parry_damage_multifac: float = 1.5
 var _cooldown_left: float = 0.0
 var is_parry_success: bool = false
 
@@ -33,59 +34,80 @@ signal died
 func _ready() -> void:
 	add_to_group("player")
 	
-	# [핵심] 게임 시작 시 체크포인트 확인
-	# "혹시 저장이 되어있고(has_checkpoint), 지금 이 씬이 저장된 그 씬(last_scene_path)인가?"
+	# ----------------------------------------------------------------
+	# [1] 위치 동기화 (체크포인트)
+	# ----------------------------------------------------------------
 	if GameManager.has_checkpoint and GameManager.last_scene_path == get_tree().current_scene.scene_file_path:
 		global_position = GameManager.last_checkpoint_pos
-		
-		# [추가] 로드된 체력 정보 적용 (이게 없으면 HP가 1인 상태로 시작할 수 있음)
-		hp = GameManager.player_current_hp
-		max_hp = GameManager.player_max_hp
-		
-		print("체크포인트 위치로 이동했습니다. HP: ", hp)
-		
-	else:
-		max_hp = 100
-		hp = 100
-		# 새 게임 시작 시 GameManager 정보도 갱신
-		GameManager.player_current_hp = hp
-		GameManager.player_max_hp = max_hp
-		GameManager.update_hp(hp)
-		
+	
+	# ----------------------------------------------------------------
+	# [2] 스탯 동기화 (무조건 GameManager 값 가져오기)
+	# ----------------------------------------------------------------
+	hp = GameManager.player_current_hp
+	max_hp = GameManager.player_max_hp
+	attack_damage = GameManager.player_damage
+	player_parry_damage_multifac = GameManager.player_parry_damage_multifac
+
+	# ----------------------------------------------------------------
+	# [3] 초기 세팅 (애니메이션, 시그널 등)
+	# ----------------------------------------------------------------
 	if sprite != null:
-		sprite.play("Stand") # 시작 시 기본 자세
+		sprite.play("Stand")
 		if not sprite.animation_finished.is_connected(_on_animation_finished):
 			sprite.animation_finished.connect(_on_animation_finished)
 	
 	if sword_area != null:
-		# 투사체/패링 감지용 (기존에 있던 것)
 		sword_area.area_entered.connect(_on_sword_area_entered)
-		
-		# [추가 2] 적 몸통(Body) 감지용 (칼 데미지 주는 용도)
-		# 이게 연결되어 있어야 적을 때릴 수 있습니다.
 		if not sword_area.body_entered.is_connected(_on_sword_body_entered):
 			sword_area.body_entered.connect(_on_sword_body_entered)
-			
 		sword_shape.disabled = true
 	
+	# UI 갱신 신호 보내기 (현재 상태를 UI에 반영)
 	GameManager.update_hp(hp)
+	GameManager.gold_changed.emit(GameManager.gold)
 	
+	# 씬 전환 후 띄울 메시지가 있다면 표시 (예: "저장됨")
 	if GameManager.pending_status != "":
-		await get_tree().create_timer(0.2).timeout 
+		await get_tree().create_timer(0.2).timeout
 		show_status(GameManager.pending_status)
 		GameManager.pending_status = ""
 		
-	velocity = Vector2.ZERO 
-	floor_snap_length = 20.0 
-	apply_floor_snap() # block spawn jump
+	velocity = Vector2.ZERO
+	floor_snap_length = 20.0
+	apply_floor_snap()
 	move_and_slide()
-		
-# [추가] 애니메이션이 끝났을 때 호출되는 함수
+
 func _on_animation_finished() -> void:
-	# 공격 모션이 끝까지 재생됐다면 공격 상태 해제
 	if sprite.animation == "Attack":
 		is_attacking = false
-		
+
+# -------------------------------------------------------
+# [수정] 데이터는 GM에게 요청하고, Player는 시각 처리만 함
+# -------------------------------------------------------
+
+func update_gold(amount: int) -> void:
+	# 이미 GM에 구현된 함수가 있으므로 그대로 사용
+	GameManager.add_gold(amount) 
+
+func update_damage(amount: int) -> void:
+	# 1. GM에게 "공격력 좀 바꿔줘" 요청
+	GameManager.add_player_damage(amount)
+	
+	# 2. GM이 바꾼 최신값을 내 변수에 동기화 (중요!)
+	attack_damage = GameManager.player_damage 
+	
+	if amount > 0:
+		show_popup("Damage Up!", Color.RED)
+
+func update_parry_ratio(amount: float) -> void:
+	# 1. GM에게 "패링 배율 좀 바꿔줘" 요청
+	GameManager.add_parry_ratio(amount)
+	
+	# 2. GM이 바꾼 최신값을 동기화
+	player_parry_damage_multifac = GameManager.player_parry_damage_multifac
+	
+	if amount > 0:
+		show_popup("Parry Power Up!", Color.CYAN)
 		
 # --- CombatBody2D Overrides ---
 func get_invuln_time() -> float: return invuln_time
@@ -96,40 +118,30 @@ func get_blink_node() -> CanvasItem: return sprite
 
 func show_popup(text: String, color: Color = Color.YELLOW) -> void:
 	if status_label == null: return
-	
-	# 1. 텍스트랑 색상 설정
+
 	status_label.text = text
-	status_label.modulate = color # 글자 색상 (기본 노랑)
+	status_label.modulate = color
 	status_label.visible = true
 	
-	# 2. 위치 초기화 (머리 위로)
-	# 원래 위치(Label이 에디터에 있는 위치)를 기준으로 잡거나 상수로 지정
-	status_label.position.y = -45.0 # 머리 위 시작 위치
-	status_label.modulate.a = 1.0   # 투명도 100% (완전 불투명)
-	
-	# 3. 애니메이션 (Tween) - 위로 뜨면서 투명해짐
+	status_label.position.y = -45.0 
+	status_label.modulate.a = 1.0 
+
 	var tween = create_tween()
-	tween.set_parallel(true) # 동시에 실행
-	
-	# 0.8초 동안 Y축으로 -30만큼 더 올라감 (둥둥~)
+	tween.set_parallel(true)
+
 	tween.tween_property(status_label, "position:y", -75.0, 1.0).set_trans(Tween.TRANS_SINE)
-	# 0.8초 동안 투명해짐
 	tween.tween_property(status_label, "modulate:a", 0.0, 1.5).set_ease(Tween.EASE_IN)
 	
-	# 애니메이션 끝나면 다시 숨김
 	tween.chain().tween_callback(func(): status_label.visible = false)
 	
 	
 func _on_death() -> void:
 	collision_stand.set_deferred("disabled", true)
-	# 누워있는 납작한 박스 켜기
 	collision_died.set_deferred("disabled", false)
 	velocity.x = 0 
 	reset_combat_state()
 	set_process_input(false)
 	sprite.play("died")
-	
-	# 3. 4초 대기 (납작한 박스가 적용되어 바닥에 착 붙을 겁니다)
 	await get_tree().create_timer(4.0).timeout
 	
 	set_physics_process(false)
@@ -151,9 +163,7 @@ func attack() -> void:
 func _on_sword_area_entered(area: Area2D) -> void:
 	if area is Projectile:
 		var p: Projectile = area as Projectile
-		
-		# [수정됨] attempt_parry가 'true'를 반환했을 때만 성공 처리!
-		# 기존에는 그냥 p.attempt_parry(...)라고만 써서 실패해도 성공으로 간주했음
+
 		if p.attempt_parry(global_position):
 			is_parry_success = true
 			

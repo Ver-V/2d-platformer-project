@@ -1,4 +1,4 @@
-# MainMenu.gd
+# MainMenu.gd	
 
 func _on_continue_button_pressed() -> void:
 	# 1. 파일에서 데이터 불러오기

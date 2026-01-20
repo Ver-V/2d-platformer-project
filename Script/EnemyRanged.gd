@@ -26,6 +26,8 @@ func _process(delta: float) -> void:
 	if not _active: return
 	
 	if target == null:
+		if shooter_component:
+			shooter_component.reset_count()
 		var players = get_tree().get_nodes_in_group("player")
 		if players.size() > 0: target = players[0]
 		return
