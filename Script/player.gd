@@ -332,7 +332,15 @@ func show_status(action_type: String) -> void:
 	# 결정된 내용으로 원래 있던 팝업 함수 실행
 	show_popup(msg, color)
 
-
+func _input(event):
+	if Input.is_key_pressed(KEY_P):
+		print("🧪 아이템 획득 테스트 중...")
+		
+		var item = load("res://resources/items/health_potion.tres") # 본인 경로로 수정!
+		if item:
+			GameManager.add_item(item)
+		
+		
 func _on_magnet_area_area_entered(area):
 	# 닿은 녀석(area)이 'attract_to'라는 함수를 가지고 있나? (즉, 코인인가?)
 	if area.has_method("attract_to"):

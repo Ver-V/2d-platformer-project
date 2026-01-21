@@ -80,3 +80,4 @@ func _on_slot_clicked(index):
 
 func _on_button_pressed() -> void:
 	close()
+	

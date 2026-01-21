@@ -12,12 +12,14 @@ func _gui_input(event: InputEvent) -> void:
 			# "나 클릭됐어요!"라고 신호를 보냄
 			slot_clicked.emit()
 
-func set_item(item_data):
-	if item_data != null:
-		# 주의: item_data가 리소스인지 딕셔너리인지에 따라 접근법이 다릅니다.
-		# 딕셔너리(JSON) 방식이라면 아래가 맞습니다.
-		if item_data.has("icon_path"):
-			icon.texture = load(item_data["icon_path"])
+func set_item(item: ItemData):
+	if item != null:
+		# [핵심 변경] load() 필요 없음! 리소스 안에 이미 이미지가 들어있음.
+		icon.texture = item.icon 
 		icon.visible = true
+		
+		# 툴팁(마우스 올리면 이름 뜨기)도 아주 쉽게 가능
+		tooltip_text = "%s\n%s" % [item.name, item.description]
 	else:
 		icon.visible = false
+		tooltip_text = ""
