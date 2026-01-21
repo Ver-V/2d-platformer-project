@@ -36,7 +36,7 @@ func reset_combat_state() -> void:
 	_knockback_left = 0.0
 	_blink_accum = 0.0
 	_update_blink_visibility(true)
-
+	
 func reset_motion() -> void:
 	velocity = Vector2.ZERO
 	reset_combat_state()

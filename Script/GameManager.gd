@@ -10,7 +10,7 @@ var player_parry_damage_multifac: float = 1.5
 var defeated_bosses: Dictionary = {} # 영구 사망 보스 목록
 var defeated_mobs: Array = []
 var pending_status: String = ""
-var inventory: Array = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
+var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 
 signal gold_changed(amount: int)
 signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
@@ -63,14 +63,15 @@ func save_checkpoint(pos: Vector2) -> void:
 	last_scene_path = get_tree().current_scene.scene_file_path
 	print("저장 완료! 위치:", pos, " / 씬:", last_scene_path)
 
-func add_item(item_data: Dictionary) -> bool:
+func add_item(item: ItemData) -> bool:
 	# 빈 칸 찾기
 	for i in range(inventory.size()):
 		if inventory[i] == null:
-			inventory[i] = item_data
-			return true # 저장 성공
+			inventory[i] = item # 리소스 파일 자체를 저장!
+			return true 
 
-	return false # 저장 실패
+	print("인벤토리가 가득 찼습니다.")
+	return false
 	
 # --- [함수 4] 플레이어 사망 시 부활 처리 ---
 func respawn_player() -> void:
