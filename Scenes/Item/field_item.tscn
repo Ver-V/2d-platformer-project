@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://bs2f7s8xuy6e0"]
+
+[ext_resource type="Script" uid="uid://c3n3m28phwxne" path="res://Script/Item_UI/FieldItem.gd" id="1_bf1bx"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bf1bx"]
+
+[node name="FieldItem" type="Area2D"]
+collision_layer = 128
+collision_mask = 2
+script = ExtResource("1_bf1bx")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_bf1bx")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

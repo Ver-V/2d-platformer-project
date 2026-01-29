@@ -11,6 +11,7 @@ var defeated_bosses: Dictionary = {} # 영구 사망 보스 목록
 var defeated_mobs: Array = []
 var pending_status: String = ""
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
+var collected_items: Array = []
 
 signal gold_changed(amount: int)
 signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
@@ -30,6 +31,10 @@ var last_scene_path: String = ""
 func add_defeated_mob(id: String) -> void:
 	if not defeated_mobs.has(id):
 		defeated_mobs.append(id)
+		
+func add_collected_item(id: String) -> void:
+	if not collected_items.has(id):
+		collected_items.append(id)
 		
 # [추가] 휴식 시 호출: 일반 몹 기록만 싹 지움! (이게 핵심!)
 func reset_mobs() -> void:
@@ -119,7 +124,8 @@ func save_game() -> void:
 		"scene_path": last_scene_path,
 		"pos_x": last_checkpoint_pos.x,
 		"pos_y": last_checkpoint_pos.y,
-		"inventory": inventory_save_data
+		"inventory": inventory_save_data,
+		"collected_items": collected_items
 	}
 	
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -154,6 +160,7 @@ func load_game() -> bool:
 		defeated_bosses = data.get("defeated_bosses", {})
 		has_checkpoint = data.get("has_checkpoint", false)
 		last_scene_path = data.get("scene_path", "")
+		collected_items = data.get("collected_items", [])
 		
 		# 인벤토리 불러오기
 		var loaded_inv_data = data.get("inventory", [])

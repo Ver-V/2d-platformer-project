@@ -1,6 +1,6 @@
 [gd_scene load_steps=14 format=3 uid="uid://byscojtoqo7ad"]
 
-[ext_resource type="Script" uid="uid://d0gowbrfv5wum" path="res://Script/SavePoint.gd" id="1_kksam"]
+[ext_resource type="Script" uid="uid://d0gowbrfv5wum" path="res://Script/System/SavePoint.gd" id="1_kksam"]
 [ext_resource type="Texture2D" uid="uid://dh2okk5r5icwk" path="res://Assets/sprites/save_point_anim_strip_9.png" id="2_bm0t3"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fi6uy"]

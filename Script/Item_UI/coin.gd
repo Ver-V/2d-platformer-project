@@ -1,49 +1,80 @@
 extends Area2D
 
-# 이 동전이 얼마짜리인지 (생성될 때 적이 정해줄 예정)
-var gold_amount: int = 10 
-var target_body = null # 날아갈 목표(플레이어)
-var speed = 0.0 # 날아가는 속도 (점점 빨라지게)
-@onready var anim_player = $AnimationPlayer
+# [설정] 필드 코인 여부 및 ID
+@export_group("Field Settings")
+@export var is_field_coin: bool = false
+@export var id: String = ""
+
+# [설정] 둥둥 떠다니는 느낌 조절
+@export_group("Float Settings")
+var float_speed: float = 5.0  # 꿀렁이는 속도
+var float_range: float = 5.0  # 위아래 움직임 폭 (픽셀)
+
+# 내부 변수
+@export var gold_amount: int = 10
+var target_body = null 
+var speed = 0.0 
+var time_passed: float = 0.0  # 시간 누적용 (sin 그래프용)
+var can_float: bool = false   # "지금 둥둥 떠도 되니?" 상태 확인
+
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
 func _ready():
-	collision.set_deferred("disabled", true)
-	_update_color()
+	time_passed = randf_range(0.0, 10.0)
+	
+	if is_field_coin:
+		_handle_field_coin_init()
+	else:
+		collision.set_deferred("disabled", true)
+		_update_color()
 		
 func _process(delta):
-	# 목표가 생기면 그쪽으로 날아갑니다!
+	# 1. 자석 기능 (플레이어에게 날아가기)
 	if target_body != null:
-		# 1. 플레이어 위치 방향으로 이동
 		var direction = global_position.direction_to(target_body.global_position)
-		
-		# 2. 가속도 (점점 빨라짐)
 		speed += 800 * delta 
-		
-		# 3. 실제 이동
 		global_position += direction * speed * delta
+		
+		# [디테일] 날아갈 때는 둥둥 효과를 서서히 없애고 0으로 복귀 (덜덜 떨림 방지)
+		sprite.position.y = move_toward(sprite.position.y, 0, delta * 50)
+		
+	# 2. 둥둥 떠다니기 (자석 아님 + 둥둥 허용 상태)
+	elif can_float:
+		time_passed += delta
+		# sin(시간)은 -1 ~ 1을 반복하므로, 거기에 범위를 곱하면 위아래로 움직임
+		sprite.position.y = sin(time_passed * float_speed) * float_range
 
+func _handle_field_coin_init():
+	# ID 자동 생성 및 중복 확인
+	if id == "":
+		id = get_tree().current_scene.name + "/" + str(get_path())
+	
+	if GameManager.collected_items.has(id):
+		queue_free()
+		return
+		
+	collision.set_deferred("disabled", false)
+	_update_color()
+	
+	# [핵심] 필드 코인은 태어나자마자 둥둥 뜸
+	can_float = true
+	
 # 자석에 감지되었을 때 호출될 함수
 func attract_to(player_node):
 	target_body = player_node
-	
-	# 기존에 튀어오르던 트윈을 강제로 끄기 (Kill)
-	# 그래야 공중에 있다가도 바로 플레이어한테 날아옴
-	var tweens = get_tree().get_processed_tweens()
-	for t in tweens:
-		# 이 트윈이 '나(self)'를 움직이고 있다면 죽여라
-		if t.is_valid(): 
-			t.kill()
-			
-	# 즉시 충돌 켜기
+	# Tween kill 불필요 (process 분기문으로 처리되므로 안전함)
 	collision.set_deferred("disabled", false)
 
 func setup(amount: int):
 	gold_amount = amount
 	_update_color()
 	_animate_pop()
-	
+
+func _start_floating():
+	var t = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(sprite, "position:y", -5.0, 1.0).as_relative()
+	t.tween_property(sprite, "position:y", 5.0, 1.0).as_relative()
 
 func _animate_pop():
 	# 1. 랜덤한 방향으로 퍼질 거리 설정 (좌우 -40 ~ +40)
@@ -92,10 +123,13 @@ func _update_color():
 		sprite.modulate = Color(0.8, 0.5, 0.2) # 구리색 덧칠
 		
 func _on_body_entered(body):
-	# 플레이어가 닿으면
 	if body.is_in_group("player"):
 		GameManager.update_gold(gold_amount)
-
+		
+		# [핵심 수정] 필드 코인이라면 장부에 기록!
+		if is_field_coin and id != "":
+			GameManager.add_collected_item(id)
+			
+		# 효과음 재생 (AudioManager 코드 주석 해제하시면 됨)
 		# AudioManager.play_sfx("coin_pickup") 
-
 		queue_free()

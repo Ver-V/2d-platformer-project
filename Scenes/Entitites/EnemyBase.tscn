@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://b0ioi1n7pmn7f"]
 
-[ext_resource type="Script" uid="uid://cf214x0wnk8fl" path="res://Script/enemy_base.gd" id="1_ltrxv"]
+[ext_resource type="Script" uid="uid://cf214x0wnk8fl" path="res://Script/Entity/enemy_base.gd" id="1_ltrxv"]
 [ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="2_v56nw"]
 
 [node name="EnemyBase" type="CharacterBody2D"]
