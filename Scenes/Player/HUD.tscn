@@ -1,6 +1,6 @@
 [gd_scene load_steps=15 format=3 uid="uid://b1xksg4lj5diy"]
 
-[ext_resource type="Script" uid="uid://cobwf8owprqua" path="res://Script/hud.gd" id="1_2s5p1"]
+[ext_resource type="Script" uid="uid://cobwf8owprqua" path="res://Script/Item_UI/hud.gd" id="1_2s5p1"]
 [ext_resource type="FontFile" uid="uid://cxqe7fhd3sbpr" path="res://Assets/fonts/PixelOperator8-Bold.ttf" id="2_vqpqm"]
 [ext_resource type="Texture2D" uid="uid://bmfhkce3wvq1k" path="res://Assets/sprites/#2 - Transparent Icons & Drop Shadow.png" id="3_765yc"]
 [ext_resource type="FontFile" uid="uid://dexfxct02yiks" path="res://Assets/fonts/PixelOperator8.ttf" id="4_1emjh"]
