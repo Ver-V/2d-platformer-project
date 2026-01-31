@@ -1,0 +1,77 @@
+[gd_scene load_steps=2 format=3 uid="uid://bbhgypcmayt44"]
+
+[ext_resource type="Script" uid="uid://cx15wxiifhrpp" path="res://Script/Item_UI/options_ui.gd" id="1_4r63o"]
+
+[node name="OptionsUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_4r63o")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 640.0
+offset_bottom = 361.0
+
+[node name="TabContainer" type="TabContainer" parent="Panel"]
+layout_mode = 0
+offset_right = 640.0
+offset_bottom = 361.0
+current_tab = 0
+
+[node name="Graphics" type="VBoxContainer" parent="Panel/TabContainer"]
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 2
+theme_override_constants/separation = 100
+metadata/_tab_index = 0
+
+[node name="HBox_Mode" type="HBoxContainer" parent="Panel/TabContainer/Graphics"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_constants/separation = 150
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Graphics/HBox_Mode"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Screen Mode"
+
+[node name="OptionButton" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_Mode"]
+layout_mode = 2
+
+[node name="HBox_Res" type="HBoxContainer" parent="Panel/TabContainer/Graphics"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_constants/separation = 150
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Graphics/HBox_Res"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Resolution"
+
+[node name="OptionButton" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_Res"]
+layout_mode = 2
+
+[node name="HBox_FPS" type="HBoxContainer" parent="Panel/TabContainer/Graphics"]
+layout_mode = 2
+theme_override_constants/separation = 150
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Graphics/HBox_FPS"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "FPS limit"
+
+[node name="OptionButton" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_FPS"]
+layout_mode = 2
+
+[node name="Audio" type="VBoxContainer" parent="Panel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Control and game" type="VBoxContainer" parent="Panel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2

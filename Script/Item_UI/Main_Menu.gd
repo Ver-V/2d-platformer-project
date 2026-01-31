@@ -21,56 +21,32 @@ func _ready() -> void:
 	$VBoxContainer/BtnCredits.pressed.connect(_on_credits_pressed)
 	$VBoxContainer/BtnExit.pressed.connect(_on_exit_pressed)
 
-# --- [기능 1] 새 게임 (New Game) ---
 func _on_new_game_pressed() -> void:
-	print("✨ 새 게임 시작")
-	
-	# 1. 이전 데이터(돈, 아이템 등) 싹 초기화
 	GameManager.reset_data()
-	
-	# 2. 첫 스테이지로 이동
 	get_tree().change_scene_to_file(FIRST_LEVEL_PATH)
 
-# --- [기능 2] 이어하기 (Load Game) ---
-func _on_continue_button_pressed() -> void: # 혹은 _on_load_game_pressed
-	print("📂 불러오기 시도...")
-	
-	# 1. 파일 로드 시도
+func _on_continue_button_pressed() -> void: 
 	if GameManager.load_game():
-		# 로드 성공!
-		if GameManager.last_scene_path != "":
-			print("✅ 저장된 위치로 이동: ", GameManager.last_scene_path)
-			
-			# 저장된 씬으로 이동 (플레이어 위치는 각 씬의 _ready에서 GameManager.last_checkpoint_pos를 보고 잡음)
+		if GameManager.last_scene_path != "":	
 			get_tree().change_scene_to_file(GameManager.last_scene_path)
 		else:
-			# 저장된 씬 정보가 이상하면 그냥 첫 스테이지로 (안전장치)
-			print("⚠️ 씬 정보 없음. 첫 스테이지로 이동")
 			get_tree().change_scene_to_file(FIRST_LEVEL_PATH)
 	else:
-		# 로드 실패 (파일 깨짐 등)
-		print("❌ 로드 실패! 새 게임을 시작합니다.")
 		GameManager.reset_data()
 		get_tree().change_scene_to_file(FIRST_LEVEL_PATH)
-		
-# --- 이어하기 버튼과 이름 통일용 (함수 연결) ---
+
 func _on_load_game_pressed() -> void:
 	_on_continue_button_pressed()
 
-# --- [기능 3] 옵션 (Options) ---
 func _on_options_pressed() -> void:
 	options_panel.visible = true
 
-# --- [기능 4] 크레딧 (Credits) ---
 func _on_credits_pressed() -> void:
 	credits_panel.visible = true
 
-# --- [기능 5] 종료 (Exit) ---
 func _on_exit_pressed() -> void:
-	print("👋 게임 종료")
 	get_tree().quit()
 
-# (보너스) 패널 닫기 버튼용 함수 (옵션 창 안의 '닫기' 버튼에 연결하세요)
 func _close_panels() -> void:
 	options_panel.visible = false
 	credits_panel.visible = false
