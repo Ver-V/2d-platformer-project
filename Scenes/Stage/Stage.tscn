@@ -312,15 +312,13 @@ position = Vector2(178, 454)
 [node name="Item" type="Node" parent="."]
 
 [node name="Coin" parent="Item" instance=ExtResource("9_7nmd1")]
-position = Vector2(391, 376)
+position = Vector2(665, 41)
 is_field_coin = true
 gold_amount = 100
 
 [node name="FieldItem" parent="Item" instance=ExtResource("9_jptyp")]
 position = Vector2(36.000004, 447)
 scale = Vector2(0.8, 0.8)
-id = null
-gold_amount = null
 item_resource = ExtResource("10_7nmd1")
 
 [node name="Entities" type="Node" parent="."]
