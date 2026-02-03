@@ -20,9 +20,10 @@ offset_bottom = 361.0
 layout_mode = 0
 offset_right = 640.0
 offset_bottom = 361.0
-current_tab = 0
+current_tab = 1
 
 [node name="Graphics" type="VBoxContainer" parent="Panel/TabContainer"]
+visible = false
 custom_minimum_size = Vector2(200, 40)
 layout_mode = 2
 theme_override_constants/separation = 100
@@ -38,7 +39,7 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Screen Mode"
 
-[node name="OptionButton" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_Mode"]
+[node name="BtnMode" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_Mode"]
 layout_mode = 2
 
 [node name="HBox_Res" type="HBoxContainer" parent="Panel/TabContainer/Graphics"]
@@ -51,7 +52,7 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Resolution"
 
-[node name="OptionButton" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_Res"]
+[node name="BtnRes" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_Res"]
 layout_mode = 2
 
 [node name="HBox_FPS" type="HBoxContainer" parent="Panel/TabContainer/Graphics"]
@@ -63,15 +64,90 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "FPS limit"
 
-[node name="OptionButton" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_FPS"]
+[node name="BtnFPS" type="OptionButton" parent="Panel/TabContainer/Graphics/HBox_FPS"]
 layout_mode = 2
 
 [node name="Audio" type="VBoxContainer" parent="Panel/TabContainer"]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 1
+
+[node name="GridContainer" type="GridContainer" parent="Panel/TabContainer/Audio"]
+layout_mode = 2
+theme_override_constants/h_separation = 80
+theme_override_constants/v_separation = 90
+columns = 2
+
+[node name="Master Volume" type="Label" parent="Panel/TabContainer/Audio/GridContainer"]
+layout_mode = 2
+text = "Master Volume "
+
+[node name="SliderMaster" type="HSlider" parent="Panel/TabContainer/Audio/GridContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="BGM Volume" type="Label" parent="Panel/TabContainer/Audio/GridContainer"]
+layout_mode = 2
+text = "BGM"
+
+[node name="SliderBGM" type="HSlider" parent="Panel/TabContainer/Audio/GridContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="SFX Volume" type="Label" parent="Panel/TabContainer/Audio/GridContainer"]
+layout_mode = 2
+text = "SFX"
+
+[node name="SliderSFX" type="HSlider" parent="Panel/TabContainer/Audio/GridContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+max_value = 1.0
+step = 0.01
+value = 1.0
 
 [node name="Control and game" type="VBoxContainer" parent="Panel/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 2
+
+[node name="GridContainer" type="GridContainer" parent="Panel/TabContainer/Control and game"]
+layout_mode = 2
+
+[node name="Mouse Sensitivity" type="Label" parent="Panel/TabContainer/Control and game/GridContainer"]
+layout_mode = 2
+text = "Mouse Sensitivity "
+
+[node name="SliderSens" type="HSlider" parent="Panel/TabContainer/Control and game/GridContainer"]
+layout_mode = 2
+
+[node name="Blood" type="Label" parent="Panel/TabContainer/Control and game/GridContainer"]
+layout_mode = 2
+text = "Blood "
+
+[node name="BtnGore" type="CheckButton" parent="Panel/TabContainer/Control and game/GridContainer"]
+layout_mode = 2
+
+[node name="ShakeValue" type="Label" parent="Panel/TabContainer/Control and game/GridContainer"]
+layout_mode = 2
+text = "ShakeValue"
+
+[node name="SliderShake" type="HSlider" parent="Panel/TabContainer/Control and game/GridContainer"]
+layout_mode = 2
+
+[node name="ExitButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 601.0
+offset_top = 1.0
+offset_right = 632.0
+offset_bottom = 31.0
+text = "X"
+
+[connection signal="pressed" from="ExitButton" to="." method="_on_exit_button_pressed"]

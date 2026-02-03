@@ -199,10 +199,14 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	
 	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
+		var stage = get_tree().current_scene
+		if stage.has_method("apply_camera_shake"):
+			stage.apply_camera_shake(10.0)
+		
 		GameManager.update_hp(hp)
 		is_attacking = false
 		sword_shape.set_deferred("disabled", true)
-		GameManager.apply_hitstop(0.2, 0.05)
+		GameManager.apply_hitstop(0.2, 0.1)
 		
 		# [수정 1] 죽었을 때 확인
 		if hp <= 0:
@@ -331,15 +335,6 @@ func show_status(action_type: String) -> void:
 	
 	# 결정된 내용으로 원래 있던 팝업 함수 실행
 	show_popup(msg, color)
-
-func _input(event):
-	if Input.is_key_pressed(KEY_P):
-		print("🧪 아이템 획득 테스트 중...")
-		
-		var item = load("res://resources/items/health_potion.tres") # 본인 경로로 수정!
-		if item:
-			GameManager.add_item(item)
-		
 		
 func _on_magnet_area_area_entered(area):
 	# 닿은 녀석(area)이 'attract_to'라는 함수를 가지고 있나? (즉, 코인인가?)

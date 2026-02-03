@@ -13,6 +13,9 @@ var pending_status: String = ""
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 var collected_items: Array = []
 
+var mouse_sensitivity: float = 0.5 
+var enable_gore: bool = true
+var screenshake_intensity: float = 1.0
 signal gold_changed(amount: int)
 signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
 signal interact_msg_requested(msg)    # [추가] 상호작용 텍스트 띄우기 요청

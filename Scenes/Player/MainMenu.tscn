@@ -1,7 +1,25 @@
-[gd_scene load_steps=3 format=3 uid="uid://c4s2twvist738"]
+[gd_scene load_steps=11 format=3 uid="uid://c4s2twvist738"]
 
 [ext_resource type="Texture2D" uid="uid://b2ow4a62p66ci" path="res://Assets/kk.png" id="1_3y8yd"]
 [ext_resource type="Script" uid="uid://c5ssd0dithpy6" path="res://Script/Item_UI/Main_Menu.gd" id="1_6xuep"]
+[ext_resource type="FontFile" uid="uid://cxqe7fhd3sbpr" path="res://Assets/fonts/PixelOperator8-Bold.ttf" id="3_shliw"]
+[ext_resource type="FontFile" uid="uid://dexfxct02yiks" path="res://Assets/fonts/PixelOperator8.ttf" id="4_jdpqn"]
+[ext_resource type="PackedScene" uid="uid://bbhgypcmayt44" path="res://Scenes/Player/options_ui.tscn" id="5_h3qbv"]
+
+[sub_resource type="FontVariation" id="FontVariation_xtrvd"]
+base_font = ExtResource("3_shliw")
+
+[sub_resource type="FontVariation" id="FontVariation_peupw"]
+base_font = ExtResource("4_jdpqn")
+
+[sub_resource type="FontVariation" id="FontVariation_l3522"]
+base_font = ExtResource("3_shliw")
+
+[sub_resource type="FontVariation" id="FontVariation_kfbj1"]
+base_font = ExtResource("4_jdpqn")
+
+[sub_resource type="FontVariation" id="FontVariation_068qs"]
+base_font = ExtResource("3_shliw")
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -40,31 +58,44 @@ alignment = 1
 [node name="BtnNewGame" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(60, 16)
 layout_mode = 2
+theme_override_fonts/font = SubResource("FontVariation_xtrvd")
+theme_override_font_sizes/font_size = 11
+text = "New Game"
 
 [node name="BtnLoadGame" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
+theme_override_fonts/font = SubResource("FontVariation_peupw")
+theme_override_font_sizes/font_size = 11
+text = "Load Game"
 
 [node name="BtnOptions" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
+theme_override_fonts/font = SubResource("FontVariation_l3522")
+theme_override_font_sizes/font_size = 11
+text = "Options"
 
 [node name="BtnCredits" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
+theme_override_fonts/font = SubResource("FontVariation_kfbj1")
+theme_override_font_sizes/font_size = 11
+text = "Credits"
 
 [node name="BtnExit" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
-
-[node name="OptionsPanel" type="Panel" parent="."]
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+theme_override_fonts/font = SubResource("FontVariation_068qs")
+theme_override_font_sizes/font_size = 11
+text = "Exit"
 
 [node name="CreditsPanel" type="Panel" parent="."]
 visible = false
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
+
+[node name="OptionsUI" parent="." instance=ExtResource("5_h3qbv")]
+visible = false
+layout_mode = 1

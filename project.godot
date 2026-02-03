@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GameManager="*res://Script/System/GameManager.gd"
 HUD="*res://Scenes/Player/HUD.tscn"
 SceneTransition="*res://Scenes/Stage/SceneTransition.tscn"
+CustomCursor="*res://Scenes/Player/CustomCursor.tscn"
 
 [display]
 
