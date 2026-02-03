@@ -4,17 +4,17 @@ class_name ItemData
 # 1. 아이템 타입을 숫자로 정의 (이걸 'Enum'이라고 함)
 enum ItemType { GENERIC, CONSUMABLE, EQUIPMENT }
 
-@export_group("기본 정보")
+@export_group("Basic Info")
 @export var id: String = ""
 @export var name: String = "Item Name"
 @export var icon: Texture2D
 @export_multiline var description: String = ""
 @export var type: ItemType = ItemType.GENERIC # 기본값은 잡동사니
 
-@export_group("소모품 설정")
+@export_group("Consumable Setting")
 @export var heal_amount: int = 0  # 포션 아니면 그냥 0으로 두면 됨
 
-@export_group("장비 설정")
+@export_group("Equipment Setting")
 @export var attack_damage: int = 0 # 무기 아니면 0으로 두면 됨
 @export var defense: int = 0
 

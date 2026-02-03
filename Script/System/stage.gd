@@ -17,11 +17,14 @@ extends Node2D
 
 var player: Player = null
 var current_room: Vector2i = Vector2i(-1, -1)
+var current_shake_strength: float = 0.0 # 현재 흔들림 강도
+@export var shake_decay_rate: float = 5.0 # 흔들림이 멈추는 속도
 
 # [로컬 장부] 현재 게임 플레이 중 죽은 적(잡몹)들을 기록
 var killed_ids: Dictionary = {}
 
 func _ready() -> void:
+	CustomCursor.hide_cursor()
 	cam.make_current()
 	register_enemies()
 	assign_persist_ids_by_formula()
@@ -41,6 +44,33 @@ func _ready() -> void:
 	Engine.time_scale = 1.0
 	HUD.visible = true
 
+func _process(delta: float) -> void:
+	# 흔들림이 남아있을 때만 작동
+	if current_shake_strength > 0:
+		# 1. 강도를 서서히 0으로 줄임 (Lerp)
+		current_shake_strength = lerp(current_shake_strength, 0.0, shake_decay_rate * delta)
+		
+		# 2. 아주 작은 값이 되면 0으로 확정 (불필요한 연산 방지)
+		if current_shake_strength < 0.1:
+			current_shake_strength = 0.0
+
+		# 3. 흔들림 오프셋 계산 (랜덤 위치)
+		# GameManager의 설정값(screenshake_intensity)을 곱해서 옵션 적용!
+		var shake_offset = Vector2(
+			randf_range(-current_shake_strength, current_shake_strength),
+			randf_range(-current_shake_strength, current_shake_strength)
+		) * GameManager.screenshake_intensity
+		
+		# 4. 카메라 위치 갱신 = [방의 중앙] + [흔들림]
+		# 주의: current_room이 유효한지(-1이 아닌지) 확인 필요
+		if current_room != Vector2i(-1, -1):
+			cam.global_position = room_center(current_room) + shake_offset
+
+	else:
+		# 흔들림이 없을 때는 방의 정중앙에 고정 (혹시 모를 오차 수정)
+		if current_room != Vector2i(-1, -1):
+			cam.global_position = room_center(current_room)
+			
 # --- 플레이어 관련 ---
 
 func spawn_player() -> void:
@@ -222,3 +252,6 @@ func room_id_from_xy(x: int, y: int) -> int:
 func room_id_from_pos(p: Vector2) -> int:
 	var r: Vector2i = room_from_pos(p)
 	return room_id_from_xy(r.x, r.y)
+	
+func apply_camera_shake(amount: float) -> void:
+	current_shake_strength = amount

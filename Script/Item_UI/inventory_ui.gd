@@ -38,11 +38,12 @@ func open():
 	is_open = true
 	
 	update_ui() # 켜면서 데이터 갱신
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	CustomCursor.show_cursor()
+	
 func close():
 	visible = false
 	is_open = false
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	CustomCursor.hide_cursor()
 
 func update_ui():
 	# --- 정보 갱신 ---
