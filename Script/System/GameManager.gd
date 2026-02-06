@@ -13,6 +13,7 @@ var pending_status: String = ""
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 var collected_items: Array = []
 
+var is_menu_open: bool = false
 var mouse_sensitivity: float = 0.5 
 var enable_gore: bool = true
 var screenshake_intensity: float = 1.0

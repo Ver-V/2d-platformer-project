@@ -10,10 +10,10 @@ signal close_requested
 @onready var slider_bgm: HSlider = $Panel/TabContainer/Audio/GridContainer/SliderBGM
 @onready var slider_sfx: HSlider = $Panel/TabContainer/Audio/GridContainer/SliderSFX
 
-@onready var slider_sens: HSlider = $Panel/TabContainer/Game/Grid/HBoxContainer/SliderSens
+@onready var slider_sens: HSlider = $"Panel/TabContainer/Control and game/GridContainer/SliderSens"
 @onready var lbl_sens_value: Label = $"Panel/TabContainer/Control and game/GridContainer/Mouse Sensitivity"
-@onready var btn_gore: CheckButton = $Panel/TabContainer/Game/Grid/BtnGore
-@onready var slider_shake: HSlider = $Panel/TabContainer/Game/Grid/HBoxContainer/SliderShake
+@onready var btn_gore: CheckButton = $"Panel/TabContainer/Control and game/BtnGore"
+@onready var slider_shake: HSlider = $"Panel/TabContainer/Control and game/GridContainer/SliderShake"
 @onready var lbl_shake_value: Label = $"Panel/TabContainer/Control and game/GridContainer/ShakeValue"
 
 
@@ -137,7 +137,7 @@ func _center_window():
 
 # (옵션) 닫기 버튼용
 func _on_close_button_pressed():
-	visible = false
+	close_requested.emit()
 	# 혹은 설정을 파일에 저장하는 로직 호출 (SaveSettings)
 
 func _on_visibility_changed():

@@ -1,13 +1,13 @@
 [gd_scene load_steps=3 format=3 uid="uid://bq4yn68pm1a70"]
 
-[ext_resource type="Script" uid="uid://c167fofkpyqv5" path="res://Scenes/Player/custom_cursor.gd" id="1_5xjb7"]
+[ext_resource type="Script" uid="uid://c167fofkpyqv5" path="res://Script/System/custom_cursor.gd" id="1_5xjb7"]
 [ext_resource type="Texture2D" uid="uid://bfo817c04ef2f" path="res://Assets/cursor_none.png" id="2_7gtjp"]
 
 [node name="CustomCursor" type="CanvasLayer"]
-layer = 150
+layer = 250
 script = ExtResource("1_5xjb7")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="CursorSprite" type="Sprite2D" parent="."]
 position = Vector2(4, 6)
 scale = Vector2(0.25, 0.25)
 texture = ExtResource("2_7gtjp")

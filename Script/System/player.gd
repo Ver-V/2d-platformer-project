@@ -87,7 +87,8 @@ func _on_animation_finished() -> void:
 
 func update_gold(amount: int) -> void:
 	# 이미 GM에 구현된 함수가 있으므로 그대로 사용
-	GameManager.add_gold(amount) 
+	GameManager.add_gold(amount)
+	HUD.show_hud_temporarily() 
 
 func update_damage(amount: int) -> void:
 	# 1. GM에게 "공격력 좀 바꿔줘" 요청
@@ -187,11 +188,11 @@ func _on_sword_body_entered(body: Node) -> void:
 			var knock_dir = (body.global_position - global_position).normalized()
 			var knock_force = Vector2(knock_dir.x * 400, -200)
 			body.apply_damage(int(attack_damage), knock_force)
-			GameManager.apply_hitstop(0.2, 0.05)
+			GameManager.apply_hitstop(0.25, 0.1)
 			
 		elif body.has_method("take_damage"):
 			body.take_damage(attack_damage, global_position)
-			GameManager.apply_hitstop(0.2, 0.05)
+			GameManager.apply_hitstop(0.25, 0.1)
 			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
 	# [체크 1] super(부모)를 호출해서 실제 체력을 깎고 결과를 받아야 함!
@@ -201,12 +202,13 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	if took_damage:
 		var stage = get_tree().current_scene
 		if stage.has_method("apply_camera_shake"):
-			stage.apply_camera_shake(10.0)
+			stage.apply_camera_shake(5.0)
 		
 		GameManager.update_hp(hp)
+		HUD.show_hud_temporarily()
 		is_attacking = false
 		sword_shape.set_deferred("disabled", true)
-		GameManager.apply_hitstop(0.2, 0.1)
+		GameManager.apply_hitstop(0.25, 0.15)
 		
 		# [수정 1] 죽었을 때 확인
 		if hp <= 0:
@@ -215,6 +217,12 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	return took_damage
 	
 func _physics_process(delta: float) -> void:
+	if GameManager.is_menu_open:
+		if not is_on_floor():
+			velocity += get_gravity() * delta
+		move_and_slide()
+		return
+		
 	if hp <= 0:
 		# 공중에 떠 있다면? -> 중력 적용!
 		if not is_on_floor():

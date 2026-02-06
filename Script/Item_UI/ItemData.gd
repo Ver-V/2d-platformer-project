@@ -35,7 +35,7 @@ func _use_consumable(player) -> void:
 		player.hp += heal_amount
 		if player.hp > player.max_hp: player.hp = player.max_hp
 		GameManager.update_hp(player.hp)
-		print("%s 사용: 체력 %d 회복" % [name, heal_amount])
+		HUD.show_hud_temporarily()
 
 # 장비일 때 실행될 로직 (나중에 구현)
 func _use_equipment(player) -> void:
