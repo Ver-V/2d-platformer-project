@@ -2,13 +2,15 @@
 extends CanvasLayer
 
 # 방금 만든 '그릇' (HBoxContainer)
-@onready var heart_container: HBoxContainer = $HeartContainer
-
+@onready var heart_container: HBoxContainer = $Control/HeartContainer
+@onready var hide_timer: Timer = $HideTimer
+@onready var ui_root: Control = $Control
 # 라벨들 경로
 @onready var gold_label: Label = $Control/GoldLabel
 @onready var interact_label: Label = $Control/InteractLabel
 @onready var save_panel: HBoxContainer = $Control/SavePanel
 
+var fade_tween: Tween
 # 개별 하트 씬 (Control 노드로 된 파일)
 var heart_scene: PackedScene = preload("res://Scenes/Player/HeartIcon.tscn")
 const HP_PER_HEART = 20
@@ -19,9 +21,30 @@ func _ready() -> void:
 	GameManager.interact_msg_requested.connect(_on_interact_msg)
 	GameManager.interact_msg_hidden.connect(_on_interact_hide)
 	
+	ui_root.modulate.a = 0.0
+	visible = false
+	
+	hide_timer.timeout.connect(_on_hide_timer_timeout)
+	
 	call_deferred("_setup_ui")
 	
 	visible = false
+
+func show_hud_temporarily():
+	visible = true
+	ui_root.modulate.a = 1.0
+	
+	if fade_tween:
+		fade_tween.kill()
+
+	hide_timer.start()
+
+func _on_hide_timer_timeout():
+	fade_tween = create_tween()
+
+	fade_tween.tween_property(ui_root, "modulate:a", 0.0, 1.5)
+
+	fade_tween.tween_callback(func(): visible = false)
 
 func _setup_ui() -> void:
 	draw_hearts(GameManager.player_current_hp, GameManager.player_max_hp)

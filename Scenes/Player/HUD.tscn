@@ -135,9 +135,15 @@ offset_right = 57.0
 offset_bottom = 28.0
 texture = SubResource("AtlasTexture_1emjh")
 
-[node name="HeartContainer" type="HBoxContainer" parent="."]
+[node name="HeartContainer" type="HBoxContainer" parent="Control"]
 custom_minimum_size = Vector2(16, 16)
+layout_mode = 0
 offset_left = 1.0
 offset_top = 1.0
 offset_right = 41.0
 offset_bottom = 41.0
+
+[node name="HideTimer" type="Timer" parent="."]
+process_mode = 3
+wait_time = 2.0
+one_shot = true

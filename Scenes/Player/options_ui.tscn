@@ -20,7 +20,7 @@ offset_bottom = 361.0
 layout_mode = 0
 offset_right = 640.0
 offset_bottom = 361.0
-current_tab = 1
+current_tab = 2
 
 [node name="Graphics" type="VBoxContainer" parent="Panel/TabContainer"]
 visible = false
@@ -68,6 +68,7 @@ text = "FPS limit"
 layout_mode = 2
 
 [node name="Audio" type="VBoxContainer" parent="Panel/TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -114,26 +115,25 @@ step = 0.01
 value = 1.0
 
 [node name="Control and game" type="VBoxContainer" parent="Panel/TabContainer"]
-visible = false
 layout_mode = 2
+theme_override_constants/separation = 20
 metadata/_tab_index = 2
 
 [node name="GridContainer" type="GridContainer" parent="Panel/TabContainer/Control and game"]
 layout_mode = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 120
+columns = 2
 
 [node name="Mouse Sensitivity" type="Label" parent="Panel/TabContainer/Control and game/GridContainer"]
 layout_mode = 2
 text = "Mouse Sensitivity "
 
 [node name="SliderSens" type="HSlider" parent="Panel/TabContainer/Control and game/GridContainer"]
+custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-
-[node name="Blood" type="Label" parent="Panel/TabContainer/Control and game/GridContainer"]
-layout_mode = 2
-text = "Blood "
-
-[node name="BtnGore" type="CheckButton" parent="Panel/TabContainer/Control and game/GridContainer"]
-layout_mode = 2
+max_value = 1.0
+step = 0.01
 
 [node name="ShakeValue" type="Label" parent="Panel/TabContainer/Control and game/GridContainer"]
 layout_mode = 2
@@ -141,6 +141,16 @@ text = "ShakeValue"
 
 [node name="SliderShake" type="HSlider" parent="Panel/TabContainer/Control and game/GridContainer"]
 layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="Blood" type="Label" parent="Panel/TabContainer/Control and game"]
+layout_mode = 2
+text = "Blood "
+
+[node name="BtnGore" type="CheckButton" parent="Panel/TabContainer/Control and game"]
+layout_mode = 2
+size_flags_horizontal = 0
 
 [node name="ExitButton" type="Button" parent="."]
 layout_mode = 0
