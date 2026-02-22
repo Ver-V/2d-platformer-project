@@ -1,7 +1,7 @@
 extends CanvasLayer
 
 @onready var menu_container: Control = $CenterContainer
-@onready var options_ui: Control = $OptionsUI
+@onready var options_ui: CanvasLayer = $OptionsUI
 
 func _ready():
 	visible = false

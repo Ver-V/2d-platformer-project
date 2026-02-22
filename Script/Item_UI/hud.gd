@@ -12,7 +12,7 @@ extends CanvasLayer
 
 var fade_tween: Tween
 # 개별 하트 씬 (Control 노드로 된 파일)
-var heart_scene: PackedScene = preload("res://Scenes/Player/HeartIcon.tscn")
+var heart_scene: PackedScene = preload("res://Scenes/System/HeartIcon.tscn")
 const HP_PER_HEART = 20
 
 func _ready() -> void:
@@ -77,6 +77,7 @@ func draw_hearts(current_hp: int, max_hp: int) -> void:
 # ... (골드, 상호작용 함수들은 기존 그대로) ...
 func _on_gold_changed(amount: int) -> void:
 	if gold_label: gold_label.text = " %d" % amount
+	show_hud_temporarily()
 
 func _on_interact_msg(msg: String) -> void:
 	if msg == "save_mode":

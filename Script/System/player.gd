@@ -218,9 +218,11 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	
 func _physics_process(delta: float) -> void:
 	if GameManager.is_menu_open:
+		velocity = Vector2.ZERO
 		if not is_on_floor():
 			velocity += get_gravity() * delta
 		move_and_slide()
+		sprite.play("Stand")
 		return
 		
 	if hp <= 0:

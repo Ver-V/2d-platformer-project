@@ -1,18 +1,19 @@
-[gd_scene load_steps=17 format=4 uid="uid://dfx7ligqjd22g"]
+[gd_scene load_steps=18 format=4 uid="uid://dfx7ligqjd22g"]
 
 [ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/System/stage.gd" id="1_gusuq"]
 [ext_resource type="PackedScene" uid="uid://bd1fcbofw2ll8" path="res://Scenes/Entitites/slime_1.tscn" id="2_l8wo6"]
-[ext_resource type="PackedScene" uid="uid://bqw80wdrftg4s" path="res://Scenes/Player/PauseMenu.tscn" id="3_2erbf"]
+[ext_resource type="PackedScene" uid="uid://bqw80wdrftg4s" path="res://Scenes/System/PauseMenu.tscn" id="3_2erbf"]
 [ext_resource type="Texture2D" uid="uid://cltaftyns351a" path="res://Assets/sprites/tileset.png" id="3_2s2j5"]
 [ext_resource type="Texture2D" uid="uid://cneqp6xfnb1wq" path="res://Assets/backgroundreal.png" id="3_t88q6"]
 [ext_resource type="Texture2D" uid="uid://cgpum4v6rh8hm" path="res://Assets/sprites/world_tileset.png" id="4_jptyp"]
 [ext_resource type="Script" uid="uid://cnklf8macledf" path="res://Script/System/room_grid.gd" id="5_7nmd1"]
 [ext_resource type="PackedScene" uid="uid://c7jx653i6b2k3" path="res://Scenes/Stage/HazardTileMap.tscn" id="6_t88q6"]
-[ext_resource type="PackedScene" uid="uid://byscojtoqo7ad" path="res://Scenes/Player/SavePoint.tscn" id="7_2erbf"]
-[ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Player/Player.tscn" id="8_l8wo6"]
+[ext_resource type="PackedScene" uid="uid://byscojtoqo7ad" path="res://Scenes/System/SavePoint.tscn" id="7_2erbf"]
+[ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="8_l8wo6"]
 [ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="9_7nmd1"]
 [ext_resource type="PackedScene" uid="uid://bs2f7s8xuy6e0" path="res://Scenes/Item/field_item.tscn" id="9_jptyp"]
 [ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="10_7nmd1"]
+[ext_resource type="PackedScene" uid="uid://cepa2x7wfxccs" path="res://Scenes/Entitites/MerchantNPC.tscn" id="14_jpob3"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qohnl"]
 texture = ExtResource("3_2s2j5")
@@ -289,7 +290,6 @@ script = ExtResource("1_gusuq")
 player_scene = ExtResource("8_l8wo6")
 
 [node name="PauseMenu" parent="." instance=ExtResource("3_2erbf")]
-visible = false
 
 [node name="TextureRect3" type="TextureRect" parent="."]
 offset_left = 5123.0
@@ -316,9 +316,10 @@ tile_map_data = PackedByteArray("AAAKAAMAAgACAAIAAAAJAAMAAgABAAIAAAAIAAMAAgABAAI
 tile_set = SubResource("TileSet_km80h")
 
 [node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(2, 2)
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(23, 5)
+position = Vector2(74, 429)
 
 [node name="RoomGrid" type="Node2D" parent="."]
 process_mode = 3
@@ -358,5 +359,11 @@ slime_move_speed = 60.0
 [node name="Slime1" parent="Entities" instance=ExtResource("2_l8wo6")]
 position = Vector2(379, 68)
 slime_move_speed = 60.0
+
+[node name="MerchantNPC" parent="." instance=ExtResource("14_jpob3")]
+position = Vector2(136, 22)
+collision_mask = 2
+
+[connection signal="body_entered" from="MerchantNPC" to="." method="_on_merchant_npc_body_entered"]
 
 [editable path="HazardTileMap"]

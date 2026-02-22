@@ -6,7 +6,7 @@ const FIRST_LEVEL_PATH = "res://Scenes/Stage/Stage.tscn"
 # [노드 참조] 씬 트리의 이름과 일치해야 합니다.
 @onready var btn_load: Button = $VBoxContainer/BtnLoadGame
 @onready var credits_panel: Panel = $CreditsPanel
-@onready var options_ui: Control = $OptionsUI
+@onready var options_ui: CanvasLayer = $OptionsUI
 
 func _ready() -> void:
 	CustomCursor.show_cursor()

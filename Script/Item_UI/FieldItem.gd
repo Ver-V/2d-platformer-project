@@ -29,9 +29,6 @@ func _ready():
 		if GameManager.collected_items.has(id):
 			queue_free() # 이미 먹은 거면 삭제
 			return
-			
-		body_entered.connect(_on_body_entered)
-		# _start_floating_animation() <- Tween 함수 호출 삭제!
 
 func _process(delta):
 	# 에디터에서는 움직이지 않게 함 (정신 사나움 방지)

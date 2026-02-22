@@ -49,9 +49,8 @@ func _input(event):
 func show_cursor():
 	cursor_sprite.visible = true
 	
-	# [중요] 켜질 때 모드를 'Hidden'(숨김+자유)으로 변경
-	# CAPTURED 상태에서는 warp_mouse가 제대로 안 먹힐 수 있음
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	# [핵심 수정] 마우스가 게임 창 밖으로 나가는 것을 OS 단에서 원천 차단!
+	Input.set_mouse_mode(Input.MOUSE_MODE_CONFINED_HIDDEN)
 	
 	# 켜지는 순간 현재 마우스 위치로 동기화
 	cursor_pos = get_viewport().get_mouse_position()

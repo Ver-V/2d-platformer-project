@@ -61,7 +61,6 @@ func _ready():
 	_init_game_settings()
 	
 	slider_shake.value_changed.connect(_on_shake_changed)
-	btn_gore.toggled.connect(_on_gore_toggled)
 	
 	# 3. 슬라이더 움직임 감지 연결
 	slider_master.value_changed.connect(_on_master_volume_changed)
@@ -157,7 +156,7 @@ func _on_sens_changed(value: float):
 
 func _update_sens_label(value: float):
 	# 0.5 -> "50%" 처럼 보기 좋게 변환
-	lbl_sens_value.text = str(int(value * 100)) + "%"
+	lbl_sens_value.text = "Mouse Sensitivity: " + str(int(value * 100)) + "%"
 
 # --- [기능 2: 유혈 표현] ---
 func _on_gore_toggled(toggled_on: bool):
@@ -199,4 +198,4 @@ func _on_shake_changed(value: float):
 	_update_shake_label(value)
 
 func _update_shake_label(value: float):
-	lbl_shake_value.text = str(int(value * 100)) + "%"
+	lbl_shake_value.text = "Shake Value: " + str(int(value * 100)) + "%"
