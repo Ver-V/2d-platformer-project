@@ -1,32 +1,39 @@
 extends CanvasLayer
 
 @onready var grid: GridContainer = $Control/TextureRect/GridContainer
-# [경로 확인 필수] 본인 씬 트리에 맞춰서 수정하세요
 @onready var gold_label: Label = $Control/TextureRect/Panel/HBoxContainer/VBoxContainer/GoldLabel
 @onready var hp_label: Label = $Control/TextureRect/Panel/HBoxContainer/VBoxContainer/HpLabel
 @onready var atk_label: Label = $Control/TextureRect/Panel/HBoxContainer/VBoxContainer/AtkLabel
 @onready var pd_label: Label = $Control/TextureRect/Panel/HBoxContainer/VBoxContainer/ParryDmgLabel
 
+# [새로 추가] 액션 메뉴 관련 노드 연결
+@onready var action_menu: PanelContainer = $ActionMenu
+@onready var btn_use: Button = $ActionMenu/VBoxContainer/BtnUse
+@onready var btn_close: Button = $ActionMenu/VBoxContainer/BtnClose
+
 var is_open: bool = false
+var selected_index: int = -1 # [새로 추가] 클릭한 슬롯 번호 기억용
 
 func _ready():
 	var slots = grid.get_children()
 	
 	for i in range(slots.size()):
 		var slot = slots[i]
-		
-		# 슬롯의 'slot_clicked' 신호를 내 함수 '_on_slot_clicked'에 연결
-		# .bind(i)는 "이게 몇 번째(i) 슬롯인지" 정보를 함께 넘겨주는 기능입니다.
 		if not slot.slot_clicked.is_connected(_on_slot_clicked):
 			slot.slot_clicked.connect(_on_slot_clicked.bind(i))
+	
+	# [새로 추가] 팝업 버튼 시그널 연결 및 숨기기
+	btn_use.pressed.connect(_on_use_pressed)
+	btn_close.pressed.connect(_on_close_pressed)
+	action_menu.hide()
 	
 	close()
 	
 func _process(_float) -> void:
-	update_ui()
+	if is_open:
+		update_ui()
 
 func _input(event):
-	# 인풋 맵에 등록한 "inventory" 키가 눌렸을 때
 	if event.is_action_pressed("inventory"):
 		if is_open:
 			close()
@@ -36,13 +43,16 @@ func _input(event):
 func open():
 	visible = true
 	is_open = true
+	selected_index = -1 # 열 때 선택 초기화
+	action_menu.hide()  # 열 때 팝업 무조건 숨김
 	
-	update_ui() # 켜면서 데이터 갱신
+	update_ui()
 	CustomCursor.show_cursor()
 	
 func close():
 	visible = false
 	is_open = false
+	action_menu.hide() # 닫을 때 팝업도 같이 닫기
 	CustomCursor.hide_cursor()
 
 func update_ui():
@@ -60,25 +70,53 @@ func update_ui():
 		else:
 			slots[i].set_item(null)
 
-# 슬롯 클릭 연결 함수 (Slot 씬에서 시그널 연결이 필요할 수 있음)
+# --- [수정됨] 슬롯 클릭 시 팝업 띄우기 ---
 func _on_slot_clicked(index):
-	print("클릭된 슬롯 번호: ", index) # 확인용
+	print("클릭된 슬롯 번호: ", index)
 	
 	if index >= GameManager.inventory.size(): return
 
 	var item = GameManager.inventory[index]
+	
+	# 디버그용: 아이템이 정말 들어있는지 콘솔에 출력해 봅니다.
+	print("슬롯에 있는 아이템 데이터: ", item) 
+	
 	if item != null:
-		var player = get_tree().get_first_node_in_group("player")
+		selected_index = index
 		
-		# 아이템 사용 (ItemData에 use 함수가 있다고 가정)
-		# 만약 item이 Dictionary라면 스크립트를 로드해서 함수를 부르는 등 별도 처리가 필요할 수 있음
-		if player and item.has_method("use"):
-			item.use(player)
-			GameManager.inventory[index] = null # 사용 후 삭제
-			update_ui()
+		# [수정 1] 마우스 좌표 대신, 클릭한 슬롯 노드의 위치를 기준으로 띄웁니다.
+		# (해상도/카메라 스케일 때문에 마우스 좌표가 엉뚱한 곳을 가리키는 현상 방지)
+		var clicked_slot = grid.get_child(index)
+		action_menu.global_position = clicked_slot.global_position + Vector2(20, 20)
+		
+		# [수정 2] 팝업이 다른 UI 배경에 가려지지 않도록 Z-Index를 강제로 100으로 확 끌어올립니다.
+		action_menu.z_index = 100 
+		
+		action_menu.show()
+	else:
+		action_menu.hide()
 
+# --- [새로 추가] '사용' 버튼 눌렀을 때 ---
+func _on_use_pressed():
+	if selected_index == -1: return
+	
+	var item = GameManager.inventory[selected_index]
+	var player = get_tree().get_first_node_in_group("player")
+	
+	# 기존에 _on_slot_clicked에 있던 로직을 이쪽으로 이사시켰습니다.
+	if player and item.has_method("use"):
+		item.use(player)
+		GameManager.inventory[selected_index] = null # 사용 후 삭제
+		update_ui()
+	
+	# 사용 완료 후 팝업 닫기 및 선택 초기화
+	action_menu.hide()
+	selected_index = -1
 
+# --- [새로 추가] '닫기' 버튼 눌렀을 때 ---
+func _on_close_pressed():
+	action_menu.hide()
+	selected_index = -1
 
 func _on_button_pressed() -> void:
 	close()
-	

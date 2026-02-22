@@ -18,14 +18,16 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameManager="*res://Script/System/GameManager.gd"
-HUD="*res://Scenes/Player/HUD.tscn"
+HUD="*res://Scenes/System/HUD.tscn"
 SceneTransition="*res://Scenes/Stage/SceneTransition.tscn"
-CustomCursor="*res://Scenes/Player/CustomCursor.tscn"
+CustomCursor="*res://Scenes/System/CustomCursor.tscn"
+DialogueManager="*res://Scenes/System/DialogueUI.tscn"
+ShopUi="*res://Scenes/System/ShopUI.tscn"
 
 [display]
 
-window/size/viewport_width=640
-window/size/viewport_height=360
+window/size/viewport_width=1280
+window/size/viewport_height=720
 window/size/borderless=true
 window/size/window_width_override=1280
 window/size/window_height_override=720

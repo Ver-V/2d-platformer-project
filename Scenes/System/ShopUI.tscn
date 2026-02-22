@@ -1,0 +1,71 @@
+[gd_scene load_steps=2 format=3 uid="uid://dx1xw33twsrqq"]
+
+[ext_resource type="Script" uid="uid://bfosgjau2a1ys" path="res://Scenes/System/ShopUI.gd" id="1_njg4f"]
+
+[node name="ShopUI" type="CanvasLayer"]
+process_mode = 3
+script = ExtResource("1_njg4f")
+
+[node name="MainPanel" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBox" type="HBoxContainer" parent="MainPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ItemList" type="VBoxContainer" parent="MainPanel/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="InfoPanel" type="Panel" parent="MainPanel/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameLabel" type="Label" parent="MainPanel/HBox/InfoPanel"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 8.0
+offset_right = 5.0
+offset_bottom = 31.0
+
+[node name="DescLabel" type="RichTextLabel" parent="MainPanel/HBox/InfoPanel"]
+layout_mode = 0
+offset_left = 9.0
+offset_top = 8.0
+offset_right = 10.0
+offset_bottom = 31.0
+
+[node name="PriceLabel" type="Label" parent="MainPanel/HBox/InfoPanel"]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 8.0
+offset_right = 15.0
+offset_bottom = 31.0
+
+[node name="ConfirmPanel" type="Panel" parent="."]
+visible = false
+custom_minimum_size = Vector2(300, 250)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MsgLabel" type="Label" parent="ConfirmPanel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0

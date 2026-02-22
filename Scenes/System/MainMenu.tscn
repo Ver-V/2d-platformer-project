@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://c5ssd0dithpy6" path="res://Script/Item_UI/Main_Menu.gd" id="1_6xuep"]
 [ext_resource type="FontFile" uid="uid://cxqe7fhd3sbpr" path="res://Assets/fonts/PixelOperator8-Bold.ttf" id="3_shliw"]
 [ext_resource type="FontFile" uid="uid://dexfxct02yiks" path="res://Assets/fonts/PixelOperator8.ttf" id="4_jdpqn"]
-[ext_resource type="PackedScene" uid="uid://bbhgypcmayt44" path="res://Scenes/Player/options_ui.tscn" id="5_h3qbv"]
+[ext_resource type="PackedScene" uid="uid://bbhgypcmayt44" path="res://Scenes/System/options_ui.tscn" id="5_h3qbv"]
 
 [sub_resource type="FontVariation" id="FontVariation_xtrvd"]
 base_font = ExtResource("3_shliw")
@@ -98,4 +98,3 @@ offset_bottom = 40.0
 
 [node name="OptionsUI" parent="." instance=ExtResource("5_h3qbv")]
 visible = false
-layout_mode = 1

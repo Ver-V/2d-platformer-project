@@ -1,0 +1,74 @@
+[gd_scene load_steps=11 format=3 uid="uid://cepa2x7wfxccs"]
+
+[ext_resource type="Texture2D" uid="uid://ctvg2ieoii6no" path="res://Assets/sprites/Soldier-Idle.png" id="1_7eu31"]
+[ext_resource type="Script" uid="uid://edf483d5ts15" path="res://Script/System/MerchantNPC.gd" id="1_qa6ul"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7eu31"]
+atlas = ExtResource("1_7eu31")
+region = Rect2(0, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qa6ul"]
+atlas = ExtResource("1_7eu31")
+region = Rect2(100, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gnql8"]
+atlas = ExtResource("1_7eu31")
+region = Rect2(200, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qw1ia"]
+atlas = ExtResource("1_7eu31")
+region = Rect2(300, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eop1e"]
+atlas = ExtResource("1_7eu31")
+region = Rect2(400, 0, 100, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5dfi8"]
+atlas = ExtResource("1_7eu31")
+region = Rect2(500, 0, 100, 100)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_1kcuk"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7eu31")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qa6ul")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gnql8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qw1ia")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eop1e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5dfi8")
+}],
+"loop": true,
+"name": &"Idle",
+"speed": 4.5
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_djfkw"]
+radius = 15.033297
+
+[node name="MerchantNPC" type="Area2D"]
+script = ExtResource("1_qa6ul")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(1.2, 1.2)
+sprite_frames = SubResource("SpriteFrames_1kcuk")
+animation = &"Idle"
+frame_progress = 0.3777271
+flip_h = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -2)
+shape = SubResource("CircleShape2D_djfkw")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_exited" from="." to="." method="_on_body_exited"]

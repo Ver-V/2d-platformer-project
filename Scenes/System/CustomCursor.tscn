@@ -8,6 +8,6 @@ layer = 250
 script = ExtResource("1_5xjb7")
 
 [node name="CursorSprite" type="Sprite2D" parent="."]
-position = Vector2(4, 6)
-scale = Vector2(0.25, 0.25)
+position = Vector2(7, 9)
+scale = Vector2(0.34375, 0.34375)
 texture = ExtResource("2_7gtjp")

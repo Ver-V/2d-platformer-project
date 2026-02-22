@@ -1,8 +1,8 @@
 [gd_scene load_steps=15 format=3 uid="uid://b1tnix67gbct2"]
 
 [ext_resource type="Script" uid="uid://4g87ffp1ejuy" path="res://Script/Item_UI/inventory_ui.gd" id="1_nwg6v"]
-[ext_resource type="Texture2D" uid="uid://b0g63twpy1bt5" path="res://Assets/sprites/inventory.png" id="1_uggrm"]
-[ext_resource type="PackedScene" uid="uid://dt18ia74utxnr" path="res://Scenes/Player/Slot.tscn" id="2_d7s18"]
+[ext_resource type="Texture2D" uid="uid://dwgaq1qogik27" path="res://Assets/sprites/inventory12.png" id="2_bjrlb"]
+[ext_resource type="PackedScene" uid="uid://dt18ia74utxnr" path="res://Scenes/System/Slot.tscn" id="2_d7s18"]
 [ext_resource type="FontFile" uid="uid://cxqe7fhd3sbpr" path="res://Assets/fonts/PixelOperator8-Bold.ttf" id="2_kd7m4"]
 [ext_resource type="FontFile" uid="uid://dexfxct02yiks" path="res://Assets/fonts/PixelOperator8.ttf" id="3_d7s18"]
 
@@ -33,17 +33,18 @@ font_size = 8
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h82ei"]
 
 [node name="InventoryUI" type="CanvasLayer"]
+scale = Vector2(2, 2)
+transform = Transform2D(2, 0, 0, 2, 0, 0)
 script = ExtResource("1_nwg6v")
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 172.0
-offset_top = -80.0
-offset_right = 212.0
-offset_bottom = -40.0
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 169.5
+offset_top = 106.5
+offset_right = 169.5
+offset_bottom = 106.5
 grow_vertical = 2
 mouse_filter = 2
 
@@ -51,63 +52,78 @@ mouse_filter = 2
 layout_mode = 1
 offset_left = 140.0
 offset_top = -1.0
-offset_right = 320.0
+offset_right = 346.5
 offset_bottom = 119.0
-texture = ExtResource("1_uggrm")
+texture = ExtResource("2_bjrlb")
 
 [node name="GridContainer" type="GridContainer" parent="Control/TextureRect"]
 layout_mode = 0
 offset_left = 8.0
-offset_top = 24.0
-offset_right = 173.0
-offset_bottom = 127.0
+offset_top = 6.5
+offset_right = 185.5
+offset_bottom = 114.5
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 5
 
 [node name="Slot" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot2" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot3" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot4" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot5" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot6" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot7" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot8" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot9" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot10" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot11" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot12" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot13" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot14" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Slot15" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 
 [node name="Panel" type="Panel" parent="Control/TextureRect"]
@@ -161,15 +177,32 @@ process_mode = 3
 z_index = 100
 custom_minimum_size = Vector2(15, 15)
 layout_mode = 0
-offset_left = 304.0
-offset_top = 16.0
-offset_right = 320.0
-offset_bottom = 32.0
+offset_left = 330.0
+offset_top = 1.0
+offset_right = 346.0
+offset_bottom = 17.0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_nwg6v")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_jos1c")
 theme_override_styles/hover = SubResource("StyleBoxEmpty_nehv6")
 theme_override_styles/disabled = SubResource("StyleBoxEmpty_p7xya")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_h82ei")
 action_mode = 0
+
+[node name="ActionMenu" type="PanelContainer" parent="."]
+visible = false
+offset_right = 50.0
+offset_bottom = 62.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ActionMenu"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="BtnUse" type="Button" parent="ActionMenu/VBoxContainer"]
+layout_mode = 2
+text = "Use"
+
+[node name="BtnClose" type="Button" parent="ActionMenu/VBoxContainer"]
+layout_mode = 2
+text = "Close"
 
 [connection signal="pressed" from="Control/Button" to="." method="_on_button_pressed"]

@@ -1,0 +1,23 @@
+[
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "HeroBunny_idle",
+		"name": "용사",
+		"text": "아저씨, 이 검은 얼마예요?"
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "HeroBunny_idle",
+		"name": "상인",
+		"text": "보는 눈이 있구만! 단돈 500골드라네."
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_idle",
+		"right_image": "HeroBunny_idle",
+		"name": "용사",
+		"text": "너무 비싸잖아요! 좀 깎아주세요."
+	}
+]
