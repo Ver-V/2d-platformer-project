@@ -12,6 +12,7 @@ var defeated_mobs: Array = []
 var pending_status: String = ""
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 var collected_items: Array = []
+var active_ui_count: int = 0
 
 var is_menu_open: bool = false
 var mouse_sensitivity: float = 0.5 
@@ -103,6 +104,18 @@ func respawn_player() -> void:
 		print("⚠️ 저장 데이터 없음/실패 -> 현재 씬 재시작")
 		call_deferred("_reload_scene_safe")
 
+func ui_opened() -> void:
+	active_ui_count += 1
+	is_menu_open = true
+	CustomCursor.show_cursor()
+
+func ui_closed() -> void:
+	active_ui_count -= 1
+	if active_ui_count <= 0:
+		active_ui_count = 0
+		is_menu_open = false
+		CustomCursor.hide_cursor()
+	
 func save_game() -> void:
 	var inventory_save_data = []
 	for item in inventory:

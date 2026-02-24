@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://dx1xw33twsrqq"]
+[gd_scene load_steps=4 format=3 uid="uid://dx1xw33twsrqq"]
 
 [ext_resource type="Script" uid="uid://bfosgjau2a1ys" path="res://Scenes/System/ShopUI.gd" id="1_njg4f"]
+[ext_resource type="FontFile" uid="uid://dexfxct02yiks" path="res://Assets/fonts/PixelOperator8.ttf" id="2_gyo4k"]
+
+[sub_resource type="FontVariation" id="FontVariation_sqbq1"]
+base_font = ExtResource("2_gyo4k")
 
 [node name="ShopUI" type="CanvasLayer"]
 process_mode = 3
@@ -10,6 +14,9 @@ script = ExtResource("1_njg4f")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 52.0
+offset_right = -1.0
+offset_bottom = -68.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -31,24 +38,26 @@ size_flags_horizontal = 3
 
 [node name="NameLabel" type="Label" parent="MainPanel/HBox/InfoPanel"]
 layout_mode = 0
-offset_left = 4.0
-offset_top = 8.0
-offset_right = 5.0
-offset_bottom = 31.0
+offset_left = 16.0
+offset_top = 9.0
+offset_right = 17.0
+offset_bottom = 32.0
 
 [node name="DescLabel" type="RichTextLabel" parent="MainPanel/HBox/InfoPanel"]
 layout_mode = 0
-offset_left = 9.0
-offset_top = 8.0
-offset_right = 10.0
-offset_bottom = 31.0
+offset_left = 16.0
+offset_top = 109.0
+offset_right = 623.0
+offset_bottom = 584.0
+theme_override_fonts/normal_font = SubResource("FontVariation_sqbq1")
+fit_content = true
 
 [node name="PriceLabel" type="Label" parent="MainPanel/HBox/InfoPanel"]
 layout_mode = 0
-offset_left = 14.0
-offset_top = 8.0
-offset_right = 15.0
-offset_bottom = 31.0
+offset_left = 432.0
+offset_top = 9.0
+offset_right = 433.0
+offset_bottom = 32.0
 
 [node name="ConfirmPanel" type="Panel" parent="."]
 visible = false

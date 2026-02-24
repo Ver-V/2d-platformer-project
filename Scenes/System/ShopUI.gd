@@ -7,14 +7,11 @@ extends CanvasLayer
 @onready var confirm_panel = $ConfirmPanel
 @onready var confirm_msg = $ConfirmPanel/MsgLabel
 
-# [수정됨] GameManager의 item_database와 연동하기 위해 "id" 항목을 추가했습니다.
-# (나중에 이 부분도 리소스나 JSON으로 빼면 관리가 더 편해집니다.)
-var shop_items = [
-	{"id": "health_potion", "name": "체력 포션", "price": 50, "desc": "체력을 40 회복합니다."},
-	# 아래는 예시입니다. GameManager의 item_database에 ID와 리소스 경로를 추가해야 작동합니다.
-	# {"id": "iron_sword", "name": "철검", "price": 300, "desc": "공격력이 소폭 상승하는 기본 검입니다."}, 
-	# {"id": "rabbit_slippers", "name": "토끼 슬리퍼", "price": 500, "desc": "이동 속도가 증가합니다."}
-]
+signal shop_closed(bought_something: bool)
+
+var bought_something: bool = false
+
+var shop_item_ids: Array[String] = ["health_potion"]
 
 var selected_index: int = 0
 var is_open: bool = false
@@ -27,21 +24,24 @@ func _ready():
 
 # --- 1. 상점 열고 닫기 ---
 func open_shop():
+	bought_something = false
 	is_open = true
 	is_confirming = false
 	selected_index = 0
 	confirm_panel.hide()
 	show()
 	_update_selection_ui()
-	
-	get_tree().paused = true
-	# CustomCursor.show_cursor() # 만든 커서 스크립트 호출
+	GameManager.ui_opened()
 
 func close_shop():
 	is_open = false
 	hide()
-	get_tree().paused = false
-	# CustomCursor.hide_cursor()
+	shop_closed.emit(bought_something)
+	GameManager.ui_closed()
+
+func close_confirm_panel():
+	is_confirming = false
+	confirm_panel.hide()
 
 # --- 2. 입력 처리 ---
 func _input(event):
@@ -55,10 +55,10 @@ func _input(event):
 		return
 
 	if event.is_action_pressed("ui_down"):
-		selected_index = (selected_index + 1) % shop_items.size()
+		selected_index = (selected_index + 1) % shop_item_ids.size()
 		_update_selection_ui()
 	elif event.is_action_pressed("ui_up"):
-		selected_index = (selected_index - 1 + shop_items.size()) % shop_items.size()
+		selected_index = (selected_index - 1 + shop_item_ids.size()) % shop_item_ids.size()
 		_update_selection_ui()
 	elif event.is_action_pressed("interact"):
 		open_confirm_panel()
@@ -67,38 +67,58 @@ func _input(event):
 
 # --- 3. 아이템 목록 UI 동적 생성 ---
 func _create_item_slots():
-	for i in range(shop_items.size()):
-		var item = shop_items[i]
+	for i in range(shop_item_ids.size()):
+		var item_id = shop_item_ids[i]
 		
+		# GameManager의 도감에서 실제 리소스(.tres) 가져오기
+		var item_resource = GameManager.get_item_by_id(item_id)
+		
+		if item_resource == null:
+			print("에러: 데이터를 찾을 수 없음 -> ", item_id)
+			continue # 데이터가 없으면 슬롯 생성을 건너뜀
+			
 		var slot = ColorRect.new()
 		slot.custom_minimum_size = Vector2(250, 40)
 		
+		var hbox = HBoxContainer.new()
+		hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+		hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		hbox.add_theme_constant_override("separation", 15)
+		slot.add_child(hbox)
+		
+		var icon_rect = TextureRect.new()
+		if item_resource.icon != null:
+			icon_rect.texture = item_resource.icon
+		icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.custom_minimum_size = Vector2(30, 30)
+		hbox.add_child(icon_rect)
+		
 		var label = Label.new()
-		label.text = item["name"] + "   [" + str(item["price"]) + "G]"
-		label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		# 리소스에서 name과 price를 직접 가져옴!
+		label.text = item_resource.name + "   [" + str(item_resource.price) + "G]"
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		slot.add_child(label)
+		hbox.add_child(label)
 		
 		slot.mouse_entered.connect(_on_slot_mouse_entered.bind(i))
 		slot.gui_input.connect(_on_slot_gui_input.bind(i))
 		
 		item_list.add_child(slot)
 
-# --- 4. 마우스 이벤트 연결 ---
 func _on_slot_mouse_entered(index: int):
 	if not is_confirming:
 		selected_index = index
 		_update_selection_ui()
 
+# --- 마우스 클릭 처리 ---
 func _on_slot_gui_input(event: InputEvent, index: int):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if not is_confirming:
 			selected_index = index
 			_update_selection_ui()
 			open_confirm_panel()
-
-# --- 5. 선택된 아이템 시각적 강조 ---
+			
+# --- 5. 선택된 아이템 시각적 강조 및 정보 표시 ---
 func _update_selection_ui():
 	for i in range(item_list.get_child_count()):
 		var slot = item_list.get_child(i)
@@ -107,52 +127,42 @@ func _update_selection_ui():
 		else:
 			slot.color = Color(0.1, 0.1, 0.1)
 			
-	var item = shop_items[selected_index]
-	name_label.text = item["name"]
-	desc_label.text = item["desc"]
-	price_label.text = "보유 골드: " + str(GameManager.gold) + " G\n\n가격: " + str(item["price"]) + " G"
+	var item_id = shop_item_ids[selected_index]
+	var item_resource = GameManager.get_item_by_id(item_id)
+	
+	if item_resource:
+		name_label.text = item_resource.name
+		desc_label.text = item_resource.description # 리소스의 description 가져오기!
+		price_label.text = "보유 골드: " + str(GameManager.gold) + " G\n\n가격: " + str(item_resource.price) + " G"
 
 # --- 6. 구매 확인창 로직 ---
 func open_confirm_panel():
 	is_confirming = true
-	var item = shop_items[selected_index]
-	confirm_msg.text = "[ " + item["name"] + " ]\n" + str(item["price"]) + "G 에 구매하시겠습니까?\n\n(E 키: 구매 확정 / ESC: 취소)"
+	var item_id = shop_item_ids[selected_index]
+	var item_resource = GameManager.get_item_by_id(item_id)
+	
+	confirm_msg.text = "[ " + item_resource.name + " ]\n" + str(item_resource.price) + "G 에 구매하시겠습니까?\n\n(E 키: 구매 확정 / ESC: 취소)"
 	confirm_panel.show()
-
-func close_confirm_panel():
-	is_confirming = false
-	confirm_panel.hide()
 
 # --- [핵심] GameManager 연동 구매 로직 ---
 func buy_item():
-	var item_info = shop_items[selected_index]
-	var price = item_info["price"]
-	var item_id = item_info["id"]
+	var item_id = shop_item_ids[selected_index]
+	var item_resource = GameManager.get_item_by_id(item_id)
+	
+	if item_resource == null: return
+	
+	var price = item_resource.price
 
-	# 1. 골드 확인
 	if GameManager.gold >= price:
+		var is_added = GameManager.add_item(item_resource)
 		
-		# 2. 아이템 데이터 가져오기
-		var item_resource = GameManager.get_item_by_id(item_id)
-		
-		if item_resource != null:
-			# 3. 인벤토리에 아이템 추가 시도
-			var is_added = GameManager.add_item(item_resource)
-			
-			if is_added:
-				# 4. 구매 성공: 골드 차감 (-금액)
-				GameManager.update_gold(-price)
-				print(item_info["name"] + " 구매 완료!")
-				
-				# 구매 성공 후 골드 UI 갱신을 위해 선택 UI 한번 더 업데이트
-				_update_selection_ui() 
-				close_confirm_panel()
-			else:
-				# 인벤토리 꽉 참
-				confirm_msg.text = "인벤토리가 가득 찼습니다!\n\n(ESC: 취소)"
+		if is_added:
+			GameManager.update_gold(-price)
+			print(item_resource.name + " 구매 완료!")
+			_update_selection_ui() 
+			close_confirm_panel()
+			bought_something = true # 상인 대사 변경을 위한 변수
 		else:
-			push_error("GameManager에 존재하지 않는 아이템 ID입니다: " + item_id)
-			confirm_msg.text = "아이템 데이터를 불러올 수 없습니다.\n\n(ESC: 취소)"
+			confirm_msg.text = "인벤토리가 가득 찼습니다!\n\n(ESC: 취소)"
 	else:
-		# 골드 부족
 		confirm_msg.text = "골드가 부족합니다!\n\n(ESC: 취소)"

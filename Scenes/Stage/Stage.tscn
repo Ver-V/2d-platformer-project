@@ -290,6 +290,7 @@ script = ExtResource("1_gusuq")
 player_scene = ExtResource("8_l8wo6")
 
 [node name="PauseMenu" parent="." instance=ExtResource("3_2erbf")]
+visible = false
 
 [node name="TextureRect3" type="TextureRect" parent="."]
 offset_left = 5123.0
@@ -319,7 +320,7 @@ tile_set = SubResource("TileSet_km80h")
 zoom = Vector2(2, 2)
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(74, 429)
+position = Vector2(88, 8)
 
 [node name="RoomGrid" type="Node2D" parent="."]
 process_mode = 3
