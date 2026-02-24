@@ -8,15 +8,17 @@ enum ItemType { GENERIC, CONSUMABLE, EQUIPMENT }
 @export var id: String = ""
 @export var name: String = "Item Name"
 @export var icon: Texture2D
+@export var price: int = 0
 @export_multiline var description: String = ""
 @export var type: ItemType = ItemType.GENERIC # 기본값은 잡동사니
 
 @export_group("Consumable Setting")
 @export var heal_amount: int = 0  # 포션 아니면 그냥 0으로 두면 됨
+@export var damage_amount: int = 0
 
 @export_group("Equipment Setting")
 @export var attack_damage: int = 0 # 무기 아니면 0으로 두면 됨
-@export var defense: int = 0
+@export var parrymul: float = 0.0
 
 # 2. 통합된 use 함수
 func use(player) -> void:
@@ -36,6 +38,8 @@ func _use_consumable(player) -> void:
 		if player.hp > player.max_hp: player.hp = player.max_hp
 		GameManager.update_hp(player.hp)
 		HUD.show_hud_temporarily()
+	if damage_amount > 0:
+		player.damage += attack_damage
 
 # 장비일 때 실행될 로직 (나중에 구현)
 func _use_equipment(player) -> void:

@@ -6,51 +6,77 @@ extends Area2D
 @onready var sprite = $AnimatedSprite2D
 # [2] 말 건 횟수 기억하기
 var talk_count: int = 0
-
 var player_in_range = false
+
+var has_bought: bool = false
 
 func _ready() -> void:
 	sprite.play("Idle")
-	
+	ShopUI.shop_closed.connect(_on_shop_closed)
+
+func _on_shop_closed(bought: bool):
+	if bought:
+		has_bought = true # 물건을 하나라도 샀다면 상태 변경!
+		
 func _input(event):
 	if player_in_range and event.is_action_pressed("interact"):
-		# 만약 대화창이 이미 떠있다면 무시
 		if DialogueManager.is_dialogue_active:
 			return
 			
-		# [핵심 1] 장소와 횟수를 조합해서 파일 경로를 자동 완성!
+		# ----------------------------------------------------
+		# 1. 만약 물건을 이미 산 상태라면? -> 감사 대사 전용 파일 실행
+		# ----------------------------------------------------
+		if has_bought:
+			var bought_file = "res://resources/Dialogues/merchant_" + "thanks.json"
+			
+			if FileAccess.file_exists(bought_file):
+				DialogueManager.start_dialogue(bought_file)
+				
+				# 대사가 끝날 때까지 기다림 (핵심!)
+				await DialogueManager.dialogue_finished 
+				
+				# 대화 끝나고 상점 다시 열어주기
+				ShopUI.open_shop() 
+			else:
+				print("구매 후 대사 파일이 없습니다: ", bought_file)
+			return # 아래 로직은 무시하고 여기서 끝냄
+			
+		# ----------------------------------------------------
+		# 2. 아직 물건을 안 산 상태 (기존 로직 + await 추가)
+		# ----------------------------------------------------
 		var file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count) + ".json"
 		
-		# [핵심 2] 파일이 진짜 있는지 확인 (더 이상 할 말이 없을 때를 대비)
 		if FileAccess.file_exists(file_path):
 			DialogueManager.start_dialogue(file_path)
-			
-			# 말 걸었으니 횟수 1 증가
 			talk_count += 1
+		
+			await DialogueManager.dialogue_finished 
+			ShopUI.open_shop()
 			
 		else:
-			# [수정된 부분] 만약 준비된 대사를 다 봐서 더 이상 파일이 없다면?
 			if talk_count > 0:
-				# 횟수를 다시 1 깎아서 마지막 대사를 부르도록 함
 				talk_count -= 1 
-				
-				# ⭐ [가장 중요] 여기 경로도 똑같이 res://resources/... 로 맞춰줍니다!
 				var last_file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count) + ".json"
 				
 				if FileAccess.file_exists(last_file_path):
 					DialogueManager.start_dialogue(last_file_path)
+					
+					# [수정] 대사가 끝날 때까지 코드 실행을 일시정지!
+					await DialogueManager.dialogue_finished 
+					
+					# 대사가 완전히 화면에서 사라진 직후 상점 열기
+					ShopUI.open_shop() 
 				else:
 					print("에러: 마지막 대사 파일조차 찾을 수 없습니다.")
 			else:
-				# 0번 파일(첫 대사)조차 아예 만들어두지 않았을 때 튕김 방지
 				print("에러: 상인의 첫 번째 대사 파일이 없습니다.")
 
 func _on_body_entered(body):
 	if body.name == "Player":
 		player_in_range = true
-		HUD.interact_label.visible = true
+		GameManager.interact_msg_requested.emit("shop")
 
 func _on_body_exited(body):
 	if body.name == "Player":
 		player_in_range = false
-		HUD.interact_label.visible = false
+		GameManager.interact_msg_hidden.emit()

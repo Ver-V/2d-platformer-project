@@ -32,6 +32,7 @@ func _ready():
 func _process(_float) -> void:
 	if is_open:
 		update_ui()
+		
 
 func _input(event):
 	if event.is_action_pressed("inventory"):
@@ -47,13 +48,13 @@ func open():
 	action_menu.hide()  # 열 때 팝업 무조건 숨김
 	
 	update_ui()
-	CustomCursor.show_cursor()
+	GameManager.ui_opened()
 	
 func close():
 	visible = false
 	is_open = false
 	action_menu.hide() # 닫을 때 팝업도 같이 닫기
-	CustomCursor.hide_cursor()
+	GameManager.ui_closed()
 
 func update_ui():
 	# --- 정보 갱신 ---

@@ -34,7 +34,7 @@ func show_hud_temporarily():
 	visible = true
 	ui_root.modulate.a = 1.0
 	
-	if fade_tween:
+	if fade_tween and fade_tween.is_valid():
 		fade_tween.kill()
 
 	hide_timer.start()
@@ -80,6 +80,13 @@ func _on_gold_changed(amount: int) -> void:
 	show_hud_temporarily()
 
 func _on_interact_msg(msg: String) -> void:
+	visible = true
+	ui_root.modulate.a = 1.0
+	
+	if fade_tween and fade_tween.is_valid():
+		fade_tween.kill()
+	hide_timer.stop()     # 타이머 정지
+	
 	if msg == "save_mode":
 		if save_panel: save_panel.visible = true
 		if interact_label: interact_label.visible = false
@@ -91,3 +98,5 @@ func _on_interact_msg(msg: String) -> void:
 func _on_interact_hide() -> void:
 	if interact_label: interact_label.visible = false
 	if save_panel: save_panel.visible = false
+	
+	hide_timer.start()

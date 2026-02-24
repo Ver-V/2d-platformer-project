@@ -2,7 +2,7 @@ extends CanvasLayer
 
 @onready var menu_container: Control = $CenterContainer
 @onready var options_ui: CanvasLayer = $OptionsUI
-
+@onready var colorR: ColorRect = $ColorRect
 func _ready():
 	visible = false
 	options_ui.visible = false
@@ -14,6 +14,7 @@ func _ready():
 		options_ui.close_requested.connect(_on_options_closed)
 
 func _on_options_closed():
+	colorR.visible = true
 	options_ui.visible = false
 	menu_container.visible = true
 	
@@ -21,6 +22,7 @@ func _input(event):
 	if event.is_action_pressed("ui_cancel"): # ESC 키
 		if options_ui.visible:
 			options_ui.visible = false
+			colorR.visible = true
 			menu_container.visible = true
 			return
 		
@@ -33,17 +35,19 @@ func toggle_menu():
 	visible = GameManager.is_menu_open
 
 	if visible:
+		colorR.visible = true
 		menu_container.visible = true
 		options_ui.visible = false
-		CustomCursor.show_cursor()
+		GameManager.ui_opened()
 	else:
-		CustomCursor.hide_cursor()
+		GameManager.ui_closed()
 
 
 func _on_btn_resume_pressed():
 	toggle_menu()
 
 func _on_btn_options_pressed():
+	colorR.visible = false
 	menu_container.visible = false
 	options_ui.visible = true
 
@@ -53,4 +57,4 @@ func _on_btn_load_pressed():
 			get_tree().change_scene_to_file(GameManager.last_scene_path)
 
 func _on_btn_exit_pressed():
-	get_tree().change_scene_to_file("res://Scenes/Player/MainMenu.tscn")
+	get_tree().change_scene_to_file("res://Scenes/System/MainMenu.tscn")

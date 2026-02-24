@@ -22,7 +22,7 @@ HUD="*res://Scenes/System/HUD.tscn"
 SceneTransition="*res://Scenes/Stage/SceneTransition.tscn"
 CustomCursor="*res://Scenes/System/CustomCursor.tscn"
 DialogueManager="*res://Scenes/System/DialogueUI.tscn"
-ShopUi="*res://Scenes/System/ShopUI.tscn"
+ShopUI="*res://Scenes/System/ShopUI.tscn"
 
 [display]
 
@@ -33,6 +33,15 @@ window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="viewport"
 window/stretch/scale_mode="integer"
+
+[global]
+
+main=false
+
+[gui]
+
+theme/custom="uid://btbbx15aae3w"
+theme/custom_font="uid://btbbx15aae3w"
 
 [input]
 

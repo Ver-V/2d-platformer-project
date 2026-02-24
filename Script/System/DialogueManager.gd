@@ -9,6 +9,8 @@ extends CanvasLayer
 @onready var left_portrait: TextureRect = $PortraitsContainer/LeftPortrait
 @onready var right_portrait: TextureRect = $PortraitsContainer/RightPortrait
 
+signal dialogue_finished
+
 var portrait_path = "res://resources/Portraits/" # 이미지가 저장된 폴더 경로
 const DIM_COLOR = Color(0.5, 0.5, 0.5, 1.0) # 어두워질 색 (회색)
 const BRIGHT_COLOR = Color.WHITE            # 밝은 색 (원래 색)
@@ -131,3 +133,4 @@ func end_dialogue():
 	# 대화 끝나면 일러스트도 숨기기
 	left_portrait.visible = false
 	right_portrait.visible = false
+	dialogue_finished.emit()
