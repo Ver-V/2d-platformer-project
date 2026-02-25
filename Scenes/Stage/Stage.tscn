@@ -347,6 +347,11 @@ position = Vector2(36.000004, 447)
 scale = Vector2(0.8, 0.8)
 item_resource = ExtResource("10_7nmd1")
 
+[node name="Coin2" parent="Item" instance=ExtResource("9_7nmd1")]
+position = Vector2(138, 13)
+is_field_coin = true
+gold_amount = 500
+
 [node name="Entities" type="Node" parent="."]
 
 [node name="Slime2" parent="Entities" instance=ExtResource("2_l8wo6")]
@@ -364,6 +369,7 @@ slime_move_speed = 60.0
 [node name="MerchantNPC" parent="." instance=ExtResource("14_jpob3")]
 position = Vector2(136, 22)
 collision_mask = 2
+location_name = null
 
 [connection signal="body_entered" from="MerchantNPC" to="." method="_on_merchant_npc_body_entered"]
 
