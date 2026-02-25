@@ -9,33 +9,33 @@ func _ready():
 	visible = false
 	options_ui.visible = false
 	is_open = false # 초기화
-	
-	if options_ui.has_signal("close_requested"):
-		options_ui.close_requested.connect(_on_options_closed)
+	options_ui.close_requested.connect(_on_options_closed)
 		
 func _on_options_closed():
 	colorR.visible = true
 	options_ui.visible = false
 	menu_container.visible = true
+	var resume_btn = menu_container.get_node_or_null("$CenterContainer/VBoxContainer/BtnResume")
+	if resume_btn:
+		resume_btn.grab_focus()
 	
 func _input(event):
 	if event.is_action_pressed("ui_cancel"): # ESC 키
 		
 		# 1. 옵션 창이 열려있다면 옵션 창만 닫기
 		if options_ui.visible:
-			options_ui.visible = false
-			colorR.visible = true
-			menu_container.visible = true
-			get_viewport().set_input_as_handled() # [핵심] 입력 삼키기
+			# ⭐ [핵심 3] 여기서 직접 코드를 쓰지 말고 위의 함수를 불러서 포커스까지 한방에 처리!
+			_on_options_closed() 
+			get_viewport().set_input_as_handled() # 입력 삼키기
 			return
 			
 		# 2. 일시정지 창이 닫혀있는데, 다른 UI(인벤토리 등)가 열려있다면?
 		if not is_open and GameManager.active_ui_count > 0:
-			return # 아무것도 하지 않고 무시함 (인벤토리만 닫히게 둠)
+			return # 아무것도 하지 않고 무시함
 			
 		# 3. 그 외의 상황 (정상적으로 일시정지 창 켜기/끄기)
 		toggle_menu()
-		get_viewport().set_input_as_handled() # [핵심] 입력 삼키기
+		get_viewport().set_input_as_handled() # 입력 삼키기
 
 func toggle_menu():
 	# GameManager 변수를 직접 건드리지 않고, 자기 자신의 변수만 뒤집음!

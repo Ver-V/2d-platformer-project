@@ -147,6 +147,22 @@ offset_top = 1.0
 offset_right = 41.0
 offset_bottom = 41.0
 
+[node name="MinimapContainer" type="SubViewportContainer" parent="Control"]
+visible = false
+custom_minimum_size = Vector2(240, 180)
+layout_mode = 0
+offset_right = 512.0
+offset_bottom = 512.0
+
+[node name="MinimapViewport" type="SubViewport" parent="Control/MinimapContainer"]
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(240, 180)
+render_target_update_mode = 0
+
+[node name="MinimapCamera" type="Camera2D" parent="Control/MinimapContainer/MinimapViewport"]
+zoom = Vector2(0.2, 0.2)
+
 [node name="HideTimer" type="Timer" parent="."]
 process_mode = 3
 wait_time = 2.0

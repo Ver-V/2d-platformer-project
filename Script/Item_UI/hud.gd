@@ -9,17 +9,27 @@ extends CanvasLayer
 @onready var gold_label: Label = $Control/GoldLabel
 @onready var interact_label: Label = $Control/InteractLabel
 @onready var save_panel: HBoxContainer = $Control/SavePanel
+@onready var minimap_container = $Control/MinimapContainer
+@onready var minimap_viewport = $Control/MinimapContainer/MinimapViewport
+@onready var minimap_camera = $Control/MinimapContainer/MinimapViewport/MinimapCamera
 
 var fade_tween: Tween
 # 개별 하트 씬 (Control 노드로 된 파일)
 var heart_scene: PackedScene = preload("res://Scenes/System/HeartIcon.tscn")
 const HP_PER_HEART = 20
 
+func _input(event):
+	if event.is_action_pressed("toggle_map"):
+		minimap_container.visible = !visible
+		
 func _ready() -> void:
 	GameManager.hp_changed.connect(_on_hp_changed)
 	GameManager.gold_changed.connect(_on_gold_changed)
 	GameManager.interact_msg_requested.connect(_on_interact_msg)
 	GameManager.interact_msg_hidden.connect(_on_interact_hide)
+	
+	minimap_viewport.world_2d = get_viewport().world_2d
+	minimap_container.visible = false
 	
 	ui_root.modulate.a = 0.0
 	visible = false
@@ -55,9 +65,15 @@ func _setup_ui() -> void:
 func _on_hp_changed(current: int, max_hp: int) -> void:
 	draw_hearts(current, max_hp)
 
+func _process(_delta):
+	var player = get_tree().get_first_node_in_group("player")
+	
+	if player != null:
+		minimap_camera.global_position = player.global_position
+
 func draw_hearts(current_hp: int, max_hp: int) -> void:
 	var total_hearts = ceili(float(max_hp) / HP_PER_HEART)
-	
+
 	# 그릇 비우고 다시 채우기
 	if heart_container.get_child_count() != total_hearts:
 		for child in heart_container.get_children():

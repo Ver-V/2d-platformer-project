@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" uid="uid://cx15wxiifhrpp" path="res://Script/Item_UI/options_ui.gd" id="1_4r63o"]
 
-[node name="CanvasLayer" type="CanvasLayer"]
+[node name="OptionsUI" type="CanvasLayer"]
+script = ExtResource("1_4r63o")
 
 [node name="OptionsUI" type="Control" parent="."]
 layout_mode = 3
@@ -12,7 +13,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(2, 2)
-script = ExtResource("1_4r63o")
 
 [node name="Panel" type="Panel" parent="OptionsUI"]
 layout_mode = 0
@@ -165,4 +165,4 @@ offset_right = 632.0
 offset_bottom = 31.0
 text = "X"
 
-[connection signal="pressed" from="OptionsUI/ExitButton" to="OptionsUI" method="_on_exit_button_pressed"]
+[connection signal="pressed" from="OptionsUI/ExitButton" to="." method="_on_exit_button_pressed"]

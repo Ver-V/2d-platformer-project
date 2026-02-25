@@ -1,20 +1,20 @@
-extends Control
+extends CanvasLayer
 
-@onready var btn_mode: OptionButton = $Panel/TabContainer/Graphics/HBox_Mode/BtnMode
-@onready var btn_res: OptionButton = $Panel/TabContainer/Graphics/HBox_Res/BtnRes
-@onready var btn_fps: OptionButton = $Panel/TabContainer/Graphics/HBox_FPS/BtnFPS
-@onready var tab_container: TabContainer = $Panel/TabContainer
+@onready var btn_mode: OptionButton = $OptionsUI/Panel/TabContainer/Graphics/HBox_Mode/BtnMode
+@onready var btn_res: OptionButton = $OptionsUI/Panel/TabContainer/Graphics/HBox_Res/BtnRes
+@onready var btn_fps: OptionButton = $OptionsUI/Panel/TabContainer/Graphics/HBox_FPS/BtnFPS
+@onready var tab_container: TabContainer = $OptionsUI/Panel/TabContainer
 signal close_requested
 
-@onready var slider_master: HSlider = $Panel/TabContainer/Audio/GridContainer/SliderMaster
-@onready var slider_bgm: HSlider = $Panel/TabContainer/Audio/GridContainer/SliderBGM
-@onready var slider_sfx: HSlider = $Panel/TabContainer/Audio/GridContainer/SliderSFX
+@onready var slider_master: HSlider = $OptionsUI/Panel/TabContainer/Audio/GridContainer/SliderMaster
+@onready var slider_bgm: HSlider = $OptionsUI/Panel/TabContainer/Audio/GridContainer/SliderBGM
+@onready var slider_sfx: HSlider = $OptionsUI/Panel/TabContainer/Audio/GridContainer/SliderSFX
 
-@onready var slider_sens: HSlider = $"Panel/TabContainer/Control and game/GridContainer/SliderSens"
-@onready var lbl_sens_value: Label = $"Panel/TabContainer/Control and game/GridContainer/Mouse Sensitivity"
-@onready var btn_gore: CheckButton = $"Panel/TabContainer/Control and game/BtnGore"
-@onready var slider_shake: HSlider = $"Panel/TabContainer/Control and game/GridContainer/SliderShake"
-@onready var lbl_shake_value: Label = $"Panel/TabContainer/Control and game/GridContainer/ShakeValue"
+@onready var slider_sens: HSlider = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/SliderSens"
+@onready var lbl_sens_value: Label = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/Mouse Sensitivity"
+@onready var btn_gore: CheckButton = $"OptionsUI/Panel/TabContainer/Control and game/BtnGore"
+@onready var slider_shake: HSlider = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/SliderShake"
+@onready var lbl_shake_value: Label = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/ShakeValue"
 
 
 var bus_index_master: int
@@ -136,7 +136,6 @@ func _center_window():
 
 # (옵션) 닫기 버튼용
 func _on_close_button_pressed():
-	visible = false
 	close_requested.emit()
 
 func _on_visibility_changed():
@@ -146,7 +145,6 @@ func _on_visibility_changed():
 		tab_container.current_tab = 0
 
 func _on_exit_button_pressed() -> void:
-	visible = false
 	close_requested.emit()
 
 # --- [기능 1: 마우스 감도] ---
