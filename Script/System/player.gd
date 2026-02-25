@@ -217,6 +217,9 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	return took_damage
 	
 func _physics_process(delta: float) -> void:
+	if get_tree().paused:
+		return
+		
 	if GameManager.is_menu_open:
 		velocity = Vector2.ZERO
 		if not is_on_floor():

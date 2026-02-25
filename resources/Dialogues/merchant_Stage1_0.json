@@ -2,22 +2,50 @@
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_idle",
-		"right_image": "HeroBunny_idle",
-		"name": "용사",
-		"text": "아저씨, 이 검은 얼마예요?"
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "Wait, what are you doing here?"
 	},
 	{
 		"speaker": "right",
 		"left_image": "HeroBunny_idle",
-		"right_image": "HeroBunny_idle",
-		"name": "상인",
-		"text": "보는 눈이 있구만! 단돈 500골드라네."
+		"right_image": "",
+		"name": "Little Bunny",
+		"text": "I just wanted to come outside world with you."
 	},
 	{
 		"speaker": "left",
 		"left_image": "HeroBunny_idle",
-		"right_image": "HeroBunny_idle",
-		"name": "용사",
-		"text": "너무 비싸잖아요! 좀 깎아주세요."
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "But… it could be dangerous outside world. Are you sure it’s okay?"
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Little Bunny",
+		"text": "But you came out because you wanted to see the outside world too."
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "Yeah… you’ve got a point."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Little Bunny",
+		"text": "Yeah, sister. Since you’re already here, you might as well take a look at the stuff. I brought some things from Mom and Dad’s storage."
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "(Sigh)... Alright."
 	}
 ]

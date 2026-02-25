@@ -33,6 +33,17 @@ var has_checkpoint: bool = false
 var last_checkpoint_pos: Vector2
 var last_scene_path: String = ""
 
+var merchant_stocks: Dictionary = {
+	"Stage1": [
+		{"id": "health_potion", "stock": 3},
+		# {"id": "iron_sword", "stock": 1}
+	],
+	"Stage2": [
+		{"id": "health_potion", "stock": 5},
+		# {"id": "bomb", "stock": 2}
+	]
+}
+
 func add_defeated_mob(id: String) -> void:
 	if not defeated_mobs.has(id):
 		defeated_mobs.append(id)
@@ -142,7 +153,8 @@ func save_game() -> void:
 		"pos_x": last_checkpoint_pos.x,
 		"pos_y": last_checkpoint_pos.y,
 		"inventory": inventory_save_data,
-		"collected_items": collected_items
+		"collected_items": collected_items,
+		"merchant_stocks": merchant_stocks
 	}
 	
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -178,6 +190,7 @@ func load_game() -> bool:
 		has_checkpoint = data.get("has_checkpoint", false)
 		last_scene_path = data.get("scene_path", "")
 		collected_items = data.get("collected_items", [])
+		merchant_stocks = data.get("merchant_stocks",{})
 		
 		# 인벤토리 불러오기
 		var loaded_inv_data = data.get("inventory", [])

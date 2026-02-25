@@ -136,8 +136,8 @@ func _center_window():
 
 # (옵션) 닫기 버튼용
 func _on_close_button_pressed():
+	visible = false
 	close_requested.emit()
-	# 혹은 설정을 파일에 저장하는 로직 호출 (SaveSettings)
 
 func _on_visibility_changed():
 	# 만약 내가 지금 '보이는 상태(true)'가 되었다면?
