@@ -9,6 +9,7 @@ script = ExtResource("2_40ktx")
 shoot_interval = 2.0
 shoot_range = 250.0
 shoot_offset = Vector2(0, -10)
+gravity = 980.0
 
 [node name="ShooterComponent" parent="." index="0" instance=ExtResource("3_n26m6")]
 

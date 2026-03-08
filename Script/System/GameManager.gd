@@ -12,7 +12,12 @@ var defeated_mobs: Array = []
 var pending_status: String = ""
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 var collected_items: Array = []
+var visited_rooms: Array[Vector2i] = [] # [추가됨] 미니맵 방문 기록 저장용
 var active_ui_count: int = 0
+var flask_max_charges: int = 1
+var flask_current_charges: int = 1
+var flask_Hamount: int = 30
+signal flask_changed 
 
 var is_menu_open: bool = false
 var mouse_sensitivity: float = 1.0
@@ -43,6 +48,24 @@ var merchant_stocks: Dictionary = {
 		# {"id": "bomb", "stock": 2}
 	]
 }
+
+func use_flask() -> bool:
+	var has_flask = false
+	for item in inventory:
+		if item != null and item.id == "health_flask":
+			has_flask = true
+			break
+	if not has_flask: return false
+	
+	if flask_current_charges > 0 and player_current_hp < player_max_hp:
+		flask_current_charges -= 1
+		var new_hp = min(player_current_hp + flask_Hamount, player_max_hp)
+		update_hp(new_hp)
+		
+		flask_changed.emit()
+		return true
+	else :
+		return false
 
 func add_defeated_mob(id: String) -> void:
 	if not defeated_mobs.has(id):
@@ -113,7 +136,9 @@ func respawn_player() -> void:
 		call_deferred("_change_scene_safe", last_scene_path)
 	else:
 		print("⚠️ 저장 데이터 없음/실패 -> 현재 씬 재시작")
+		player_current_hp = player_max_hp
 		call_deferred("_reload_scene_safe")
+		
 
 func ui_opened() -> void:
 	active_ui_count += 1
@@ -128,6 +153,10 @@ func ui_closed() -> void:
 		CustomCursor.hide_cursor()
 	
 func save_game() -> void:
+	# 플레이어 체력 0이하면 저장 안하기. (꼼수로 보스, 스테이지 깨기 방지)
+	if player_current_hp <= 0:
+		return
+	
 	var inventory_save_data = []
 	for item in inventory:
 		if item == null:
@@ -154,7 +183,10 @@ func save_game() -> void:
 		"pos_y": last_checkpoint_pos.y,
 		"inventory": inventory_save_data,
 		"collected_items": collected_items,
-		"merchant_stocks": merchant_stocks
+		"merchant_stocks": merchant_stocks,
+		"visited_rooms": visited_rooms.map(func(r): return {"x": r.x, "y": r.y}),
+		"flask_max": flask_max_charges,
+		"flask_current": flask_current_charges
 	}
 	
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -180,6 +212,7 @@ func load_game() -> bool:
 	var data = JSON.parse_string(json_string)
 	
 	if data:
+		var raw_rooms = data.get("visited_rooms", [])
 		gold = data.get("gold", 0)
 		player_current_hp = data.get("current_hp", 100)
 		player_max_hp = data.get("max_hp", 100)
@@ -191,13 +224,23 @@ func load_game() -> bool:
 		last_scene_path = data.get("scene_path", "")
 		collected_items = data.get("collected_items", [])
 		merchant_stocks = data.get("merchant_stocks",{})
+		flask_max_charges = data.get("flask_max", 1)
+		flask_current_charges = data.get("flask_current", 1)
+		visited_rooms.clear()
+		for r in raw_rooms:
+			if typeof(r) == TYPE_DICTIONARY:
+				visited_rooms.append(Vector2i(int(r.get("x", 0)), int(r.get("y", 0))))
+			elif typeof(r) == TYPE_STRING:
+				var parts = r.replace("(", "").replace(")", "").split(",")
+				if parts.size() >= 2: visited_rooms.append(Vector2i(int(parts[0]), int(parts[1])))
 		
 		# 인벤토리 불러오기
 		var loaded_inv_data = data.get("inventory", [])
 		
 		inventory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 		
-		for i in range(loaded_inv_data.size()):
+		# [수정됨] 세이브 데이터 배열 크기가 인벤토리 크기보다 클 경우를 대비하여 방어 코드 추가
+		for i in range(min(loaded_inv_data.size(), inventory.size())):
 			
 			var slot_data = loaded_inv_data[i]
 		
@@ -248,6 +291,8 @@ func reset_data() -> void:
 	defeated_bosses = {}
 	defeated_mobs = []
 	inventory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
+	active_ui_count = 0
+	is_menu_open = false
 
 # --- [함수 수정] 플레이어 체력 갱신 ---
 # Player 스크립트에서 직접 변수를 바꾸는 대신, 이 함수를 쓰도록 할 겁니다.

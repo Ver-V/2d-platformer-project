@@ -1,6 +1,7 @@
 # HUD.gd
 extends CanvasLayer
 
+@onready var Restart_Label: Label = $Control/RestartLabel
 # 방금 만든 '그릇' (HBoxContainer)
 @onready var heart_container: HBoxContainer = $Control/HeartContainer
 @onready var hide_timer: Timer = $HideTimer
@@ -10,8 +11,6 @@ extends CanvasLayer
 @onready var interact_label: Label = $Control/InteractLabel
 @onready var save_panel: HBoxContainer = $Control/SavePanel
 @onready var minimap_container = $Control/MinimapContainer
-@onready var minimap_viewport = $Control/MinimapContainer/MinimapViewport
-@onready var minimap_camera = $Control/MinimapContainer/MinimapViewport/MinimapCamera
 
 var fade_tween: Tween
 # 개별 하트 씬 (Control 노드로 된 파일)
@@ -20,7 +19,12 @@ const HP_PER_HEART = 20
 
 func _input(event):
 	if event.is_action_pressed("toggle_map"):
-		minimap_container.visible = !visible
+		minimap_container.visible = !minimap_container.visible
+		if minimap_container.visible:
+			show_hud_temporarily()
+			hide_timer.stop()
+		else:
+			hide_timer.start()
 		
 func _ready() -> void:
 	GameManager.hp_changed.connect(_on_hp_changed)
@@ -28,7 +32,9 @@ func _ready() -> void:
 	GameManager.interact_msg_requested.connect(_on_interact_msg)
 	GameManager.interact_msg_hidden.connect(_on_interact_hide)
 	
-	minimap_viewport.world_2d = get_viewport().world_2d
+	if Restart_Label:
+		Restart_Label.hide()
+		
 	minimap_container.visible = false
 	
 	ui_root.modulate.a = 0.0
@@ -40,16 +46,33 @@ func _ready() -> void:
 	
 	visible = false
 
+func show_death_screen() -> void:
+	if Restart_Label:
+		Restart_Label.show()
+		
+	visible = true
+	ui_root.modulate.a = 1.0
+	hide_timer.stop()
+	
+func hide_death_screen() -> void:
+	if Restart_Label:
+		Restart_Label.hide()
+		
+		
 func show_hud_temporarily():
 	visible = true
 	ui_root.modulate.a = 1.0
 	
 	if fade_tween and fade_tween.is_valid():
 		fade_tween.kill()
-
-	hide_timer.start()
+	
+	if not minimap_container.visible:
+		hide_timer.start()
 
 func _on_hide_timer_timeout():
+	if minimap_container.visible:
+		return
+		
 	fade_tween = create_tween()
 
 	fade_tween.tween_property(ui_root, "modulate:a", 0.0, 1.5)
@@ -64,12 +87,6 @@ func _setup_ui() -> void:
 	
 func _on_hp_changed(current: int, max_hp: int) -> void:
 	draw_hearts(current, max_hp)
-
-func _process(_delta):
-	var player = get_tree().get_first_node_in_group("player")
-	
-	if player != null:
-		minimap_camera.global_position = player.global_position
 
 func draw_hearts(current_hp: int, max_hp: int) -> void:
 	var total_hearts = ceili(float(max_hp) / HP_PER_HEART)

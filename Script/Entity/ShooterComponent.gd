@@ -42,7 +42,7 @@ func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> void
 			p.set_parryable_mode(false)
 			
 	# 4. 씬에 추가
-	get_tree().current_scene.add_child(p)
+	get_tree().current_scene.call_deferred("add_child", p)
 	
 func reset_count() -> void:
 	_shot_count = 0

@@ -1,4 +1,7 @@
 extends Node2D
+class_name BaseStage
+
+var is_waiting_respawn: bool = false
 
 @export var player_scene: PackedScene
 @export var room_size: Vector2 = Vector2(640.0, 360.0)
@@ -48,7 +51,7 @@ func _process(delta: float) -> void:
 	# 흔들림이 남아있을 때만 작동
 	if current_shake_strength > 0:
 		# 1. 강도를 서서히 0으로 줄임 (Lerp)
-		current_shake_strength = lerp(current_shake_strength, 0.0, shake_decay_rate * delta)
+		current_shake_strength = move_toward(current_shake_strength, 0.0, shake_decay_rate * delta)
 		
 		# 2. 아주 작은 값이 되면 0으로 확정 (불필요한 연산 방지)
 		if current_shake_strength < 0.1:
@@ -100,8 +103,14 @@ func spawn_player() -> void:
 		
 	player = p
 
+func _input(event:InputEvent) -> void:
+	if is_waiting_respawn and event.is_action_pressed("rest"):
+		is_waiting_respawn = false
+		HUD.hide_death_screen()
+		restart_stage()
+		
 func _on_player_died() -> void:
-	restart_stage()
+	is_waiting_respawn = true
 
 func restart_stage() -> void:
 	GameManager.respawn_player()
@@ -121,17 +130,18 @@ func _cleanup_already_dead_enemies() -> void:
 			continue
 			
 		# 2. 이번 판에 잡은 잡몹인지 확인 (killed_ids)
-		if killed_ids.has(id):
+		if killed_ids.has(id) or GameManager.defeated_mobs.has(id):
 			e.queue_free()
 
 func _on_enemy_died(e: EnemyBase) -> void:
 	var id = e.get_persist_id()
-	
+
 	# 1. 로컬 장부 기록 (잡몹 리젠 방지용, 껏다 켜면 초기화됨)
 	killed_ids[id] = true
-	
-	# 2. [추가] 만약 이 녀석이 '보스'라면 GameManager에 영구 저장!
-	# (보스 씬 노드 옆 'Node' 탭 -> Groups에 "bosses"를 추가하세요)
+	if not e.is_in_group("bosses"):
+		GameManager.add_defeated_mob(id)
+
+	# 2. [추가] 만약 이 녀석이 '보스'라면 GameManager에 영구 저장!	# (보스 씬 노드 옆 'Node' 탭 -> Groups에 "bosses"를 추가하세요)
 	if e.is_in_group("bosses"):
 		GameManager.defeated_bosses[id] = true
 		GameManager.save_game()

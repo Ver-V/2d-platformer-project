@@ -210,6 +210,8 @@ func buy_item():
 			for child in item_list.get_children():
 				child.queue_free()
 			_create_item_slots()
+			await get_tree().process_frame
+			
 			_update_selection_ui()
 			
 		else:

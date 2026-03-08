@@ -36,6 +36,7 @@ func _process(_float) -> void:
 
 func _input(event):
 	if event.is_action_pressed("inventory"):
+		get_viewport().set_input_as_handled()
 		if is_open:
 			close()
 		else:
@@ -102,15 +103,48 @@ func _on_use_pressed():
 	if selected_index == -1: return
 	
 	var item = GameManager.inventory[selected_index]
+	
+	# [추가됨] 빈 슬롯 예외 처리 (크래시 방지)
+	if item == null:
+		action_menu.hide()
+		selected_index = -1
+		return
+		
 	var player = get_tree().get_first_node_in_group("player")
 	
-	# 기존에 _on_slot_clicked에 있던 로직을 이쪽으로 이사시켰습니다.
-	if player and item.has_method("use"):
-		item.use(player)
-		GameManager.inventory[selected_index] = null # 사용 후 삭제
-		update_ui()
-	
-	# 사용 완료 후 팝업 닫기 및 선택 초기화
+	# [1] 플라스크(특수 소모품) 예외 처리
+	if item.id == "health_flask":
+		if GameManager.has_method("use_flask"):
+			var success = GameManager.use_flask()
+			if success:
+				update_ui()
+		else:
+			print("GameManager에 use_flask 함수가 구현되지 않았습니다.")
+		
+		# 플라스크는 사용 후 절대 삭제하지 않음
+		action_menu.hide()
+		selected_index = -1
+		return
+
+	# [2] 일반 아이템 타입별 처리
+	match item.type:
+		ItemData.ItemType.CONSUMABLE:
+			# 일반 소모품(포션 등)은 사용 후 삭제
+			item.use(player)
+			GameManager.inventory[selected_index] = null
+			print("%s를 사용하고 소모했습니다." % item.name)
+			
+		ItemData.ItemType.EQUIPMENT:
+			# 장비템은 사용(장착)해도 삭제하지 않음
+			item.use(player)
+			print("%s를 장착/해제했습니다." % item.name)
+			
+		_:
+			# 잡동사니 등은 그냥 use만 실행 (보통 아무 일 없음)
+			item.use(player)
+
+	# 공통 마무리: UI 업데이트 및 메뉴 닫기
+	update_ui()
 	action_menu.hide()
 	selected_index = -1
 

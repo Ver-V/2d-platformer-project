@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=4 uid="uid://dfx7ligqjd22g"]
+[gd_scene load_steps=19 format=4 uid="uid://dfx7ligqjd22g"]
 
 [ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/System/stage.gd" id="1_gusuq"]
 [ext_resource type="PackedScene" uid="uid://bd1fcbofw2ll8" path="res://Scenes/Entitites/slime_1.tscn" id="2_l8wo6"]
@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="9_7nmd1"]
 [ext_resource type="PackedScene" uid="uid://bs2f7s8xuy6e0" path="res://Scenes/Item/field_item.tscn" id="9_jptyp"]
 [ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="10_7nmd1"]
+[ext_resource type="PackedScene" uid="uid://jdh4gq3rwxsg" path="res://Scenes/Entitites/esnake.tscn" id="14_hwyny"]
 [ext_resource type="PackedScene" uid="uid://cepa2x7wfxccs" path="res://Scenes/Entitites/MerchantNPC.tscn" id="14_jpob3"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qohnl"]
@@ -354,17 +355,14 @@ gold_amount = 500
 
 [node name="Entities" type="Node" parent="."]
 
-[node name="Slime2" parent="Entities" instance=ExtResource("2_l8wo6")]
-position = Vector2(122, 132)
-slime_move_speed = 60.0
-
-[node name="Slime3" parent="Entities" instance=ExtResource("2_l8wo6")]
-position = Vector2(361, 163)
-slime_move_speed = 60.0
-
 [node name="Slime1" parent="Entities" instance=ExtResource("2_l8wo6")]
 position = Vector2(379, 68)
 slime_move_speed = 60.0
+
+[node name="Esnake" parent="Entities" instance=ExtResource("14_hwyny")]
+position = Vector2(270, 72)
+snake_max_hp = 20
+drop_gold_amount = 20
 
 [node name="MerchantNPC" parent="." instance=ExtResource("14_jpob3")]
 position = Vector2(136, 22)

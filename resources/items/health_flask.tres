@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://csvo1tat21ts4"]
+
+[ext_resource type="Texture2D" uid="uid://citog4m28u5un" path="res://Assets/sprites/#2 - Transparent & Drop Shadow.png" id="1_onvmg"]
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="2_vbwi5"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8a5l7"]
+atlas = ExtResource("1_onvmg")
+region = Rect2(384, 288, 32, 32)
+
+[resource]
+script = ExtResource("2_vbwi5")
+id = "health_flask"
+name = "Red flask of the Flower Spring"
+icon = SubResource("AtlasTexture_8a5l7")
+description = "A flask containing a mysterious, glowing red liquid found at the Spring of Flowers. According to ancient myths, it is said to refill itself whenever the bearer takes a rest.
+this red liquid mends your wounds with every drop."
+type = 1
+heal_amount = 30
