@@ -36,7 +36,7 @@ func _process(delta):
 	
 	# [핵심] 끊기지 않는 무한 둥둥 효과
 	if has_node("Sprite2D"):
-		time_passed += delta
+		time_passed = wrapf(time_passed + delta, 0.0, PI * 2.0)
 		$Sprite2D.position.y = sin(time_passed * float_speed) * float_range
 
 func _update_texture():
@@ -52,13 +52,16 @@ func _on_body_entered(body: Node):
 		
 		# [분기 1] 돈일 경우
 		if gold_amount > 0:
+			GameManager.update_gold(gold_amount)
 			collected_success = true
 			
 		# [분기 2] 아이템일 경우
 		elif item_resource != null:
 			if GameManager.add_item(item_resource):
 				collected_success = true
-		
+			else:
+				if body.has_method("show_status"):
+					body.show_status("full")
 		# 획득 성공 시 처리
 		if collected_success:
 			GameManager.add_collected_item(id)

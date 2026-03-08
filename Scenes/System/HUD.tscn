@@ -1,10 +1,11 @@
-[gd_scene load_steps=15 format=3 uid="uid://b1xksg4lj5diy"]
+[gd_scene load_steps=17 format=3 uid="uid://b1xksg4lj5diy"]
 
 [ext_resource type="Script" uid="uid://cobwf8owprqua" path="res://Script/Item_UI/hud.gd" id="1_2s5p1"]
 [ext_resource type="FontFile" uid="uid://cxqe7fhd3sbpr" path="res://Assets/fonts/PixelOperator8-Bold.ttf" id="2_vqpqm"]
 [ext_resource type="Texture2D" uid="uid://bmfhkce3wvq1k" path="res://Assets/sprites/#2 - Transparent Icons & Drop Shadow.png" id="3_765yc"]
 [ext_resource type="FontFile" uid="uid://dexfxct02yiks" path="res://Assets/fonts/PixelOperator8.ttf" id="4_1emjh"]
 [ext_resource type="Texture2D" uid="uid://6p28cbcbp8hj" path="res://Assets/sprites/Keyboard Letters and Symbols.png" id="5_m7g0g"]
+[ext_resource type="Script" uid="uid://bltog7x3cptt0" path="res://Script/System/minimap_ui.gd" id="6_cpq7e"]
 
 [sub_resource type="SystemFont" id="SystemFont_l8u43"]
 
@@ -33,6 +34,10 @@ region = Rect2(64, 32, 16, 16)
 font = ExtResource("4_1emjh")
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1emjh"]
+atlas = ExtResource("5_m7g0g")
+region = Rect2(16, 64, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cio0w"]
 atlas = ExtResource("5_m7g0g")
 region = Rect2(16, 64, 16, 16)
 
@@ -147,21 +152,38 @@ offset_top = 1.0
 offset_right = 41.0
 offset_bottom = 41.0
 
-[node name="MinimapContainer" type="SubViewportContainer" parent="Control"]
+[node name="RestartLabel" type="Label" parent="Control"]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -137.5
+offset_top = -31.5
+offset_right = 144.5
+offset_bottom = -15.5
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 16
+text = "'Press        to load game'"
+
+[node name="TextureRect" type="TextureRect" parent="Control/RestartLabel"]
+layout_mode = 0
+offset_left = 88.5
+offset_top = -18.5
+offset_right = 138.0
+offset_bottom = 27.5
+texture = SubResource("AtlasTexture_cio0w")
+
+[node name="MinimapContainer" type="Control" parent="Control"]
 visible = false
 custom_minimum_size = Vector2(240, 180)
-layout_mode = 0
+anchors_preset = 0
 offset_right = 512.0
 offset_bottom = 512.0
-
-[node name="MinimapViewport" type="SubViewport" parent="Control/MinimapContainer"]
-transparent_bg = true
-handle_input_locally = false
-size = Vector2i(240, 180)
-render_target_update_mode = 0
-
-[node name="MinimapCamera" type="Camera2D" parent="Control/MinimapContainer/MinimapViewport"]
-zoom = Vector2(0.2, 0.2)
+script = ExtResource("6_cpq7e")
 
 [node name="HideTimer" type="Timer" parent="."]
 process_mode = 3

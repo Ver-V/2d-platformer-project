@@ -1,0 +1,160 @@
+[gd_scene load_steps=22 format=3 uid="uid://jdh4gq3rwxsg"]
+
+[ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_txgma"]
+[ext_resource type="Texture2D" uid="uid://cxp0dtk8qcmic" path="res://Scenes/Entitites/snake_02.png" id="2_p70un"]
+[ext_resource type="Script" uid="uid://c1exm1728gpq6" path="res://Script/Entity/esnake.gd" id="3_esnake"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pyjl4"]
+atlas = ExtResource("2_p70un")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_onb4o"]
+atlas = ExtResource("2_p70un")
+region = Rect2(80, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4crgt"]
+atlas = ExtResource("2_p70un")
+region = Rect2(96, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wbudx"]
+atlas = ExtResource("2_p70un")
+region = Rect2(112, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shhcr"]
+atlas = ExtResource("2_p70un")
+region = Rect2(128, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_twsw4"]
+atlas = ExtResource("2_p70un")
+region = Rect2(144, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2o8tm"]
+atlas = ExtResource("2_p70un")
+region = Rect2(160, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xpt44"]
+atlas = ExtResource("2_p70un")
+region = Rect2(176, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8nuqh"]
+atlas = ExtResource("2_p70un")
+region = Rect2(192, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_etq5o"]
+atlas = ExtResource("2_p70un")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1uh7q"]
+atlas = ExtResource("2_p70un")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b7ugd"]
+atlas = ExtResource("2_p70un")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_80k5p"]
+atlas = ExtResource("2_p70un")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_hculo"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pyjl4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_onb4o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4crgt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wbudx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shhcr")
+}],
+"loop": true,
+"name": &"attack",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_twsw4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2o8tm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xpt44")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8nuqh")
+}],
+"loop": true,
+"name": &"died",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_etq5o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1uh7q")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b7ugd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_80k5p")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p70un"]
+size = Vector2(12, 13)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pyjl4"]
+size = Vector2(12, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_onb4o"]
+size = Vector2(12, 12)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 22.0
+
+[node name="Esnake" instance=ExtResource("1_txgma")]
+script = ExtResource("3_esnake")
+gravity = 980.0
+max_fall_speed = 280.0
+snake_max_hp = 45
+snake_contact_damage = 15
+snake_move_speed = 40.0
+snake_knockback_res = 0.0
+turn_on_wall = true
+turn_on_ledge = true
+floor_ray_x = 14.0
+floor_ray_y = 24.0
+attack_distance = 35.0
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+scale = Vector2(1.3, 1.3)
+sprite_frames = SubResource("SpriteFrames_hculo")
+animation = &"attack"
+
+[node name="CollisionShape2D" parent="." index="1"]
+position = Vector2(1, 3.5)
+shape = SubResource("RectangleShape2D_p70un")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(1, 4)
+shape = SubResource("RectangleShape2D_pyjl4")
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(1, 4)
+shape = SubResource("RectangleShape2D_onb4o")
+
+[node name="CollisionShape2D" parent="DetectArea" index="0"]
+shape = SubResource("CircleShape2D_detect")

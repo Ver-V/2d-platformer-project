@@ -18,6 +18,18 @@ class_name Player
 @export var fall_gravity_mult: float = 1.0
 @export var max_fall_speed: float = 280.0
 
+@export_group("Advanced Movement")
+@export var acceleration: float = 1400.0   # 바닥 가속도 (높을수록 쫀쫀함)
+@export var friction: float = 2000.0       # 바닥 마찰력 (떼면 미끄러지듯 멈춤)
+
+@export_group("Jump Forgiveness")
+@export var coyote_time: float = 0.15     # 절벽에서 떨어져도 점프 가능한 시간
+@export var jump_buffer_time: float = 0.1 # 바닥에 닿기 전 미리 점프 입력받는 시간
+
+# 내부 타이머
+var _coyote_timer: float = 0.0
+var _jump_buffer_timer: float = 0.0
+
 @export_group("Combat")
 @export var invuln_time: float = 0.8
 @export var blink_interval: float = 0.05
@@ -28,6 +40,7 @@ class_name Player
 @export var player_parry_damage_multifac: float = 1.5
 var _cooldown_left: float = 0.0
 var is_parry_success: bool = false
+var status_tween: Tween # [추가됨] 팝업 애니메이션 겹침 방지용
 
 signal died
 
@@ -120,6 +133,10 @@ func get_blink_node() -> CanvasItem: return sprite
 func show_popup(text: String, color: Color = Color.YELLOW) -> void:
 	if status_label == null: return
 
+	# [추가됨] 이전 트윈이 실행 중이면 취소하여 겹침 방지
+	if status_tween:
+		status_tween.kill()
+
 	status_label.text = text
 	status_label.modulate = color
 	status_label.visible = true
@@ -127,7 +144,9 @@ func show_popup(text: String, color: Color = Color.YELLOW) -> void:
 	status_label.position.y = -45.0 
 	status_label.modulate.a = 1.0 
 
-	var tween = create_tween()
+	status_tween = create_tween()
+	var tween = status_tween
+
 	tween.set_parallel(true)
 
 	tween.tween_property(status_label, "position:y", -75.0, 1.0).set_trans(Tween.TRANS_SINE)
@@ -143,6 +162,8 @@ func _on_death() -> void:
 	reset_combat_state()
 	set_process_input(false)
 	sprite.play("died")
+	HUD.show_death_screen()
+	
 	await get_tree().create_timer(4.0).timeout
 	
 	set_physics_process(false)
@@ -242,7 +263,14 @@ func _physics_process(delta: float) -> void:
 	if _cooldown_left > 0.0:
 		_cooldown_left -= delta
 	
-	# 1. 중력
+	# [조작감 개선] 1. 타이머 감소
+	_coyote_timer -= delta
+	_jump_buffer_timer -= delta
+	
+	if is_on_floor():
+		_coyote_timer = coyote_time
+
+	# 2. 중력
 	var g := get_gravity()
 	if not is_on_floor():
 		var mult := 1.0
@@ -253,27 +281,25 @@ func _physics_process(delta: float) -> void:
 		if velocity.y > max_fall_speed:
 			velocity.y = max_fall_speed
 
-	# 2. 이동 입력값 먼저 계산 (중요!)
+	# 3. 이동 입력값 계산
 	var dir_input := Input.get_axis("left", "right")
 
-	# 3. [핵심] 공격 캔슬 로직 (방향 불일치 시 캔슬)
+	# 4. 공격 캔슬 로직
 	if is_attacking:
-		# 현재 바라보는 방향 (1: 오른쪽, -1: 왼쪽)
 		var facing_dir = attack_pivot.scale.x 
-		
-		# 이동 입력이 있는데(0이 아님) && 바라보는 방향과 다를 때 (역방향)
-		# 예: 오른쪽(1) 보고 있는데 왼쪽(-1) 키를 누름 -> 조건 성립 -> 캔슬
 		if dir_input != 0 and dir_input != facing_dir:
 			is_attacking = false
 			sword_shape.disabled = true
-			# 여기서 캔슬되면 아래 로직에 의해 즉시 방향이 뒤집히고 이동 모션이 나옴
 
-	# 4. 공격 시작 입력
+	# 5. 공격 시작 입력
 	if Input.is_action_just_pressed("attack"):
 		attack()
-
-	# 5. 방향 전환 및 이동 처리
-	# 캔슬이 위에서 발생했다면 is_attacking은 false가 되었으므로, 여기서 즉시 방향이 바뀜
+	
+	if Input.is_action_just_pressed("use_flask"):
+		if GameManager.use_flask():
+			pass
+		
+	# 6. 방향 전환
 	if not is_attacking and dir_input != 0:
 		if dir_input > 0:
 			sprite.flip_h = false
@@ -282,16 +308,26 @@ func _physics_process(delta: float) -> void:
 			sprite.flip_h = true
 			attack_pivot.scale.x = -1
 	
-	# [이동 적용]
-	# 공격 중이라도 같은 방향이면 velocity가 적용됨 (무빙샷)
-	# 캔슬 되었다면 반대 방향 velocity가 적용됨 (즉시 턴)
-	velocity.x = dir_input * movespeed
+	# [조작감 개선] 7. 가감속을 적용한 이동 처리
+	var target_speed = dir_input * movespeed
+	if is_on_floor():
+		if dir_input != 0:
+			velocity.x = move_toward(velocity.x, target_speed, acceleration * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0, friction * delta)
+	else:
+		velocity.x = target_speed
 	
-	# 6. 점프
-	if is_on_floor() and Input.is_action_just_pressed("jump"):
-		velocity.y = jumpforce
+	# [조작감 개선] 8. 점프 (선입력 & 코요테 타임 적용)
+	if Input.is_action_just_pressed("jump"):
+		_jump_buffer_timer = jump_buffer_time
 
-	# 7. 넉백 및 이동 실행
+	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
+		velocity.y = jumpforce
+		_jump_buffer_timer = 0.0
+		_coyote_timer = 0.0
+
+	# 9. 넉백 및 이동 실행
 	var kb: Vector2 = update_knockback(delta)
 	velocity += kb
 	move_and_slide()
@@ -342,6 +378,9 @@ func show_status(action_type: String) -> void:
 		"rest":
 			msg = "Rested"
 			color = Color(0.429, 0.793, 0.33, 1.0)
+		"full":
+			msg = "Inventory Full"
+			color = Color.ORANGE
 		_: # default (그 외 나머지)
 			msg = "!"
 			color = Color.WHITE

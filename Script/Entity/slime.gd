@@ -2,7 +2,7 @@ extends EnemyBase
 class_name Slime
 
 @export var gravity: float = 980.0
-@export var max_fall_speed: float = 200.0
+@export var max_fall_speed: float = 280.0
 
 @export var slime_max_hp: int = 30
 @export var slime_contact_damage: int = 10
@@ -45,7 +45,9 @@ func _process(delta: float) -> void:
 		_air_chase_left -= delta
 		if _air_chase_left < 0.0:
 			_air_chase_left = 0.0
-			
+	
+	if hp <= 0:
+		sprite.play("died")
 
 func _physics_process(delta: float) -> void:
 	if floor_ray != null:

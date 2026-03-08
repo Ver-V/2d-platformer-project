@@ -39,7 +39,7 @@ func _use_consumable(player) -> void:
 		GameManager.update_hp(player.hp)
 		HUD.show_hud_temporarily()
 	if damage_amount > 0:
-		player.damage += attack_damage
+		player.update_damage(damage_amount)
 
 # 장비일 때 실행될 로직 (나중에 구현)
 func _use_equipment(player) -> void:

@@ -18,6 +18,12 @@ func set_item(item: ItemData):
 		icon.texture = item.icon 
 		icon.visible = true
 		
+		if item.id == "health_flask":
+			$AmountLabel.text = str(GameManager.flask_current_charges) + "/" + str(GameManager.flask_max_charges)
+			$AmountLabel.show()
+		else:
+			$AmountLabel.hide()
+			 
 		# 툴팁(마우스 올리면 이름 뜨기)도 아주 쉽게 가능
 		tooltip_text = "%s\n%s" % [item.name, item.description]
 	else:

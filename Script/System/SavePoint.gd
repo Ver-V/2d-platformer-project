@@ -57,13 +57,19 @@ func action_save_only() -> void:
 func action_rest() -> void:
 	can_save = false
 	
-	# 1. 플레이어 체력 회복
+	# 1. 플레이어 체력 회복 및 에스트 병 충전
 	var players = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		var p = players[0]
 		p.hp = p.max_hp
 		GameManager.player_current_hp = p.max_hp
 		GameManager.hp_changed.emit(p.hp, p.max_hp)
+		
+		# [추가됨] 플라스크 횟수 충전
+		if GameManager.get("flask_current_charges") != null:
+			GameManager.flask_current_charges = GameManager.flask_max_charges
+			if GameManager.has_signal("flask_changed"):
+				GameManager.flask_changed.emit()
 
 	# 2. [핵심] 일반 몹 사망 기록 삭제!
 	GameManager.reset_mobs()

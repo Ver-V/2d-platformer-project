@@ -31,7 +31,7 @@ func _ready():
 		
 func _process(delta):
 	# 1. 자석 기능 (플레이어에게 날아가기)
-	if target_body != null:
+	if is_instance_valid(target_body):
 		var direction = global_position.direction_to(target_body.global_position)
 		speed += 800 * delta 
 		global_position += direction * speed * delta
@@ -41,7 +41,7 @@ func _process(delta):
 		
 	# 2. 둥둥 떠다니기 (자석 아님 + 둥둥 허용 상태)
 	elif can_float:
-		time_passed += delta
+		time_passed = wrapf(time_passed + delta, 0.0, PI * 2.0)
 		# sin(시간)은 -1 ~ 1을 반복하므로, 거기에 범위를 곱하면 위아래로 움직임
 		sprite.position.y = sin(time_passed * float_speed) * float_range
 

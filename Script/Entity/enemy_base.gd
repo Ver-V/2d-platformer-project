@@ -83,7 +83,7 @@ func get_blink_node() -> CanvasItem: return sprite
 func _on_death() -> void:
 	# [시스템 필수] 죽음 신호를 보내야 Stage가 장부에 기록
 	died.emit(self)
-	call_deferred("spawn_gold")
+	spawn_gold()
 	queue_free()
 
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
@@ -161,8 +161,8 @@ func create_one_coin(amount: int):
 	var random_offset = Vector2(randf_range(-20, 20), randf_range(-20, 0))
 	coin.global_position = global_position + random_offset
 	
-	# 2. 맵에 먼저 추가 (그래야 트윈이 돕니다)
-	get_parent().call_deferred("add_child", coin)
+	# 2. get_parent() 대신 현재 씬에 바로 추가하여 에러 방지 (물리 처리 중 에러 방지를 위해 call_deferred 유지)
+	get_tree().current_scene.call_deferred("add_child", coin)
 	
 	# 3. [핵심] setup 함수 호출 (다음 프레임에 실행하여 안전하게)
 	# call_deferred를 썼으므로, coin이 트리에 들어간 직후에 setup을 부르도록 합니다.

@@ -127,6 +127,8 @@ func _on_type_timer_timeout():
 		type_timer.stop()
 
 func end_dialogue():
+	if portrait_tween:
+		portrait_tween.kill()
 	is_dialogue_active = false
 	visible = false
 	GameManager.is_menu_open = false
