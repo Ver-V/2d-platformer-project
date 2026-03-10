@@ -100,7 +100,8 @@ func _on_slot_clicked(index):
 
 # --- [새로 추가] '사용' 버튼 눌렀을 때 ---
 func _on_use_pressed():
-	if selected_index == -1: return
+	if selected_index < 0 or selected_index >= GameManager.inventory.size():
+		return
 	
 	var item = GameManager.inventory[selected_index]
 	

@@ -14,6 +14,7 @@ class_name EnemyRanged
 @export var shooter_component: ShooterComponent
 
 var _shoot_timer: float = 0.0
+var _can_see_target: bool = true
 
 @onready var los: RayCast2D = get_node_or_null("LineOfSight")
 @onready var muzzle: Marker2D = get_node_or_null("Muzzle")
@@ -31,6 +32,16 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += gravity * delta
 		
+	if is_instance_valid(target) and los:
+		if global_position.distance_to(target.global_position) <= shoot_range:
+			los.target_position = los.to_local(target.global_position + Vector2(0, -10))
+			los.force_raycast_update()
+			_can_see_target = true
+			if los.is_colliding():
+				var collider = los.get_collider()
+				if collider != target and not collider.is_in_group("player"):
+					_can_see_target = false
+
 	super._physics_process(delta)
 
 func _process(delta: float) -> void:
@@ -38,7 +49,8 @@ func _process(delta: float) -> void:
 	
 	if not _active: return
 	
-	if target == null:
+	if not is_instance_valid(target):
+		target = null
 		if shooter_component:
 			shooter_component.reset_count()
 		return
@@ -47,16 +59,7 @@ func _process(delta: float) -> void:
 	var dist = global_position.distance_to(target.global_position)
 	
 	if dist <= shoot_range:
-		var can_see = true
-		
-		# LineOfSight가 있을 경우 벽 너머인지 확인
-		if los:
-			los.target_position = los.to_local(target.global_position + Vector2(0, -10))
-			los.force_raycast_update()
-			if los.is_colliding():
-				var collider = los.get_collider()
-				if collider != target and not collider.is_in_group("player"):
-					can_see = false
+		var can_see = _can_see_target if los else true
 					
 		if can_see:
 			_shoot_timer -= delta

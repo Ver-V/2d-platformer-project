@@ -27,5 +27,6 @@ func set_item(item: ItemData):
 		# 툴팁(마우스 올리면 이름 뜨기)도 아주 쉽게 가능
 		tooltip_text = "%s\n%s" % [item.name, item.description]
 	else:
+		icon.texture = null
 		icon.visible = false
 		tooltip_text = ""

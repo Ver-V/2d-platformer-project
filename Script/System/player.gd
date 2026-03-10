@@ -180,7 +180,10 @@ func attack() -> void:
 	
 	sword_shape.disabled = false
 	await get_tree().create_timer(0.25).timeout
-	sword_shape.disabled = true
+	
+	# 데미지를 입어서 캔슬되지 않았을 때만 원상복구
+	if is_instance_valid(sword_shape) and is_attacking:
+		sword_shape.disabled = true
 
 func _on_sword_area_entered(area: Area2D) -> void:
 	if area is Projectile:

@@ -44,11 +44,7 @@ func _ready() -> void:
 	if start_homing and team == "enemy":
 		_is_homing = true
 		homing_turn_speed = enemy_homing_speed # 적 전용 회전 속도 적용
-		
-		# "player" 그룹에 있는 노드(플레이어)를 찾아서 타겟으로 설정
-		var players = get_tree().get_nodes_in_group("player")
-		if players.size() > 0:
-			_homing_target = players[0]
+		# 유도탄 타겟 할당은 ShooterComponent에서 직접 처리하도록 최적화됨
 	
 	# Area(플레이어 히트박스 등)와의 충돌은 Player나 Enemy쪽에서 처리하거나
 	# 여기서 area_entered로 처리할 수도 있지만, 보통 투사체는 '몸'에 닿는 걸 체크함.
@@ -147,12 +143,12 @@ func attempt_parry(source_pos: Vector2) -> bool:
 	modulate = Color.CYAN
 
 	# [핵심] 신분 세탁 (Layer & Mask 실시간 변경)
-	set_collision_layer_value(7, false) 
-	set_collision_layer_value(6, true) 
-	set_collision_mask_value(2, false)
-	set_collision_mask_value(1, false)
-	set_collision_mask_value(3, true)
-	set_collision_mask_value(4, true)
+	call_deferred("set_collision_layer_value", 7, false) 
+	call_deferred("set_collision_layer_value", 6, true) 
+	call_deferred("set_collision_mask_value", 2, false)
+	call_deferred("set_collision_mask_value", 1, false)
+	call_deferred("set_collision_mask_value", 3, true)
+	call_deferred("set_collision_mask_value", 4, true)
 	
 	return true
 	

@@ -4,8 +4,14 @@ class_name HazardSensor
 @export var knockback_force: float = 300.0
 @export var damage_invuln_time: float = 2.5 # [추가] 가시 전용 무적 시간 (에디터에서 수정 가능)
 
+var _damage_timer: float = 0.0
+
 # 1초에 60번 실행되는 물리 업데이트 함수입니다.
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	if _damage_timer > 0.0:
+		_damage_timer -= delta
+		return
+		
 	# 1. 센서 영역(CollisionShape)에 들어온 물체들을 다 가져옵니다.
 	var bodies = get_overlapping_bodies()
 	if bodies.size() == 0: 
@@ -44,6 +50,7 @@ func _physics_process(_delta: float) -> void:
 					if dmg > 0:
 						# 부모(Player)에게 데미지 전달
 						_hurt_parent(dmg)
+						_damage_timer = damage_invuln_time
 						# 이번 프레임은 이미 아프니까 더 계산하지 않고 종료
 						return 
 

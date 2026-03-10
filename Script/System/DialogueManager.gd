@@ -43,8 +43,16 @@ func _input(event):
 
 # --- [핵심] 외부에서 이 함수를 부르면 대화 시작 ---
 func start_dialogue(json_file_path: String):
+	if not FileAccess.file_exists(json_file_path):
+		print("JSON 파일이 존재하지 않습니다: ", json_file_path)
+		return
+		
 	# 1. 파일 읽기
 	var file = FileAccess.open(json_file_path, FileAccess.READ)
+	if file == null:
+		print("파일을 열 수 없습니다: ", json_file_path)
+		return
+		
 	var content = file.get_as_text()
 	var json = JSON.new()
 	var error = json.parse(content)
