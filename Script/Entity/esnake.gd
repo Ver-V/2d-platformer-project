@@ -131,6 +131,8 @@ func apply_poison(player_node: CombatBody2D) -> void:
 func _poison_routine(player_node: Node) -> void:
 	for i in range(2):
 		await get_tree().create_timer(1.0).timeout
+		if not is_inside_tree():
+			return
 		if is_instance_valid(player_node) and player_node.hp > 0:
 			if player_node.has_method("apply_damage"):
 				player_node.apply_damage(5, Vector2.ZERO, true, 0.0)

@@ -94,6 +94,7 @@ func draw_hearts(current_hp: int, max_hp: int) -> void:
 	# 그릇 비우고 다시 채우기
 	if heart_container.get_child_count() != total_hearts:
 		for child in heart_container.get_children():
+			heart_container.remove_child(child)
 			child.queue_free()
 		
 		for i in range(total_hearts):

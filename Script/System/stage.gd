@@ -25,10 +25,12 @@ var current_shake_strength: float = 0.0 # 현재 흔들림 강도
 
 # [로컬 장부] 현재 게임 플레이 중 죽은 적(잡몹)들을 기록
 var killed_ids: Dictionary = {}
+var _cached_enemies: Array = []
 
 func _ready() -> void:
 	CustomCursor.hide_cursor()
 	cam.make_current()
+	_cached_enemies = get_tree().get_nodes_in_group("enemies")
 	register_enemies()
 	assign_persist_ids_by_formula()
 	
@@ -117,8 +119,7 @@ func restart_stage() -> void:
 
 # [수정] 이미 죽은 적들(보스 + 로컬 잡몹) 제거 함수
 func _cleanup_already_dead_enemies() -> void:
-	var nodes: Array = get_tree().get_nodes_in_group("enemies")
-	for n in nodes:
+	for n in _cached_enemies:
 		var e: EnemyBase = n as EnemyBase
 		if e == null: continue
 		
@@ -148,17 +149,9 @@ func _on_enemy_died(e: EnemyBase) -> void:
 		print("보스 처치됨 (영구 저장): ", id)
 	
 func apply_room_rules(r: Vector2i) -> void:
-	var nodes: Array = get_tree().get_nodes_in_group("enemies")
-	for n in nodes:
+	for n in _cached_enemies:
 		var e: EnemyBase = n as EnemyBase
-		if e == null: continue
-
-		var id: StringName = e.get_persist_id()
-		
-		# [수정] 로컬(잡몹) 또는 글로벌(보스) 장부에 있으면 방에 들어와도 삭제
-		if killed_ids.has(id) or GameManager.defeated_bosses.has(id):
-			if is_instance_valid(e): e.queue_free()
-			continue
+		if not is_instance_valid(e): continue
 
 		var eroom: Vector2i = room_from_pos(e.home_position)
 
@@ -202,17 +195,15 @@ func clear_projectiles(clear_all: bool) -> void:
 			if pr != current_room: p.queue_free()
 
 func register_enemies() -> void:
-	var nodes: Array = get_tree().get_nodes_in_group("enemies")
-	for n in nodes:
+	for n in _cached_enemies:
 		var e: EnemyBase = n as EnemyBase
 		if e == null: continue
 		if not e.died.is_connected(_on_enemy_died):
 			e.died.connect(_on_enemy_died)
 
 func assign_persist_ids_by_formula() -> void:
-	var nodes: Array = get_tree().get_nodes_in_group("enemies")
 	var per_room: Dictionary = {}
-	for n in nodes:
+	for n in _cached_enemies:
 		var e: EnemyBase = n as EnemyBase
 		if e == null: continue
 		var rid: int = room_id_from_pos(e.home_position)

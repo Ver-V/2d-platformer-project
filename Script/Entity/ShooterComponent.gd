@@ -32,6 +32,10 @@ func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> void
 	p.rotation = dir.angle()
 	p.team = "enemy" # 보스도 적 팀
 	
+	# 유도탄 타겟 직접 지정 (탐색 연산 최적화)
+	if p.start_homing:
+		p._homing_target = target_node
+	
 	# 3. [핵심] N번째 탄환 패링 설정 로직 (여기서 통합 관리!)
 	var is_parry_shot = (_shot_count % parry_interval == 0)
 	

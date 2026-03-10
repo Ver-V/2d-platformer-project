@@ -68,7 +68,7 @@ func use_flask() -> bool:
 		return false
 
 func add_defeated_mob(id: String) -> void:
-	if not defeated_mobs.has(id):
+	if id != "" and not defeated_mobs.has(id):
 		defeated_mobs.append(id)
 		
 func add_collected_item(id: String) -> void:
