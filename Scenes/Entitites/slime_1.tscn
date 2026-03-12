@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_d5xvo"]
 [ext_resource type="Script" uid="uid://dcnt2aa637mxh" path="res://Script/Entity/slime.gd" id="2_cbd27"]
-[ext_resource type="Texture2D" uid="uid://g5jgwko4w7jm" path="res://Scenes/Entitites/slime_01.png" id="3_04ua4"]
+[ext_resource type="Texture2D" uid="uid://g5jgwko4w7jm" path="res://Assets/sprites/slime_01.png" id="3_04ua4"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_j6rap"]
 atlas = ExtResource("3_04ua4")
@@ -142,6 +142,7 @@ jump_cooldown = 2.5
 jump_only_when_player_near = true
 jump_chase_speed = 90.0
 jump_chase_time = 0.12
+attack_distance = 40.0
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 position = Vector2(-1.0000005, -2.9999998)

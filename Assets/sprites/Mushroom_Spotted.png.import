@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://g5jgwko4w7jm"
-path="res://.godot/imported/slime_01.png-3ec3793dd3c4d39e35191b19d2df4643.ctex"
+uid="uid://drsnrtqjpb5s5"
+path="res://.godot/imported/Mushroom_Spotted.png-f8710c490d4b2e421dd12d1fd97d5fd8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Scenes/Entitites/slime_01.png"
-dest_files=["res://.godot/imported/slime_01.png-3ec3793dd3c4d39e35191b19d2df4643.ctex"]
+source_file="res://Assets/sprites/Mushroom_Spotted.png"
+dest_files=["res://.godot/imported/Mushroom_Spotted.png-f8710c490d4b2e421dd12d1fd97d5fd8.ctex"]
 
 [params]
 

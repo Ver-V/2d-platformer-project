@@ -86,7 +86,7 @@ func _ready() -> void:
 		GameManager.pending_status = ""
 		
 	velocity = Vector2.ZERO
-	floor_snap_length = 20.0
+	floor_snap_length = 2.0
 	apply_floor_snap()
 	move_and_slide()
 

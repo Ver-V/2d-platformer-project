@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://drsnrtqjpb5s5"
-path="res://.godot/imported/Mushroom_Spotted.png-f21c0e69857decdd213fca90c7b71568.ctex"
+uid="uid://cxp0dtk8qcmic"
+path="res://.godot/imported/snake_02.png-5b77f2841527955a6a80082dbf67a2ca.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Scenes/Entitites/Mushroom_Spotted.png"
-dest_files=["res://.godot/imported/Mushroom_Spotted.png-f21c0e69857decdd213fca90c7b71568.ctex"]
+source_file="res://Assets/sprites/snake_02.png"
+dest_files=["res://.godot/imported/snake_02.png-5b77f2841527955a6a80082dbf67a2ca.ctex"]
 
 [params]
 
