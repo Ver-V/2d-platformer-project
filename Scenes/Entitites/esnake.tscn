@@ -1,7 +1,7 @@
 [gd_scene load_steps=22 format=3 uid="uid://jdh4gq3rwxsg"]
 
 [ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_txgma"]
-[ext_resource type="Texture2D" uid="uid://cxp0dtk8qcmic" path="res://Scenes/Entitites/snake_02.png" id="2_p70un"]
+[ext_resource type="Texture2D" uid="uid://cxp0dtk8qcmic" path="res://Assets/sprites/snake_02.png" id="2_p70un"]
 [ext_resource type="Script" uid="uid://c1exm1728gpq6" path="res://Script/Entity/esnake.gd" id="3_esnake"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_pyjl4"]

@@ -1,7 +1,7 @@
 [gd_scene load_steps=50 format=3 uid="uid://c0gju76svf4ot"]
 
 [ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_fkyq0"]
-[ext_resource type="Texture2D" uid="uid://drsnrtqjpb5s5" path="res://Scenes/Entitites/Mushroom_Spotted.png" id="2_c7aq3"]
+[ext_resource type="Texture2D" uid="uid://drsnrtqjpb5s5" path="res://Assets/sprites/Mushroom_Spotted.png" id="2_c7aq3"]
 [ext_resource type="Script" uid="uid://dcnt2aa637mxh" path="res://Script/Entity/slime.gd" id="2_ge0j4"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l6i1k"]
@@ -346,6 +346,7 @@ jump_cooldown = 2.0
 jump_only_when_player_near = true
 jump_chase_speed = 100.0
 jump_chase_time = 0.3
+attack_distance = 40.0
 drop_gold_amount = 20
 
 [node name="AnimatedSprite2D" parent="." index="0"]
