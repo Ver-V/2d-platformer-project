@@ -1,3 +1,10 @@
-[gd_scene format=3 uid="uid://k7lok5dfd5bg"]
+[gd_scene load_steps=3 format=3 uid="uid://bl288730bkpt"]
 
-[node name="Boss" type="Node2D"]
+[ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_6i41e"]
+[ext_resource type="Script" uid="uid://brj603k3tqrbg" path="res://Script/Entity/BossBase.gd" id="2_kqjum"]
+
+[node name="Boss" instance=ExtResource("1_6i41e")]
+script = ExtResource("2_kqjum")
+dialogue_file = ""
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="." index="8"]

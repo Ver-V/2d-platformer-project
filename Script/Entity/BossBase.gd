@@ -1,17 +1,71 @@
-# Boss.gd
 extends EnemyBase
 class_name Boss
+
+enum State {INTRO, IDLE, COMBAT, DEAD}
+var current_state = State.INTRO
+
+@export_file("*.json") var dialogue_file: String = ""
+@export var bgm_player : AudioStreamPlayer
 
 func _ready() -> void:
 	super._ready() # 부모(EnemyBase)의 _ready 실행 (체력 설정 등)
 	add_to_group("bosses") # 보스 그룹 추가 (필요 시 사용)
-	if (GameManager.defeated_bosses.has(persist_id) == true):
+	if persist_id != "" and GameManager.defeated_bosses.has(persist_id):
 		queue_free()
+		return
+	
+	if persist_id != "" and GameManager.talked_bosses.has(persist_id):
+		_start_combat()
+	else:
+		_start_intro()
 		
+func _start_intro() -> void:
+	current_state = State.INTRO
+	set_active(false)
+	if dialogue_file != "":
+		DialogueManager.start_dialogue(dialogue_file)
+		
+		await DialogueManager.dialogue_finished
+		
+		if persist_id != "":
+			GameManager.talked_bosses[persist_id] = true
+			GameManager.save_game()
+			
+	_start_combat()
+
+func _start_combat() -> void:
+	current_state = State.IDLE
+	
+	set_active(true)
+	GameManager.is_menu_open = false
+	if bgm_player != null:
+		bgm_player.play()
+		
+	
+func _physics_process(delta:float) -> void:
+	match current_state:
+		State.INTRO:
+			pass
+		State.IDLE:
+			_idle_state(delta)
+		State.COMBAT:
+			_combat_state(delta)
+		State.DEAD:
+			_dead_state(delta)
+	super._physics_process(delta)
+	
+func _idle_state(_delta: float) -> void:
+	pass
+	
+func _combat_state(_delta:float) -> void:
+	pass
+	
+func _dead_state(_delta:float) -> void:
+	velocity = Vector2.ZERO
 
 func _on_death() -> void:
-	# [핵심] 보스는 죽을 때 매니저 장부에 자기 ID를 적고 죽습니다.
-	# Stage 스크립트가 따로 검사할 필요 없이 보스가 스스로 신고하는 구조입니다.
+	current_state = State.DEAD
+	
 	if persist_id != "":
 		GameManager.defeated_bosses[persist_id] = true
 	
