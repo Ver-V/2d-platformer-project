@@ -1,4 +1,4 @@
-[gd_scene load_steps=65 format=3 uid="uid://qfh6su8aeoy7"]
+[gd_scene load_steps=54 format=3 uid="uid://qfh6su8aeoy7"]
 
 [ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/System/player.gd" id="1_kpjcp"]
 [ext_resource type="PackedScene" uid="uid://b1tnix67gbct2" path="res://Scenes/System/InventoryUI.tscn" id="2_0kmp4"]
@@ -9,8 +9,6 @@
 [ext_resource type="Texture2D" uid="uid://bge6xe1qdcgsv" path="res://Assets/sprites/knight/DEATH.png" id="6_ji083"]
 [ext_resource type="Script" uid="uid://b00spr31wmhci" path="res://Script/System/sword_hitbox.gd" id="6_yu0nx"]
 [ext_resource type="Script" uid="uid://dleqtylnlbedr" path="res://Script/System/hazard_sensor.gd" id="7_im3yb"]
-[ext_resource type="Texture2D" uid="uid://jlxpbe0j2nkd" path="res://Assets/sprites/knight/dd.png" id="8_825xp"]
-[ext_resource type="Texture2D" uid="uid://doosotx312txt" path="res://Assets/sprites/knight/dddd.png" id="9_ji083"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_yu0nx"]
 atlas = ExtResource("2_3wgd0")
@@ -403,85 +401,6 @@ size = Vector2(6.25, 2.75)
 outline_size = 4
 outline_color = Color(0, 0, 0, 1)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_0kmp4"]
-atlas = ExtResource("8_825xp")
-region = Rect2(0, 0, 400, 448)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_i5acl"]
-atlas = ExtResource("8_825xp")
-region = Rect2(400, 0, 400, 448)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_epg6k"]
-atlas = ExtResource("8_825xp")
-region = Rect2(0, 448, 400, 448)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_0u84n"]
-atlas = ExtResource("8_825xp")
-region = Rect2(400, 448, 400, 448)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_esmjy"]
-atlas = ExtResource("8_825xp")
-region = Rect2(0, 896, 400, 448)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_6tu5v"]
-atlas = ExtResource("9_ji083")
-region = Rect2(0, 896, 400, 448)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_spxdj"]
-atlas = ExtResource("8_825xp")
-region = Rect2(0, 0, 400, 448)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_0objx"]
-atlas = ExtResource("9_ji083")
-region = Rect2(0, 0, 400, 448)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_w71ue"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_0kmp4")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_i5acl")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_epg6k")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_0u84n")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_esmjy")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_6tu5v")
-}],
-"loop": true,
-"name": &"Attack",
-"speed": 14.0
-}, {
-"frames": [],
-"loop": true,
-"name": &"Jump",
-"speed": 5.0
-}, {
-"frames": [],
-"loop": true,
-"name": &"Run",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_spxdj")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_0objx")
-}],
-"loop": true,
-"name": &"Stand",
-"speed": 5.0
-}]
-
 [sub_resource type="CircleShape2D" id="CircleShape2D_825xp"]
 radius = 30.265491
 
@@ -501,12 +420,11 @@ visible = false
 position = Vector2(-1.4000014, -21.3)
 scale = Vector2(0.7, 0.7)
 sprite_frames = SubResource("SpriteFrames_xlvrw")
-animation = &"died"
-frame_progress = 0.38299412
+animation = &"Run"
 speed_scale = 0.7
 
 [node name="PlayerCol" type="CollisionShape2D" parent="."]
-position = Vector2(-1, -18)
+position = Vector2(-1, -10)
 shape = SubResource("RectangleShape2D_73fnb")
 
 [node name="AttackPivot" type="Marker2D" parent="."]
@@ -528,7 +446,7 @@ collision_layer = 0
 script = ExtResource("7_im3yb")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HazardSensor"]
-position = Vector2(-1, -9)
+position = Vector2(-2, -1)
 shape = SubResource("RectangleShape2D_im3yb")
 
 [node name="StatusLabel" type="Label" parent="."]
@@ -540,20 +458,12 @@ offset_bottom = -27.0
 label_settings = SubResource("LabelSettings_t26db")
 horizontal_alignment = 1
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-visible = false
-position = Vector2(1, -14)
-scale = Vector2(0.07, 0.07)
-sprite_frames = SubResource("SpriteFrames_w71ue")
-animation = &"Attack"
-frame_progress = 0.7786647
-
 [node name="MagnetArea" type="Area2D" parent="."]
 collision_layer = 0
 collision_mask = 128
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="MagnetArea"]
-position = Vector2(0, -13)
+position = Vector2(-1, -13)
 shape = SubResource("CircleShape2D_825xp")
 
 [node name="Collisiondied" type="CollisionShape2D" parent="."]

@@ -1,24 +1,24 @@
 [gd_scene load_steps=20 format=4 uid="uid://dfx7ligqjd22g"]
 
-[ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/System/stage.gd" id="1_gusuq"]
-[ext_resource type="PackedScene" uid="uid://bd1fcbofw2ll8" path="res://Scenes/Entitites/slime_1.tscn" id="2_l8wo6"]
-[ext_resource type="PackedScene" uid="uid://bqw80wdrftg4s" path="res://Scenes/System/PauseMenu.tscn" id="3_2erbf"]
-[ext_resource type="Texture2D" uid="uid://cltaftyns351a" path="res://Assets/sprites/tileset.png" id="3_2s2j5"]
-[ext_resource type="Texture2D" uid="uid://cneqp6xfnb1wq" path="res://Assets/backgroundreal.png" id="3_t88q6"]
-[ext_resource type="Texture2D" uid="uid://cgpum4v6rh8hm" path="res://Assets/sprites/world_tileset.png" id="4_jptyp"]
-[ext_resource type="Script" uid="uid://cnklf8macledf" path="res://Script/System/room_grid.gd" id="5_7nmd1"]
-[ext_resource type="PackedScene" uid="uid://c7jx653i6b2k3" path="res://Scenes/Stage/HazardTileMap.tscn" id="6_t88q6"]
-[ext_resource type="PackedScene" uid="uid://byscojtoqo7ad" path="res://Scenes/System/SavePoint.tscn" id="7_2erbf"]
-[ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="8_l8wo6"]
-[ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="9_7nmd1"]
-[ext_resource type="PackedScene" uid="uid://bs2f7s8xuy6e0" path="res://Scenes/Item/field_item.tscn" id="9_jptyp"]
-[ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="10_7nmd1"]
-[ext_resource type="PackedScene" uid="uid://jdh4gq3rwxsg" path="res://Scenes/Entitites/esnake.tscn" id="14_hwyny"]
-[ext_resource type="PackedScene" uid="uid://cepa2x7wfxccs" path="res://Scenes/Entitites/MerchantNPC.tscn" id="14_jpob3"]
-[ext_resource type="AudioStream" uid="uid://bjb33qep6eamb" path="res://Script/Entity/wild-road.mp3" id="16_hwyny"]
+[ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/System/stage.gd" id="1_pgns6"]
+[ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="2_v4g68"]
+[ext_resource type="PackedScene" uid="uid://bqw80wdrftg4s" path="res://Scenes/System/PauseMenu.tscn" id="3_asn4q"]
+[ext_resource type="Texture2D" uid="uid://cneqp6xfnb1wq" path="res://Assets/backgroundreal.png" id="4_22r6i"]
+[ext_resource type="Texture2D" uid="uid://cltaftyns351a" path="res://Assets/sprites/tileset.png" id="5_qsy5d"]
+[ext_resource type="Texture2D" uid="uid://cgpum4v6rh8hm" path="res://Assets/sprites/world_tileset.png" id="6_udna4"]
+[ext_resource type="Script" uid="uid://cnklf8macledf" path="res://Script/System/room_grid.gd" id="7_orfdu"]
+[ext_resource type="PackedScene" uid="uid://c7jx653i6b2k3" path="res://Scenes/Stage/HazardTileMap.tscn" id="8_4n2r4"]
+[ext_resource type="PackedScene" uid="uid://byscojtoqo7ad" path="res://Scenes/System/SavePoint.tscn" id="9_ae7cf"]
+[ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="10_nijh8"]
+[ext_resource type="PackedScene" uid="uid://bs2f7s8xuy6e0" path="res://Scenes/Item/field_item.tscn" id="11_an4tw"]
+[ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="12_tdvhl"]
+[ext_resource type="PackedScene" uid="uid://bd1fcbofw2ll8" path="res://Scenes/Entitites/slime_1.tscn" id="13_lg3tr"]
+[ext_resource type="PackedScene" uid="uid://jdh4gq3rwxsg" path="res://Scenes/Entitites/esnake.tscn" id="14_eveut"]
+[ext_resource type="PackedScene" uid="uid://cepa2x7wfxccs" path="res://Scenes/Entitites/MerchantNPC.tscn" id="15_vqt1q"]
+[ext_resource type="AudioStream" uid="uid://bjb33qep6eamb" path="res://Script/Entity/wild-road.mp3" id="16_vrmrq"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qohnl"]
-texture = ExtResource("3_2s2j5")
+texture = ExtResource("5_qsy5d")
 0:0/next_alternative_id = 2
 0:0/0 = 0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
@@ -153,7 +153,7 @@ texture = ExtResource("3_2s2j5")
 5:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_km80h"]
-texture = ExtResource("4_jptyp")
+texture = ExtResource("6_udna4")
 0:0/0 = 0
 1:0/0 = 0
 2:0/0 = 0
@@ -288,10 +288,10 @@ sources/2 = SubResource("TileSetAtlasSource_qohnl")
 sources/4 = SubResource("TileSetAtlasSource_km80h")
 
 [node name="Stage_01" type="Node2D"]
-script = ExtResource("1_gusuq")
-player_scene = ExtResource("8_l8wo6")
+script = ExtResource("1_pgns6")
+player_scene = ExtResource("2_v4g68")
 
-[node name="PauseMenu" parent="." instance=ExtResource("3_2erbf")]
+[node name="PauseMenu" parent="." instance=ExtResource("3_asn4q")]
 visible = false
 
 [node name="TextureRect3" type="TextureRect" parent="."]
@@ -299,19 +299,19 @@ offset_left = 5123.0
 offset_top = -1.0
 offset_right = 7682.0
 offset_bottom = 1079.0
-texture = ExtResource("3_t88q6")
+texture = ExtResource("4_22r6i")
 
 [node name="TextureRect2" type="TextureRect" parent="."]
 offset_left = 2562.0
 offset_top = -3.0
 offset_right = 5121.0
 offset_bottom = 1077.0
-texture = ExtResource("3_t88q6")
+texture = ExtResource("4_22r6i")
 
 [node name="TextureRect" type="TextureRect" parent="."]
 offset_right = 2559.0
 offset_bottom = 1080.0
-texture = ExtResource("3_t88q6")
+texture = ExtResource("4_22r6i")
 
 [node name="World" type="TileMapLayer" parent="."]
 position = Vector2(5, 0)
@@ -326,54 +326,62 @@ position = Vector2(25, 676)
 
 [node name="RoomGrid" type="Node2D" parent="."]
 process_mode = 3
-script = ExtResource("5_7nmd1")
+script = ExtResource("7_orfdu")
 
-[node name="HazardTileMap" parent="." instance=ExtResource("6_t88q6")]
+[node name="HazardTileMap" parent="." instance=ExtResource("8_4n2r4")]
 
 [node name="HazardTileMap" parent="HazardTileMap" index="0"]
 position = Vector2(5, 0)
 tile_map_data = PackedByteArray("AAAAABUAAAAEAAAAACABABUAAAAEAAAAACACABUAAAAEAAAAACADABUAAAAEAAAAACAEABUAAAAEAAAAACAFABUAAAAEAAAAACAGABUAAAAEAAAAACAHABUAAAAEAAAAACAIABUAAAAEAAAAACAJABUAAAAEAAAAACAKABUAAAAEAAAAACALABUAAAAEAAAAACAMABUAAAAEAAAAACANABUAAAAEAAAAACAOABUAAAAEAAAAACAPABUAAAAEAAAAACAQABUAAAAEAAAAACARABUAAAAEAAAAACASABUAAAAEAAAAACATABUAAAAEAAAAACAUABUAAAAEAAAAACAVABUAAAAEAAAAACAfABUAAAAEAAAAACAgABUAAAAEAAAAACAhABUAAAAEAAAAACAiABUAAAAEAAAAACAjABUAAAAEAAAAACAkABUAAAAEAAAAACAlABUAAAAEAAAAACAmABUAAAAEAAAAACAeABUAAAAEAAAAACAdABUAAAAEAAAAACAGAB4AAAAEAAAAACAHAB4AAAAEAAAAACAIAB4AAAAEAAAAACASACEAAAAEAAAAACATACAAAAAEAAAAACAUACEAAAAEAAAAACAQACEAAAAEAAAAACAWACEAAAAEAAAAACAaACMAAAAEAAAAACAZACMAAAAEAAAAACAYACMAAAAEAAAAACAOACMAAAAEAAAAACACACwAAAAEAAAAACADACwAAAAEAAAAACAEACwAAAAEAAAAACAFACwAAAAEAAAAACAGACwAAAAEAAAAACAHACwAAAAEAAAAACAIACwAAAAEAAAAACAJACwAAAAEAAAAACAKACwAAAAEAAAAACALACwAAAAEAAAAACAMACwAAAAEAAAAACANACwAAAAEAAAAACAOACwAAAAEAAAAACAPACwAAAAEAAAAACAQACwAAAAEAAAAACARACwAAAAEAAAAACASACwAAAAEAAAAACATACwAAAAEAAAAACAUACwAAAAEAAAAACAVACwAAAAEAAAAACAWACwAAAAEAAAAACAXACwAAAAEAAAAACAYACwAAAAEAAAAACAZACwAAAAEAAAAACAaACwAAAAEAAAAACAbACwAAAAEAAAAACAcACwAAAAEAAAAACAdACwAAAAEAAAAACAeACwAAAAEAAAAACAfACwAAAAEAAAAACAgACwAAAAEAAAAACAhACwAAAAEAAAAACAiACwAAAAEAAAAACAjACwAAAAEAAAAACAkACwAAAAEAAAAACAlACwAAAAEAAAAACAmACwAAAAEAAAAACALADEAAAAEAAAAACAMADEAAAAEAAAAACAUADIAAAAEAAAAACAVADIAAAAEAAAAACAcADIAAAAEAAAAACAdADIAAAAEAAAAACAYADEAAAAEAAAAACAZADEAAAAEAAAAACAXADgAAAAEAAAAACAYADgAAAAEAAAAACAZADgAAAAEAAAAACAMADkAAAAEAAAAACALADkAAAAEAAAAACAJADsAAAAEAAAAACAHAD0AAAAEAAAAACAFAEEAAAAEAAAAACAHAEMAAAAEAAAAACAWAEMAAAAEAAAAACAYAEEAAAAEAAAAACAaAEEAAAAEAAAAACAcAEIAAAAEAAAAACAeAEIAAAAEAAAAACAfAEIAAAAEAAAAACAhAEIAAAAEAAAAACAiAEIAAAAEAAAAACAkAEIAAAAEAAAAACACADEAAAAEAAAAACA=")
 
-[node name="SavePoint" parent="." instance=ExtResource("7_2erbf")]
+[node name="SavePoint" parent="." instance=ExtResource("9_ae7cf")]
 position = Vector2(178, 454)
 
 [node name="Item" type="Node" parent="."]
 
-[node name="Coin" parent="Item" instance=ExtResource("9_7nmd1")]
+[node name="Coin" parent="Item" instance=ExtResource("10_nijh8")]
 position = Vector2(665, 41)
 is_field_coin = true
 gold_amount = 100
 
-[node name="FieldItem" parent="Item" instance=ExtResource("9_jptyp")]
+[node name="FieldItem" parent="Item" instance=ExtResource("11_an4tw")]
 position = Vector2(36.000004, 447)
 scale = Vector2(0.8, 0.8)
-item_resource = ExtResource("10_7nmd1")
+item_resource = ExtResource("12_tdvhl")
 
-[node name="Coin2" parent="Item" instance=ExtResource("9_7nmd1")]
+[node name="Coin2" parent="Item" instance=ExtResource("10_nijh8")]
 position = Vector2(138, 13)
 is_field_coin = true
 gold_amount = 500
 
 [node name="Entities" type="Node" parent="."]
 
-[node name="Slime1" parent="Entities" instance=ExtResource("2_l8wo6")]
+[node name="Slime1" parent="Entities" instance=ExtResource("13_lg3tr")]
 position = Vector2(379, 68)
 slime_move_speed = 60.0
 
-[node name="Esnake" parent="Entities" instance=ExtResource("14_hwyny")]
+[node name="Esnake" parent="Entities" instance=ExtResource("14_eveut")]
 position = Vector2(270, 72)
 snake_max_hp = 20
 drop_gold_amount = 20
 
-[node name="MerchantNPC" parent="." instance=ExtResource("14_jpob3")]
+[node name="MerchantNPC" parent="." instance=ExtResource("15_vqt1q")]
 position = Vector2(136, 22)
 collision_mask = 2
-location_name = null
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("16_hwyny")
+stream = ExtResource("16_vrmrq")
+volume_db = -15.0
 autoplay = true
 bus = &"BGM"
+
+[node name="BossTeleportPoints" type="Node2D" parent="." groups=["teleport_points_stage1"]]
+
+[node name="TP1" type="Marker2D" parent="BossTeleportPoints"]
+
+[node name="TP2" type="Marker2D" parent="BossTeleportPoints"]
+
+[node name="TP3" type="Marker2D" parent="BossTeleportPoints"]
 
 [connection signal="body_entered" from="MerchantNPC" to="." method="_on_merchant_npc_body_entered"]
 
