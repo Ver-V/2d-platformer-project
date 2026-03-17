@@ -9,6 +9,7 @@ var talk_count: int = 0
 var player_in_range = false
 
 func _ready() -> void:
+	add_to_group("npc")
 	sprite.play("Idle")
 	ShopUI.shop_closed.connect(_on_shop_closed)
 

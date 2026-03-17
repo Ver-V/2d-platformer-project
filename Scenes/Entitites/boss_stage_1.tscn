@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://cssceudukavu"]
+
+[ext_resource type="PackedScene" uid="uid://bl288730bkpt" path="res://Scenes/Entitites/Boss.tscn" id="1_3230w"]
+[ext_resource type="PackedScene" uid="uid://d888233uuktt" path="res://Scenes/Entitites/ShooterComponent.tscn" id="2_nrtuv"]
+
+[node name="Boss_stage1" instance=ExtResource("1_3230w")]
+script = null
+
+[node name="ShooterComponent" parent="." index="9" instance=ExtResource("2_nrtuv")]

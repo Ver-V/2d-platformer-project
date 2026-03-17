@@ -40,7 +40,7 @@ main=false
 
 [global_group]
 
-npc=""
+teleport_points_stage1=""
 
 [gui]
 
