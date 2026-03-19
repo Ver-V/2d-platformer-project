@@ -54,31 +54,45 @@ func _attack_state(delta:float) -> void:
 	
 	is_attacking = true
 	var pattern = randi() % 4
-	
+		
 	match pattern:
 		0:
-			_attack_pattern_1()
+			await _attack_pattern_1()
 		1:
-			_attack_pattern_2()
+			await _attack_pattern_2()
 		2:
-			_attack_pattern_3()
+			await _attack_pattern_3()
 		3:
-			_attack_pattern_4()
+			await _attack_pattern_4()
 	
 	current_state = STATE_TELEPORT
 
 func _attack_pattern_1() -> void:
 	if not shooter: return
 	shooter.projectile_scene = Fire_projectile
-	shooter.parry_interval = 4
-	shooter.reset_count()
+	var random_parry_index = randi() % 4
 	for i in range(4):
 		if target != null:
-			shooter.shoot(self, target, global_position)
+			var p: Projectile = shooter.shoot(self, target, global_position) as Projectile
+			if p != null and p.has_method("set_parryable_mode"):
+				if i == random_parry_index:
+					p.set_parryable_mode(true, shooter.parry_cue_color)
+				else:
+					p.set_parryable_mode(false)
+					
 		await get_tree().create_timer(0.5).timeout
 
 func _attack_pattern_2() -> void:
-	pass
+	if not shooter: return
+	shooter.projectile_scene = Fire_projectile
+	if target != null:
+		var p: Projectile = shooter.shoot(self, target, global_position) as Projectile
+		if p != null:
+			p.set_parryable_mode(false)
+			p.scale = Vector2(2.5, 2.5)
+			if "damage" in p:
+				p.damage = 35
+	await get_tree().create_timer(0.5).timeout
 	
 func _attack_pattern_3() -> void:
 	pass

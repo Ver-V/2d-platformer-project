@@ -137,6 +137,8 @@ func respawn_player() -> void:
 	else:
 		print("⚠️ 저장 데이터 없음/실패 -> 현재 씬 재시작")
 		player_current_hp = player_max_hp
+		# [중요] 씬 변경 실패 시에도 플래그는 풀어줘야 다음 시도가 가능함
+		is_respawning = false
 		call_deferred("_reload_scene_safe")
 		
 
@@ -278,7 +280,11 @@ var item_database: Dictionary = {
 
 func get_item_by_id(item_id: String) -> ItemData:
 	if item_database.has(item_id):
-		return load(item_database[item_id]) # 경로에 있는 파일을 로드해서 줌
+		var path = item_database[item_id]
+		if FileAccess.file_exists(path):
+			return load(path)
+		else:
+			print ("Not found Item")
 	return null
 	
 func reset_data() -> void:

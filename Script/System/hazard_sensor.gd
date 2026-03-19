@@ -58,6 +58,9 @@ func _physics_process(delta: float) -> void:
 func _hurt_parent(amount: int) -> void:
 	var parent = get_parent()
 	if parent.has_method("apply_damage"):
+		# [추가] 이미 죽었으면 데미지 무시
+		if "hp" in parent and parent.hp <= 0:
+			return
 		
 		# 넉백 계산 (위로 띄우거나, 0으로 하거나 취향대로)
 		var final_kb = Vector2.ZERO 
