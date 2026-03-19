@@ -13,7 +13,7 @@ var _shot_count: int = 0
 # 외부(보스나 몹)에서 이 함수를 부르면 총알이 나갑니다.
 # target_node: 누구를 향해 쏠 건지
 # spawn_pos: 어디서 쏠 건지 (보스 손, 입 등)
-func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> void:
+func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> Node2D:
 	if projectile_scene == null or target_node == null:
 		return
 		
@@ -47,6 +47,8 @@ func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> void
 			
 	# 4. 씬에 추가
 	get_tree().current_scene.call_deferred("add_child", p)
+	
+	return p
 	
 func reset_count() -> void:
 	_shot_count = 0

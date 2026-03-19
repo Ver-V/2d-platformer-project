@@ -120,6 +120,7 @@ func restart_stage() -> void:
 # [수정] 이미 죽은 적들(보스 + 로컬 잡몹) 제거 함수
 func _cleanup_already_dead_enemies() -> void:
 	for n in _cached_enemies:
+		if not is_instance_valid(n): continue
 		var e: EnemyBase = n as EnemyBase
 		if e == null: continue
 		
@@ -149,9 +150,12 @@ func _on_enemy_died(e: EnemyBase) -> void:
 		print("보스 처치됨 (영구 저장): ", id)
 	
 func apply_room_rules(r: Vector2i) -> void:
+	_cached_enemies = _cached_enemies.filter(func(n) : return is_instance_valid(n))
+	
 	for n in _cached_enemies:
+		if not is_instance_valid(n): continue
 		var e: EnemyBase = n as EnemyBase
-		if not is_instance_valid(e): continue
+		if e == null: continue
 
 		var eroom: Vector2i = room_from_pos(e.home_position)
 
@@ -170,7 +174,7 @@ func apply_room_rules(r: Vector2i) -> void:
 # ...
 # --- 아래는 생략된 부분입니다. 작성하신 코드 그대로 유지하세요 ---
 func _physics_process(_delta: float) -> void:
-	if player == null: return
+	if not is_instance_valid(player): return
 	var r: Vector2i = room_from_pos(player.global_position)
 	if r != current_room: snap_to_room(r, false)
 
@@ -187,6 +191,7 @@ func snap_to_room(r: Vector2i, is_initial: bool) -> void:
 func clear_projectiles(clear_all: bool) -> void:
 	var nodes: Array = get_tree().get_nodes_in_group("projectiles")
 	for n in nodes:
+		if not is_instance_valid(n): continue
 		var p: Node2D = n as Node2D
 		if p == null: continue
 		if clear_all: p.queue_free()

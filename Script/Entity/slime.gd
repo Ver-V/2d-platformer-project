@@ -45,7 +45,11 @@ func _ready() -> void:
 		sprite.animation_finished.connect(_on_animation_finished)
 	
 	if is_instance_valid(hitbox_shape):
+		# [수정] 히트박스 리소스 고유화 (공유 방지)
+		hitbox_shape.shape = hitbox_shape.shape.duplicate()
+		# [수정] 에디터에 설정된 기본 위치를 정확히 기억
 		default_hitbox_pos = hitbox_shape.position
+		
 		if hitbox_shape.shape is RectangleShape2D:
 			default_hitbox_extents = hitbox_shape.shape.extents
 		elif hitbox_shape.shape is CircleShape2D:
@@ -76,8 +80,14 @@ func _process(delta: float) -> void:
 			_air_chase_left = 0.0
 
 	if target != null and is_on_floor():
-		var dist = global_position.distance_to(target.global_position)
-		if dist <= attack_distance:
+		# [핵심] 공격 체크 전, 플레이어가 있는 방향으로 몸을 돌림
+		dir = 1 if target.global_position.x > global_position.x else -1
+		
+		var dx = abs(global_position.x - target.global_position.x)
+		var dy = abs(global_position.y - target.global_position.y)
+		
+		# 가로 사거리(attack_distance)와 세로 높이 차이(예: 32픽셀 이내)를 동시에 체크
+		if dx <= attack_distance and dy <= 32.0:
 			if not is_attacking:
 				is_attacking = true
 				if sprite:
@@ -117,7 +127,7 @@ func _set_attack_hitbox(active: bool) -> void:
 	if hitbox_shape.shape is RectangleShape2D:
 		var shape = hitbox_shape.shape as RectangleShape2D
 		if active:
-			# 4픽셀만 추가 (esnake 참고)
+			# 뱀과 동일하게 4.0픽셀 확장 및 이동
 			shape.extents = Vector2(default_hitbox_extents.x + 4.0, default_hitbox_extents.y)
 			hitbox_shape.position.x = default_hitbox_pos.x + (dir * 4.0)
 		else:
@@ -126,7 +136,7 @@ func _set_attack_hitbox(active: bool) -> void:
 	elif hitbox_shape.shape is CircleShape2D:
 		var shape = hitbox_shape.shape as CircleShape2D
 		if active:
-			# 원형도 3.5픽셀 정도만 추가
+			# 원형은 사방으로 커지므로 3.5픽셀만 확장 후 이동
 			shape.radius = default_hitbox_radius + 3.5
 			hitbox_shape.position.x = default_hitbox_pos.x + (dir * 3.5)
 		else:

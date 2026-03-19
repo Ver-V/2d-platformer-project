@@ -46,7 +46,14 @@ func _effective_knockback_cooldown(fallback: float = -1.0) -> float:
 	var c: float = get_knockback_cooldown()
 	return c if c >= 0.0 else get_invuln_time()
 
-# --- 넉백 적용 ---
+func move_with_knockback(delta:float) -> void:
+	var kb: Vector2 = update_knockback(delta)
+	kb.x = clamp(kb.x, -2000, 2000)
+	kb.y = clamp(kb.y, -2000, 2000)
+	velocity += kb
+	move_and_slide()
+	velocity -= kb
+
 func apply_knockback_vec(kb: Vector2, ignore_cooldown: bool = false, cooldown: float = -1.0, reset_y: bool = true) -> void:
 	if kb == Vector2.ZERO: return
 	if not ignore_cooldown and _knockback_left > 0.0: return

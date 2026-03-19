@@ -114,11 +114,7 @@ func _process(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	if not _active: return
-	
-	var kb: Vector2 = update_knockback(delta)
-	velocity += kb
-	move_and_slide()
-	velocity -= kb
+	move_with_knockback(delta)
 
 func spawn_gold():
 	# 코인 씬이 연결되어 있고, 드랍 금액이 0보다 클 때만 생성

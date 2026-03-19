@@ -329,12 +329,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jumpforce
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
-
-	# 9. 넉백 및 이동 실행
-	var kb: Vector2 = update_knockback(delta)
-	velocity += kb
-	move_and_slide()
-	velocity -= kb
+	
+	move_with_knockback(delta)
 	
 	_update_animation(dir_input)
 	

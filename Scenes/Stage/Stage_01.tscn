@@ -322,7 +322,7 @@ tile_set = SubResource("TileSet_km80h")
 zoom = Vector2(2, 2)
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(25, 676)
+position = Vector2(46, 118)
 
 [node name="RoomGrid" type="Node2D" parent="."]
 process_mode = 3

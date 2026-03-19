@@ -21,6 +21,7 @@ var is_attacking: bool = false
 
 @onready var hitbox_shape = get_node_or_null("Hitbox/CollisionShape2D")
 var default_hitbox_extents: Vector2 = Vector2(4.5, 5.0)
+var default_hitbox_pos: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	max_hp_base = snake_max_hp
@@ -30,8 +31,10 @@ func _ready() -> void:
 	super._ready()
 	if sprite:
 		sprite.play("idle")
-
-	if hitbox_shape and hitbox_shape.shape is RectangleShape2D:
+	
+	if hitbox_shape:
+		hitbox_shape.shape = hitbox_shape.shape.dupulicate()
+		default_hitbox_pos = hitbox_shape.position
 		default_hitbox_extents = hitbox_shape.shape.extents
 
 func _process(delta: float) -> void:
@@ -45,8 +48,12 @@ func _process(delta: float) -> void:
 		return
 
 	if target != null:
-		var dist = global_position.distance_to(target.global_position)
-		if dist <= attack_distance:
+		dir = 1 if target.global_position.x > global_position.x else -1
+		var dx = abs(global_position.x - target.global_position.x)
+		var dy = abs(global_position.y - target.global_position.y)
+		
+		# 뱀은 사거리가 좀 더 짧고 바닥 근처여야 함 (24픽셀 이내)
+		if dx <= attack_distance and dy <= 24.0:
 			if not is_attacking:
 				is_attacking = true
 				if sprite:
@@ -80,10 +87,10 @@ func _set_attack_hitbox(active: bool) -> void:
 		# 공격 시 히트박스의 가로 길이를 늘림 (원하는 수치로 조정 가능)
 		shape.extents = Vector2(default_hitbox_extents.x + 4.0, default_hitbox_extents.y)
 		# 바라보는 방향(dir)으로 늘어난 만큼 중심점을 이동 (dir: 1 오른쪽, -1 왼쪽)
-		hitbox_shape.position.x = 0.5 + (dir * 4.0) 
+		hitbox_shape.position.x = default_hitbox_pos.x + (dir * 4.0) 
 	else:
 		shape.extents = default_hitbox_extents
-		hitbox_shape.position.x = 0.5
+		hitbox_shape.position.x = default_hitbox_pos.x
 
 func _physics_process(delta: float) -> void:
 	if not _active or hp <= 0:
