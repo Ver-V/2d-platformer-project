@@ -33,7 +33,7 @@ func _ready() -> void:
 		sprite.play("idle")
 	
 	if hitbox_shape:
-		hitbox_shape.shape = hitbox_shape.shape.dupulicate()
+		hitbox_shape.shape = hitbox_shape.shape.duplicate()
 		default_hitbox_pos = hitbox_shape.position
 		default_hitbox_extents = hitbox_shape.shape.extents
 

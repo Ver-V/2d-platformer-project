@@ -81,12 +81,6 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 func _on_body_entered(body: Node) -> void:
-	# 1. 벽/지형에 닿았을 때 (TileMapLayer 등)
-	if body is TileMapLayer or body is TileMap:
-		_destroy_projectile()
-		return
-
-	# 2. CombatBody2D(플레이어 또는 적)에 닿았을 때
 	if body is CombatBody2D:
 		# 같은 팀이면 통과 (예: 적이 쏜 게 적을 맞추지 않음)
 		if _is_same_team(body):
@@ -137,7 +131,7 @@ func attempt_parry(source_pos: Vector2) -> bool:
 	# (유도탄이라 초기 방향은 크게 중요하지 않지만, 멋을 위해 반대편으로 설정)
 	direction = (global_position - source_pos).normalized()
 	damage = ceil(damage * 1.5)
-	speed *= 0.75 # 유도탄이니까 속도는 2배만 (너무 빠르면 선회하기 힘듦)
+	speed *= 2.0 # 유도탄이니까 속도는 2배만 (너무 빠르면 선회하기 힘듦)
 	velocity = direction * speed  # <-- 이거 꼭 있어야 날아갑니다!
 
 	modulate = Color.CYAN
