@@ -127,12 +127,12 @@ func _cleanup_already_dead_enemies() -> void:
 		var id: StringName = e.get_persist_id()
 		
 		# 1. 영구 사망한 보스인지 확인 (GameManager)
-		if GameManager.defeated_bosses.has(id):
+		if GameManager.defeated_bosses.get(id, false):
 			e.queue_free()
 			continue
 			
 		# 2. 이번 판에 잡은 잡몹인지 확인 (killed_ids)
-		if killed_ids.has(id) or GameManager.defeated_mobs.has(id):
+		if killed_ids.get(id, false) or GameManager.defeated_mobs.has(id):
 			e.queue_free()
 
 func _on_enemy_died(e: EnemyBase) -> void:

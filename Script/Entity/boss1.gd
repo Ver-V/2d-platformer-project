@@ -28,8 +28,7 @@ func _physics_process(delta:float) -> void:
 			_teleport_state(delta)
 		STATE_ATTACK:
 			_attack_state(delta)
-		_:
-			super._physics_process(delta)
+	super._physics_process(delta)
 			
 func _teleport_state(delta:float) -> void:
 	teleport_timer += delta
@@ -43,6 +42,7 @@ func _teleport_state(delta:float) -> void:
 		if candidate_markers.size() > 0:
 			var random_marker = candidate_markers.pick_random()
 			global_position = random_marker.global_position
+			velocity = Vector2.ZERO
 		
 		is_attacking = false
 		current_state = STATE_ATTACK
@@ -95,7 +95,24 @@ func _attack_pattern_2() -> void:
 	await get_tree().create_timer(0.5).timeout
 	
 func _attack_pattern_3() -> void:
-	pass
+	if not shooter: return
+	shooter.projectile_scene = Fire_projectile
+	
+	# 1. 기본 8방향으로 2번 발사 (간격 0.8초)
+	for i in range(2):
+		for angle_deg in range(0, 360, 45): # 0, 45, 90, 135, 180, 225, 270, 315도
+			var dir = Vector2.RIGHT.rotated(deg_to_rad(angle_deg))
+			shooter.shoot_dir(self, dir, global_position)
+		
+		await get_tree().create_timer(0.8).timeout
+
+	# 2. 22.5도를 틀어서 8방향으로 2번 발사 (간격 0.8초)
+	for i in range(2):
+		for angle_deg in range(0, 360, 45):
+			var dir = Vector2.RIGHT.rotated(deg_to_rad(angle_deg + 22.5))
+			shooter.shoot_dir(self, dir, global_position)
+		
+		await get_tree().create_timer(0.8).timeout
 	
 func _attack_pattern_4() -> void:
 	pass

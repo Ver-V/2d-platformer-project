@@ -104,7 +104,9 @@ func add_parry_ratio(amount: float) -> void:
 func save_checkpoint(pos: Vector2) -> void:
 	has_checkpoint = true
 	last_checkpoint_pos = pos
-	last_scene_path = get_tree().current_scene.scene_file_path
+	var current_scene = get_tree().current_scene
+	if current_scene:
+		last_scene_path = current_scene.scene_file_path
 	print("저장 완료! 위치:", pos, " / 씬:", last_scene_path)
 
 func add_item(item: ItemData) -> bool:
@@ -281,7 +283,7 @@ var item_database: Dictionary = {
 func get_item_by_id(item_id: String) -> ItemData:
 	if item_database.has(item_id):
 		var path = item_database[item_id]
-		if FileAccess.file_exists(path):
+		if ResourceLoader.exists(path):
 			return load(path)
 		else:
 			print ("Not found Item")

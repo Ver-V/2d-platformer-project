@@ -24,7 +24,11 @@ func _ready():
 		
 		# 2. ID 자동 생성 및 중복 확인
 		if id == "":
-			id = get_tree().current_scene.name + "/" + str(get_path())
+			var current_scene = get_tree().current_scene
+			if current_scene:
+				id = current_scene.name + "/" + str(get_path())
+			else:
+				id = "unknown_scene/" + str(get_path())
 		
 		if GameManager.collected_items.has(id):
 			queue_free() # 이미 먹은 거면 삭제
