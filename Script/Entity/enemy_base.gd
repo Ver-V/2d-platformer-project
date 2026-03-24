@@ -84,6 +84,26 @@ func _on_death() -> void:
 	# [시스템 필수] 죽음 신호를 보내야 Stage가 장부에 기록
 	died.emit(self)
 	spawn_gold()
+	
+	# 충돌체 비활성화 (시체에 부딪히거나 데미지를 받지 않도록)
+	if hitbox: hitbox.set_deferred("monitoring", false)
+	if hurtbox: hurtbox.set_deferred("monitoring", false)
+	if body_shape: body_shape.set_deferred("disabled", true)
+	
+	# 스프라이트가 애니메이션을 재생 중이면 끝날 때까지 대기
+	var anim_sprite = sprite
+	if not anim_sprite and "boss_sprite" in self:
+		anim_sprite = get("boss_sprite")
+		
+	if anim_sprite and anim_sprite.has_animation("died"):
+		anim_sprite.play("died")
+		await anim_sprite.animation_finished
+	elif anim_sprite and anim_sprite.is_playing():
+		await anim_sprite.animation_finished
+		
+	# 시체가 5초 동안 남아있게 대기
+	await get_tree().create_timer(5.0).timeout
+		
 	queue_free()
 
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
@@ -114,6 +134,11 @@ func _process(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	if not _active: return
+	
+	# 중력 적용
+	if not is_on_floor():
+		velocity += get_gravity() * delta
+		
 	move_with_knockback(delta)
 
 func spawn_gold():

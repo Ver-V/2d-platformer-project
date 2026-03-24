@@ -1,8 +1,8 @@
 extends Boss
 class_name Boss_stage1
 
-const STATE_TELEPORT = 4
-const STATE_ATTACK = 5
+enum CombatState {TELEPORT, ATTACK}
+var current_state1 = CombatState.TELEPORT
 
 var teleport_markers: Array[Node] = []
 var teleport_timer: float = 0.0
@@ -15,21 +15,24 @@ const Fire_projectile = preload("res://Scenes/Projectile/projectilefire.tscn")
 func _ready() -> void:
 	super._ready()
 	call_deferred("_setup_teleports_points")
-	current_state = STATE_TELEPORT
 	
 func _setup_teleports_points() -> void:
 	var points_node = get_tree().get_first_node_in_group("teleport_points_stage1")
 	if points_node:
 		teleport_markers = points_node.get_children()
-	
-func _physics_process(delta:float) -> void:
-	match current_state:
-		STATE_TELEPORT:
+		
+func _idle_state(_delta: float) -> void:
+	# IDLE 상태가 되면 곧바로 COMBAT 상태로 넘어갑니다
+	current_state = State.COMBAT
+	current_state1 = CombatState.TELEPORT
+
+func _combat_state(delta:float) -> void:
+	match current_state1:
+		CombatState.TELEPORT:
 			_teleport_state(delta)
-		STATE_ATTACK:
+		CombatState.ATTACK:
 			_attack_state(delta)
-	super._physics_process(delta)
-			
+
 func _teleport_state(delta:float) -> void:
 	teleport_timer += delta
 	if teleport_timer >= 3.0:
@@ -45,15 +48,17 @@ func _teleport_state(delta:float) -> void:
 			velocity = Vector2.ZERO
 		
 		is_attacking = false
-		current_state = STATE_ATTACK
+		current_state1 = CombatState.ATTACK
 				
-	
-func _attack_state(delta:float) -> void:
+func _attack_state(_delta:float) -> void:
 	if is_attacking:
 		return
 	
 	is_attacking = true
 	var pattern = randi() % 4
+		
+	if boss_sprite:
+		boss_sprite.play("attack")
 		
 	match pattern:
 		0:
@@ -65,7 +70,10 @@ func _attack_state(delta:float) -> void:
 		3:
 			await _attack_pattern_4()
 	
-	current_state = STATE_TELEPORT
+	if boss_sprite and boss_sprite.animation == "attack":
+		boss_sprite.play("idle")
+		
+	current_state1 = CombatState.TELEPORT
 
 func _attack_pattern_1() -> void:
 	if not shooter: return
@@ -115,6 +123,43 @@ func _attack_pattern_3() -> void:
 		await get_tree().create_timer(0.8).timeout
 	
 func _attack_pattern_4() -> void:
-	pass
+	if not shooter or target == null: return
+	shooter.projectile_scene = Fire_projectile
+	
+	var p1 = shooter.shoot(self, target, global_position)
+	
+	await get_tree().create_timer(0.5).timeout
+	
+	var p2_list: Array[Node] = []
+	if is_instance_valid(p1) :
+		var pos1 = p1.global_position
+		p1.queue_free()
+		
+		if is_instance_valid(target):
+			var target_pos1 = target.global_position + Vector2(0,-10)
+			var dir1 = (target_pos1 - pos1).normalized()
+			
+			for angle_deg in [-30, 0 , 30]:
+				var dir = dir1.rotated(deg_to_rad(angle_deg))
+				var p = shooter.shoot_dir(self, dir, pos1)
+				if p != null:
+					p2_list.append(p)
+	
+	await get_tree().create_timer(0.6).timeout
+	
+	for p2 in p2_list:
+		if is_instance_valid(p2):
+			var pos2 = p2.global_position
+			p2.queue_free()
+			if is_instance_valid(target):
+				var target_pos2 = target.global_position + Vector2(0,-10)
+				var dir2 = (target_pos2 - pos2).normalized()
+				
+				for angle_deg in [-30, 0 , 30]:
+					var dir = dir2.rotated(deg_to_rad(angle_deg))
+					shooter.shoot_dir(self,dir,pos2)
+					
+			
+	
 	
 	

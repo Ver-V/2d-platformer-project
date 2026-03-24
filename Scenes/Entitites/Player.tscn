@@ -292,98 +292,8 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7xdrn")
 }],
-"loop": true,
+"loop": false,
 "name": &"died",
 "speed": 8.0
 }]
@@ -420,7 +330,7 @@ visible = false
 position = Vector2(-1.4000014, -21.3)
 scale = Vector2(0.7, 0.7)
 sprite_frames = SubResource("SpriteFrames_xlvrw")
-animation = &"Run"
+animation = &"died"
 speed_scale = 0.7
 
 [node name="PlayerCol" type="CollisionShape2D" parent="."]

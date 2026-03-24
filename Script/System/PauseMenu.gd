@@ -15,7 +15,7 @@ func _on_options_closed():
 	colorR.visible = true
 	options_ui.visible = false
 	menu_container.visible = true
-	var resume_btn = menu_container.get_node_or_null("$CenterContainer/VBoxContainer/BtnResume")
+	var resume_btn: Button = menu_container.get_node_or_null("CenterContainer/VBoxContainer/BtnResume")
 	if resume_btn:
 		resume_btn.grab_focus()
 	
