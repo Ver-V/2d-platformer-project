@@ -60,11 +60,11 @@ func _input(event):
 				print("에러: 상인의 첫 번째 대사 파일이 없습니다.")
 
 func _on_body_entered(body):
-	if body.name == "Player":
+	if body.is_in_group("player"):
 		player_in_range = true
 		GameManager.interact_msg_requested.emit("shop")
 
 func _on_body_exited(body):
-	if body.name == "Player":
+	if body.is_in_group("player"):
 		player_in_range = false
 		GameManager.interact_msg_hidden.emit()

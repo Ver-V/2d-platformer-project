@@ -15,7 +15,7 @@ var _shot_count: int = 0
 # spawn_pos: 어디서 쏠 건지 (보스 손, 입 등)
 func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> Node2D:
 	if projectile_scene == null or target_node == null:
-		return
+		return null
 		
 	_shot_count += 1
 	
@@ -46,9 +46,52 @@ func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> Node
 			p.set_parryable_mode(false)
 			
 	# 4. 씬에 추가
-	get_tree().current_scene.call_deferred("add_child", p)
+	var current_scene = get_tree().current_scene
+	if current_scene:
+		current_scene.call_deferred("add_child", p)
+	else:
+		p.queue_free()
 	
 	return p
 	
 func reset_count() -> void:
 	_shot_count = 0
+
+# 특정 방향으로 투사체를 발사하는 함수
+func shoot_dir(shooter_mob: Node2D, dir: Vector2, spawn_pos: Vector2) -> Node2D:
+	if projectile_scene == null:
+		return null
+		
+	_shot_count += 1
+	
+	# 1. 총알 생성
+	var p = projectile_scene.instantiate()
+	p.shooter = shooter_mob
+	p.global_position = spawn_pos
+	
+	# 2. 방향 및 각도 설정
+	p.direction = dir.normalized()
+	p.rotation = p.direction.angle()
+	p.team = "enemy" 
+	
+	# 탄막 패턴이므로 유도탄 속성을 강제로 끔
+	if "start_homing" in p:
+		p.start_homing = false 
+	
+	# 3. 패링 설정
+	var is_parry_shot = (_shot_count % parry_interval == 0)
+	
+	if p.has_method("set_parryable_mode"):
+		if is_parry_shot:
+			p.set_parryable_mode(true, parry_cue_color)
+		else:
+			p.set_parryable_mode(false)
+			
+	# 4. 씬에 추가
+	var current_scene = get_tree().current_scene
+	if current_scene:
+		current_scene.call_deferred("add_child", p)
+	else:
+		p.queue_free()
+	
+	return p

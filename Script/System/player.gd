@@ -50,7 +50,8 @@ func _ready() -> void:
 	# ----------------------------------------------------------------
 	# [1] 위치 동기화 (체크포인트)
 	# ----------------------------------------------------------------
-	if GameManager.has_checkpoint and GameManager.last_scene_path == get_tree().current_scene.scene_file_path:
+	var current_scene = get_tree().current_scene
+	if current_scene and GameManager.has_checkpoint and GameManager.last_scene_path == current_scene.scene_file_path:
 		global_position = GameManager.last_checkpoint_pos
 	
 	# ----------------------------------------------------------------
@@ -225,7 +226,7 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
 		var stage = get_tree().current_scene
-		if stage.has_method("apply_camera_shake"):
+		if stage and stage.has_method("apply_camera_shake"):
 			stage.apply_camera_shake(5.0)
 		
 		GameManager.update_hp(hp)

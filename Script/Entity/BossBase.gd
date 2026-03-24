@@ -10,18 +10,18 @@ var current_state = State.INTRO
 func _ready() -> void:
 	super._ready() # 부모(EnemyBase)의 _ready 실행 (체력 설정 등)
 	add_to_group("bosses") # 보스 그룹 추가 (필요 시 사용)
-	if persist_id != "" and GameManager.defeated_bosses.has(persist_id):
+	if persist_id != "" and GameManager.defeated_bosses.get(persist_id, false):
 		queue_free()
 		return
 	
-	if persist_id != "" and GameManager.talked_bosses.has(persist_id):
+	if persist_id != "" and GameManager.talked_bosses.get(persist_id, false):
 		_start_combat()
 	else:
 		_start_intro()
 		
 func _start_intro() -> void:
 	current_state = State.INTRO
-	set_active(false)
+	velocity = Vector2.ZERO
 	if dialogue_file != "":
 		DialogueManager.start_dialogue(dialogue_file)
 		
