@@ -43,6 +43,7 @@ var is_parry_success: bool = false
 var status_tween: Tween # [추가됨] 팝업 애니메이션 겹침 방지용
 
 signal died
+signal death_started
 
 func _ready() -> void:
 	add_to_group("player")
@@ -157,6 +158,7 @@ func show_popup(text: String, color: Color = Color.YELLOW) -> void:
 	
 	
 func _on_death() -> void:
+	death_started.emit()
 	collision_stand.set_deferred("disabled", true)
 	collision_died.set_deferred("disabled", false)
 	velocity.x = 0 
@@ -195,7 +197,7 @@ func _on_sword_area_entered(area: Area2D) -> void:
 			
 			# 성공했을 때만 잠깐 대기 후 히트스탑
 			await get_tree().create_timer(0.05).timeout
-			GameManager.apply_hitstop(0.05, 0.25)
+			GameManager.apply_hitstop(0.15, 0.2)
 		
 		# else: 실패한 경우(패링 불가 탄환)에는 아무것도 안 함.
 		# is_parry_success가 false로 유지되므로, 
@@ -233,7 +235,7 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 		HUD.show_hud_temporarily()
 		is_attacking = false
 		sword_shape.set_deferred("disabled", true)
-		GameManager.apply_hitstop(0.25, 0.15)
+		GameManager.apply_hitstop(0.25, 0.2)
 		
 		# [수정 1] 죽었을 때 확인
 		if hp <= 0:
