@@ -28,6 +28,7 @@ var killed_ids: Dictionary = {}
 var _cached_enemies: Array = []
 
 func _ready() -> void:
+	GameManager.is_respawning = false
 	CustomCursor.hide_cursor()
 	cam.make_current()
 	_cached_enemies = get_tree().get_nodes_in_group("enemies")
@@ -40,8 +41,8 @@ func _ready() -> void:
 	spawn_player()
 
 	if player != null:
-		if not player.died.is_connected(_on_player_died):
-			player.died.connect(_on_player_died)
+		if not player.death_started.is_connected(_on_player_died):
+			player.death_started.connect(_on_player_died)
 		
 		# 플레이어 위치에 맞춰 카메라 및 방 설정
 		snap_to_room(room_from_pos(player.global_position), true)
@@ -140,11 +141,13 @@ func _on_enemy_died(e: EnemyBase) -> void:
 
 	# 1. 로컬 장부 기록 (잡몹 리젠 방지용, 껏다 켜면 초기화됨)
 	killed_ids[id] = true
-	if not e.is_in_group("bosses"):
+	
+	# [중요] 보스 그룹이거나 Boss 클래스인 경우 잡몹 리스트에서 제외
+	if not e.is_in_group("bosses") and not (e is Boss):
 		GameManager.add_defeated_mob(id)
-
-	# 2. [추가] 만약 이 녀석이 '보스'라면 GameManager에 영구 저장!	# (보스 씬 노드 옆 'Node' 탭 -> Groups에 "bosses"를 추가하세요)
-	if e.is_in_group("bosses"):
+		print("잡몹 처치됨: ", id)
+	else:
+		# 2. [추가] 만약 이 녀석이 '보스'라면 GameManager에 영구 저장!
 		GameManager.defeated_bosses[id] = true
 		GameManager.save_game()
 		print("보스 처치됨 (영구 저장): ", id)

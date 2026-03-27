@@ -10,13 +10,18 @@ var current_state = State.INTRO
 
 func _ready() -> void:
 	super._ready() # 부모(EnemyBase)의 _ready 실행 (체력 설정 등)
-	add_to_group("bosses") # 보스 그룹 추가 (필요 시 사용)
 	
-	if persist_id != "" and GameManager.defeated_bosses.get(persist_id, false):
+	# 코드에서도 다시 한번 그룹 확인
+	if not is_in_group("bosses"):
+		add_to_group("bosses")
+	
+	var id = get_persist_id()
+	
+	if id != "" and GameManager.defeated_bosses.get(id, false):
 		queue_free()
 		return
 	
-	if persist_id != "" and GameManager.talked_bosses.get(persist_id, false):
+	if id != "" and GameManager.talked_bosses.get(id, false):
 		_start_combat()
 	else:
 		_start_intro()
@@ -29,8 +34,9 @@ func _start_intro() -> void:
 		
 		await DialogueManager.dialogue_finished
 		
-		if persist_id != "":
-			GameManager.talked_bosses[persist_id] = true
+		var id = get_persist_id()
+		if id != "":
+			GameManager.talked_bosses[id] = true
 			GameManager.save_game()
 			
 	_start_combat()

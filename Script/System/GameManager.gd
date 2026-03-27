@@ -8,6 +8,7 @@ var player_current_hp: int = 100
 var player_damage: int = 10
 var player_parry_damage_multifac: float = 1.5
 var defeated_bosses: Dictionary = {} # 영구 사망 보스 목록
+var talked_bosses: Dictionary = {}   # [추가] 보스 대화 완료 목록
 var defeated_mobs: Array = []
 var pending_status: String = ""
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
@@ -122,12 +123,17 @@ func add_item(item: ItemData) -> bool:
 # --- [함수 4] 플레이어 사망 시 부활 처리 ---
 func respawn_player() -> void:
 	if is_respawning:
+		print("⚠️ 이미 리스폰 진행 중입니다. 요청을 무시합니다.")
 		return
 	
+	print("🔄 리스폰 시작...")
 	is_respawning = true
 	
 	# 로드 시도
 	var load_result = load_game()
+	
+	# [추가] 부활 시 일반 몹 사망 기록 초기화 (모든 몹 다시 생성)
+	reset_mobs()
 	
 	get_tree().paused = false 
 	Engine.time_scale = 1.0
@@ -180,6 +186,7 @@ func save_game() -> void:
 		"damage": player_damage,
 		"parrydamage": player_parry_damage_multifac,
 		"defeated_bosses": defeated_bosses,
+		"talked_bosses": talked_bosses, # [추가]
 		"defeated_mobs": defeated_mobs,
 		"has_checkpoint": has_checkpoint,
 		"scene_path": last_scene_path,
@@ -224,6 +231,7 @@ func load_game() -> bool:
 		player_parry_damage_multifac = data.get("parrydamage", 1.5)
 		defeated_mobs = data.get("defeated_mobs", [])
 		defeated_bosses = data.get("defeated_bosses", {})
+		talked_bosses = data.get("talked_bosses", {}) # [추가]
 		has_checkpoint = data.get("has_checkpoint", false)
 		last_scene_path = data.get("scene_path", "")
 		collected_items = data.get("collected_items", [])
@@ -297,6 +305,7 @@ func reset_data() -> void:
 	player_parry_damage_multifac = 1.5
 	has_checkpoint = false
 	defeated_bosses = {}
+	talked_bosses = {} # [추가]
 	defeated_mobs = []
 	inventory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 	active_ui_count = 0
