@@ -11,14 +11,14 @@ signal died(enemy: EnemyBase)
 # [시스템 필수] 세이브/로드 시 나를 구별하는 ID (Stage에서 자동 할당함)
 @export var persist_id: StringName = &"" 
 
-@export_group("Stats")
+@export_group("Enemy Stats")
 @export var max_hp_base: int = 10
 @export var contact_damage_base: int = 1
 @export var move_speed_base: float = 80.0
 @export var contact_knockback_x: float = 320.0
 @export var contact_knockback_y: float = -240.0
 
-@export_group("Combat")
+@export_group("Enemy Combat")
 @export var invuln_time: float = 0.7
 @export var blink_interval: float = 0.05
 @export var knockback_resist: float = 0.0
@@ -88,14 +88,18 @@ func _on_death() -> void:
 	# 충돌체 비활성화 (시체에 부딪히거나 데미지를 받지 않도록)
 	if hitbox: hitbox.set_deferred("monitoring", false)
 	if hurtbox: hurtbox.set_deferred("monitoring", false)
-	if body_shape: body_shape.set_deferred("disabled", true)
+	
+	# [수정] 충돌체 자체를 끄지 않고 레이어를 변경하여 바닥에 서 있게 함
+	# 1번 레이어(World)만 남기고 나머지는 끔으로써 플레이어와는 겹쳐짐
+	collision_layer = 0
+	collision_mask = 1 # World 레이어하고만 충돌 유지
 	
 	# 스프라이트가 애니메이션을 재생 중이면 끝날 때까지 대기
 	var anim_sprite = sprite
 	if not anim_sprite and "boss_sprite" in self:
 		anim_sprite = get("boss_sprite")
 		
-	if anim_sprite and anim_sprite.has_animation("died"):
+	if anim_sprite and anim_sprite.sprite_frames.has_animation("died"):
 		anim_sprite.play("died")
 		await anim_sprite.animation_finished
 	elif anim_sprite and anim_sprite.is_playing():

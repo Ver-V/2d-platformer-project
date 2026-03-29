@@ -156,10 +156,6 @@ func _update_sens_label(value: float):
 	# 0.5 -> "50%" 처럼 보기 좋게 변환
 	lbl_sens_value.text = "Mouse Sensitivity: " + str(int(value * 100)) + "%"
 
-# --- [기능 2: 유혈 표현] ---
-func _on_gore_toggled(toggled_on: bool):
-	GameManager.enable_gore = toggled_on
-	
 func _init_game_settings():
 	# 1. 마우스 감도 초기화 (저장된 값 불러오기)
 	slider_sens.value = GameManager.mouse_sensitivity
@@ -168,12 +164,8 @@ func _init_game_settings():
 	slider_shake.value = GameManager.screenshake_intensity
 	_update_shake_label(GameManager.screenshake_intensity)
 	
-	# 2. 유혈 표현 초기화
-	btn_gore.button_pressed = GameManager.enable_gore
-	
-	# 3. 연결
+	# 2. 연결
 	slider_sens.value_changed.connect(_on_sens_changed)
-	btn_gore.toggled.connect(_on_gore_toggled)
 	
 	
 func _init_audio_sliders():

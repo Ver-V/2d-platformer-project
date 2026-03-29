@@ -1,7 +1,7 @@
 extends Control
 
 # [설정] 새 게임 시작 시 이동할 첫 스테이지 경로 (반드시 수정하세요!)
-const FIRST_LEVEL_PATH = "res://Scenes/Stage/Stage.tscn"
+const FIRST_LEVEL_PATH = "res://Scenes/Stage/Stage_01.tscn"
 
 # [노드 참조] 씬 트리의 이름과 일치해야 합니다.
 @onready var btn_load: Button = $VBoxContainer/BtnLoadGame
@@ -29,17 +29,17 @@ func _ready() -> void:
 
 func _on_new_game_pressed() -> void:
 	GameManager.reset_data()
-	get_tree().change_scene_to_file(FIRST_LEVEL_PATH)
+	get_tree().change_scene_to_file(GameManager.get_stage_path(1))
 
 func _on_continue_button_pressed() -> void: 
 	if GameManager.load_game():
-		if GameManager.last_scene_path != "":	
-			get_tree().change_scene_to_file(GameManager.last_scene_path)
-		else:
-			get_tree().change_scene_to_file(FIRST_LEVEL_PATH)
+		var path = GameManager.last_scene_path
+		if path == "" or not ResourceLoader.exists(path):
+			path = GameManager.get_stage_path(1)
+		get_tree().change_scene_to_file(path)
 	else:
 		GameManager.reset_data()
-		get_tree().change_scene_to_file(FIRST_LEVEL_PATH)
+		get_tree().change_scene_to_file(GameManager.get_stage_path(1))
 
 func _on_load_game_pressed() -> void:
 	_on_continue_button_pressed()
