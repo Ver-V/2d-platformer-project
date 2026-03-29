@@ -103,7 +103,11 @@ func _on_death() -> void:
 	if persist_id != "":
 		GameManager.defeated_bosses[persist_id] = true
 	
-	# 즉시 파일 저장 (보스 잡고 튕기면 억울하니까)
-	GameManager.save_game()
+	# [수정] 골드 드랍 및 사망 처리를 먼저 수행 (돈이 먼저 생겨야 함)
+	super._on_death() 
 	
-	super._on_death() # 부모의 사망 처리(신호 발송, 삭제) 실행
+	# [수정] 그 후 저장 (그래야 늘어난 골드/보스 처치 기록이 동시에 저장됨)
+	# 보스의 경우 골드 코인을 뿌리는 것보다 즉시 지급하는 것이 세이브 데이터 안정성에 더 좋습니다.
+	GameManager.add_gold(drop_gold_amount)
+	GameManager.save_game()
+	print("보스 처치 완료 및 데이터 저장됨. 획득 골드: ", drop_gold_amount)

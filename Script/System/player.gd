@@ -29,6 +29,10 @@ class_name Player
 # 내부 타이머
 var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
+var _was_on_floor: bool = false # [추가] 착지 감지용
+
+@export_group("Visuals")
+@export var dust_particles_scene: PackedScene = preload("res://Scenes/System/DustParticles.tscn")
 
 @export_group("Combat")
 @export var invuln_time: float = 0.8
@@ -332,10 +336,28 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jumpforce
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
+		spawn_dust(Vector2(0, 0)) # 점프 시 발밑에 먼지 생성
+
+	# [추가] 착지 순간 감지
+	if is_on_floor() and not _was_on_floor:
+		spawn_dust(Vector2(0, 0)) # 착지 시 발밑에 먼지 생성
+	
+	_was_on_floor = is_on_floor() # 상태 업데이트
 	
 	move_with_knockback(delta)
 	
 	_update_animation(dir_input)
+
+# [추가] 먼지 파티클 소환 함수
+func spawn_dust(offset: Vector2 = Vector2.ZERO) -> void:
+	if dust_particles_scene:
+		var dust = dust_particles_scene.instantiate()
+		get_parent().add_child(dust)
+		dust.global_position = global_position + offset
+		dust.emitting = true
+		# 수명이 다하면 자동으로 삭제되도록 타이머 연결
+		await get_tree().create_timer(dust.lifetime).timeout
+		dust.queue_free()
 	
 func get_knockback_cooldown() -> float:
 	return 0.7  # 0.7초 뒤에는 바로 움직일 수 있음!

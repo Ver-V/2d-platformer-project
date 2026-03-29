@@ -61,8 +61,13 @@ func _on_btn_options_pressed():
 
 func _on_btn_load_pressed():
 	if GameManager.load_game():
-		if GameManager.last_scene_path != "":	
-			get_tree().change_scene_to_file(GameManager.last_scene_path)
+		var path = GameManager.last_scene_path
+		# [수정] 경로가 유효하지 않으면 1번 스테이지(Stage_01)를 기본값으로 사용
+		if path == "" or not ResourceLoader.exists(path):
+			path = GameManager.get_stage_path(1)
+			
+		get_tree().paused = false
+		get_tree().change_scene_to_file(path)
 
 func _on_btn_exit_pressed():
 	get_tree().change_scene_to_file("res://Scenes/System/MainMenu.tscn")

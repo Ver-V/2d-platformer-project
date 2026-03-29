@@ -149,14 +149,6 @@ layout_mode = 2
 max_value = 1.0
 step = 0.01
 
-[node name="Blood" type="Label" parent="OptionsUI/Panel/TabContainer/Control and game"]
-layout_mode = 2
-text = "Blood "
-
-[node name="BtnGore" type="CheckButton" parent="OptionsUI/Panel/TabContainer/Control and game"]
-layout_mode = 2
-size_flags_horizontal = 0
-
 [node name="ExitButton" type="Button" parent="OptionsUI"]
 layout_mode = 0
 offset_left = 601.0

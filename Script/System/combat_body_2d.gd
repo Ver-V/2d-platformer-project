@@ -5,6 +5,10 @@ class_name CombatBody2D
 var max_hp: int = 1
 var hp: int = 1
 
+# [추가] 시각 효과 리소스
+var hit_spark_scene: PackedScene = preload("res://Scenes/System/HitSpark.tscn")
+var outline_shader: Shader = preload("res://resources/Shaders/outline.gdshader")
+
 # 상태 변수
 var _invuln_left: float = 0.0
 var _knockback_left: float = 0.0
@@ -19,6 +23,23 @@ func get_knockback_resist() -> float: return 0.0
 func get_knockback_cooldown() -> float: return -1.0 # -1이면 invuln_time을 따름
 func get_blink_node() -> CanvasItem: return null
 func _on_death() -> void: pass
+
+func _ready() -> void:
+	_setup_outline_material()
+
+# [추가] 쉐이더 마테리얼 자동 설정
+func _setup_outline_material() -> void:
+	var node = get_blink_node()
+	if node and outline_shader:
+		# 이미 마테리얼이 있으면 유지, 없으면 새로 생성
+		if node.material == null:
+			var mat = ShaderMaterial.new()
+			mat.shader = outline_shader
+			# 기본값 설정
+			mat.set_shader_parameter("outline_color", Color(1, 1, 1, 1)) # 흰색 외곽선
+			mat.set_shader_parameter("outline_width", 1.0)
+			mat.set_shader_parameter("is_active", false)
+			node.material = mat
 
 # --- 상태 확인 및 조작 ---
 func is_invulnerable() -> bool:
@@ -94,10 +115,33 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	# -1.0이면 원래대로 기본값을 쓰고, 값이 들어왔으면(예: 2.0) 그 시간을 씁니다.
 	start_invuln(or_invuln_time)
 	
+	# [추가] 피격 효과 발동
+	_play_hit_effects()
+	
 	if knockback != Vector2.ZERO:
 		apply_knockback_vec(knockback, ignore_cd, -1.0, true)
 	
 	return true
+
+# [추가] 피격 시 시각 효과 처리
+func _play_hit_effects() -> void:
+	# 1. 파티클 소환
+	if hit_spark_scene:
+		var spark = hit_spark_scene.instantiate()
+		get_parent().add_child(spark)
+		spark.global_position = global_position
+		spark.emitting = true
+		get_tree().create_timer(spark.lifetime).timeout.connect(func(): spark.queue_free())
+
+	# 2. 쉐이더 외곽선 효과 (스프라이트에 outline.gdshader가 있어야 함)
+	var node = get_blink_node()
+	if node and node.material is ShaderMaterial:
+		node.material.set_shader_parameter("is_active", true)
+		# 짧은 시간 후 외곽선 끄기
+		get_tree().create_timer(0.15).timeout.connect(func():
+			if is_instance_valid(node) and node.material is ShaderMaterial:
+				node.material.set_shader_parameter("is_active", false)
+		)
 
 # --- 물리 프로세스 (넉백 감소) ---
 func update_knockback(delta: float) -> Vector2:

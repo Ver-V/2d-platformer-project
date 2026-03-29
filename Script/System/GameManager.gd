@@ -22,7 +22,6 @@ signal flask_changed
 
 var is_menu_open: bool = false
 var mouse_sensitivity: float = 1.0
-var enable_gore: bool = true
 var screenshake_intensity: float = 0.5
 signal gold_changed(amount: int)
 signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
@@ -208,6 +207,10 @@ func save_game() -> void:
 	else:
 		print("게임 저장 실패! 경로 오류: ", FileAccess.get_open_error())
 
+# --- [함수 5] 스테이지 경로 생성 헬퍼 ---
+func get_stage_path(stage_num: int) -> String:
+	return "res://Scenes/Stage/Stage_%02d.tscn" % stage_num
+
 # --- [기능 2] 게임 불러오기 (Load) ---
 func load_game() -> bool:
 	if not FileAccess.file_exists(SAVE_PATH):
@@ -231,9 +234,16 @@ func load_game() -> bool:
 		player_parry_damage_multifac = data.get("parrydamage", 1.5)
 		defeated_mobs = data.get("defeated_mobs", [])
 		defeated_bosses = data.get("defeated_bosses", {})
-		talked_bosses = data.get("talked_bosses", {}) # [추가]
+		talked_bosses = data.get("talked_bosses", {})
 		has_checkpoint = data.get("has_checkpoint", false)
-		last_scene_path = data.get("scene_path", "")
+		
+		# [수정] 경로 마이그레이션 및 유효성 검사
+		var loaded_path = data.get("scene_path", "")
+		if loaded_path == "" or loaded_path == "res://Scenes/Stage/Stage.tscn":
+			last_scene_path = get_stage_path(1) # 기본 스테이지 01로 설정
+		else:
+			last_scene_path = loaded_path
+		
 		collected_items = data.get("collected_items", [])
 		merchant_stocks = data.get("merchant_stocks",{})
 		flask_max_charges = data.get("flask_max", 1)
@@ -274,6 +284,9 @@ func load_game() -> bool:
 		var px = data.get("pos_x", 0.0)
 		var py = data.get("pos_y", 0.0)
 		last_checkpoint_pos = Vector2(px, py)
+		
+		# [추가] 로드 성공 시 리스폰 방지 플래그 해제
+		is_respawning = false
 
 		return true
 		

@@ -367,7 +367,6 @@ slime_move_speed = 60.0
 [node name="Esnake" parent="Entities" instance=ExtResource("14_eveut")]
 position = Vector2(270, 72)
 snake_max_hp = 20
-drop_gold_amount = 20
 
 [node name="Boss_stage1" parent="Entities" instance=ExtResource("15_v4g68")]
 position = Vector2(7355, 837)
@@ -391,7 +390,7 @@ position = Vector2(7133, 971)
 position = Vector2(7562, 971)
 
 [node name="TP3" type="Marker2D" parent="BossTeleportPoints"]
-position = Vector2(7358, 1035)
+position = Vector2(7353, 847)
 
 [connection signal="body_entered" from="MerchantNPC" to="." method="_on_merchant_npc_body_entered"]
 
