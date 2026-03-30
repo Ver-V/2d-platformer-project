@@ -29,13 +29,23 @@ func _ready() -> void:
 	move_speed_base = snake_move_speed
 	knockback_resist = snake_knockback_res
 	super._ready()
+	
 	if sprite:
 		sprite.play("idle")
+		# [추가] 애니메이션이 끝나면 공격 상태를 해제하는 시그널 연결
+		if not sprite.animation_finished.is_connected(_on_animation_finished):
+			sprite.animation_finished.connect(_on_animation_finished)
 	
 	if hitbox_shape:
 		hitbox_shape.shape = hitbox_shape.shape.duplicate()
 		default_hitbox_pos = hitbox_shape.position
 		default_hitbox_extents = hitbox_shape.shape.extents
+
+# [추가] 애니메이션 종료 시 상태 리셋
+func _on_animation_finished() -> void:
+	if sprite and sprite.animation == "attack":
+		is_attacking = false
+		_set_attack_hitbox(false)
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -43,40 +53,39 @@ func _process(delta: float) -> void:
 	if hp <= 0:
 		if sprite and sprite.animation != "died":
 			sprite.play("died")
-		if hitbox_shape and hitbox_shape.shape is RectangleShape2D:
-			hitbox_shape.shape.extents = default_hitbox_extents
+		_set_attack_hitbox(false)
 		return
 
 	if target != null:
+		# [수정] 이미 공격 중이라면 상태 유지 (판정 감시)
+		if is_attacking:
+			if sprite and sprite.animation == "attack":
+				_set_attack_hitbox(sprite.frame == 3)
+			return
+
+		# 플레이어 방향 바라보기 (추격 준비)
 		dir = 1 if target.global_position.x > global_position.x else -1
 		var dx = abs(global_position.x - target.global_position.x)
 		var dy = abs(global_position.y - target.global_position.y)
-		
-		# 뱀은 사거리가 좀 더 짧고 바닥 근처여야 함 (24픽셀 이내)
+
+		# 사거리 안일 때만 멈춰서 공격!
 		if dx <= attack_distance and dy <= 24.0:
-			if not is_attacking:
-				is_attacking = true
-				if sprite:
-					sprite.play("attack")
-			
-			if sprite and sprite.animation == "attack" and sprite.frame == 3:
-				_set_attack_hitbox(true)
-			else:
-				_set_attack_hitbox(false)
-		else:
-			if is_attacking:
-				is_attacking = false
-				if sprite:
-					sprite.play("idle")
-				_set_attack_hitbox(false)
-	else:
-		if is_attacking:
-			is_attacking = false
+			is_attacking = true
 			if sprite:
+				sprite.play("attack")
+		else:
+			# 사거리 밖: 추격 애니메이션 재생 (이때 velocity.x가 물리 프로세스에서 작동함)
+			if sprite and sprite.animation != "idle" and sprite.animation != "died":
+				if sprite.sprite_frames.has_animation("Run"): # 혹은 Walk
+					sprite.play("Run")
+				else:
+					sprite.play("idle")
+			_set_attack_hitbox(false)
+	else:
+		if not is_attacking:
+			if sprite and sprite.animation != "idle" and sprite.animation != "died":
 				sprite.play("idle")
 			_set_attack_hitbox(false)
-		elif sprite and sprite.animation != "idle":
-			sprite.play("idle")
 
 func _set_attack_hitbox(active: bool) -> void:
 	if not hitbox_shape or not hitbox_shape.shape is RectangleShape2D:

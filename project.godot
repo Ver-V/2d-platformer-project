@@ -41,6 +41,7 @@ main=false
 [global_group]
 
 teleport_points_stage1=""
+boss_doors=""
 
 [gui]
 

@@ -201,7 +201,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_qqvch")
 }],
-"loop": true,
+"loop": false,
 "name": &"attack1",
 "speed": 8.0
 }, {
@@ -236,7 +236,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_n44is")
 }],
-"loop": true,
+"loop": false,
 "name": &"attack2",
 "speed": 8.0
 }, {
@@ -265,7 +265,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_7kjjq")
 }],
-"loop": true,
+"loop": false,
 "name": &"died",
 "speed": 7.0
 }, {
@@ -346,14 +346,13 @@ jump_cooldown = 2.0
 jump_only_when_player_near = true
 jump_chase_speed = 100.0
 jump_chase_time = 0.3
-attack_distance = 40.0
+attack_distance = 15.0
 drop_gold_amount = 20
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 scale = Vector2(1.2, 1.2)
 sprite_frames = SubResource("SpriteFrames_l6i1k")
-animation = &"attack1"
-frame_progress = 0.6089719
+animation = &"jump"
 
 [node name="CollisionShape2D" parent="." index="1"]
 position = Vector2(0, 9.5)

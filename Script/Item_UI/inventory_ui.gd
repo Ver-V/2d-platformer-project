@@ -28,11 +28,6 @@ func _ready():
 	action_menu.hide()
 	
 	close()
-	
-func _process(_float) -> void:
-	if is_open:
-		update_ui()
-		
 
 func _input(event):
 	if event.is_action_pressed("inventory"):

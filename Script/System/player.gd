@@ -171,6 +171,9 @@ func _on_death() -> void:
 	sprite.play("died")
 	HUD.show_death_screen()
 	
+	is_attacking = false
+	sword_shape.set_deferred("disabled",true)
+	
 	await get_tree().create_timer(4.0).timeout
 	
 	set_physics_process(false)
