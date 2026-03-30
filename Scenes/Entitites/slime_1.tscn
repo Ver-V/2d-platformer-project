@@ -71,7 +71,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_0b7ma")
 }],
-"loop": true,
+"loop": false,
 "name": &"attack",
 "speed": 4.0
 }, {
@@ -91,7 +91,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_br0oq")
 }],
-"loop": true,
+"loop": false,
 "name": &"died",
 "speed": 4.0
 }, {
@@ -142,14 +142,13 @@ jump_cooldown = 2.5
 jump_only_when_player_near = true
 jump_chase_speed = 90.0
 jump_chase_time = 0.12
-attack_distance = 40.0
+attack_distance = 15.0
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 position = Vector2(-1.0000005, -2.9999998)
 scale = Vector2(1.3750001, 1.7500001)
 sprite_frames = SubResource("SpriteFrames_twyhu")
-animation = &"died"
-frame_progress = 0.00932585
+animation = &"attack"
 
 [node name="CollisionShape2D" parent="." index="1"]
 position = Vector2(0, 6.5)

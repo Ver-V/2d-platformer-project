@@ -80,44 +80,41 @@ func _process(delta: float) -> void:
 			_air_chase_left = 0.0
 
 	if target != null and is_on_floor():
-		# [핵심] 공격 체크 전, 플레이어가 있는 방향으로 몸을 돌림
-		dir = 1 if target.global_position.x > global_position.x else -1
-		
 		var dx = abs(global_position.x - target.global_position.x)
 		var dy = abs(global_position.y - target.global_position.y)
 		
-		# 가로 사거리(attack_distance)와 세로 높이 차이(예: 32픽셀 이내)를 동시에 체크
-		if dx <= attack_distance and dy <= 32.0:
-			if not is_attacking:
-				is_attacking = true
-				if sprite:
-					if sprite.sprite_frames.has_animation("attack1"):
-						sprite.play("attack1" if randf() > 0.5 else "attack2")
-					elif sprite.sprite_frames.has_animation("attack"):
-						sprite.play("attack")
-			
-			# esnake처럼 특정 프레임에서만 공격 판정 확장
+		# [핵심] 이미 공격 중이라면 끝까지 실행 (방향 고정됨)
+		if is_attacking:
 			var is_active_frame = false
 			if sprite and sprite.animation.begins_with("attack"):
 				if sprite.sprite_frames.get_frame_count(sprite.animation) > 5:
-					# 버섯처럼 프레임이 많은 경우 (3~6번 프레임)
 					is_active_frame = sprite.frame >= 3 and sprite.frame <= 6
 				else:
-					# 슬라임처럼 프레임이 적은 경우 (2~3번 프레임)
 					is_active_frame = sprite.frame >= 2
-			
 			_set_attack_hitbox(is_active_frame)
-		else:
-			if is_attacking:
-				is_attacking = false
-				if sprite:
-					sprite.play("idle")
-				_set_attack_hitbox(false)
-	else:
-		if is_attacking:
-			is_attacking = false
+			return
+
+		# [수정] 사거리 밖이라면 플레이어 쪽으로 이동(추격)하고, 안일 때만 공격
+		dir = 1 if target.global_position.x > global_position.x else -1
+		
+		if dx <= attack_distance and dy <= 32.0:
+			is_attacking = true
 			if sprite:
-				sprite.play("idle")
+				if sprite.sprite_frames.has_animation("attack1"):
+					sprite.play("attack1" if randf() > 0.5 else "attack2")
+				elif sprite.sprite_frames.has_animation("attack"):
+					sprite.play("attack")
+		else:
+			# 사거리 밖: 추격 애니메이션 재생 (Run이 있으면 재생, 없으면 Idle)
+			if sprite and sprite.animation != "died" and not sprite.animation.begins_with("jump"):
+				if sprite.sprite_frames.has_animation("Run"):
+					sprite.play("Run")
+				else:
+					sprite.play("idle")
+			_set_attack_hitbox(false)
+	else:
+		# 타겟이 없거나 공중에 있을 때
+		if not is_attacking:
 			_set_attack_hitbox(false)
 
 func _set_attack_hitbox(active: bool) -> void:
@@ -128,8 +125,8 @@ func _set_attack_hitbox(active: bool) -> void:
 		var shape = hitbox_shape.shape as RectangleShape2D
 		if active:
 			# 뱀과 동일하게 4.0픽셀 확장 및 이동
-			shape.extents = Vector2(default_hitbox_extents.x + 4.0, default_hitbox_extents.y)
-			hitbox_shape.position.x = default_hitbox_pos.x + (dir * 4.0)
+			shape.extents = Vector2(default_hitbox_extents.x + 5.0, default_hitbox_extents.y)
+			hitbox_shape.position.x = default_hitbox_pos.x + (dir * 5.0)
 		else:
 			shape.extents = default_hitbox_extents
 			hitbox_shape.position.x = default_hitbox_pos.x

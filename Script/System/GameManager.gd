@@ -248,38 +248,34 @@ func load_game() -> bool:
 		merchant_stocks = data.get("merchant_stocks",{})
 		flask_max_charges = data.get("flask_max", 1)
 		flask_current_charges = data.get("flask_current", 1)
-		visited_rooms.clear()
+		
 		for r in raw_rooms:
+			var _pos: Vector2i
 			if typeof(r) == TYPE_DICTIONARY:
-				visited_rooms.append(Vector2i(int(r.get("x", 0)), int(r.get("y", 0))))
+				_pos = Vector2i(int(r.get("x", 0)), int(r.get("y", 0)))
 			elif typeof(r) == TYPE_STRING:
 				var parts = r.replace("(", "").replace(")", "").split(",")
-				if parts.size() >= 2: visited_rooms.append(Vector2i(int(parts[0]), int(parts[1])))
+				if parts.size() >= 2: _pos = Vector2i(int(parts[0]), int(parts[1]))
+				
+			if not visited_rooms.has(_pos):
+				visited_rooms.append(_pos)
 		
 		# 인벤토리 불러오기
 		var loaded_inv_data = data.get("inventory", [])
+		inventory.fill(null)
 		
-		inventory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
-		
-		# [수정됨] 세이브 데이터 배열 크기가 인벤토리 크기보다 클 경우를 대비하여 방어 코드 추가
 		for i in range(min(loaded_inv_data.size(), inventory.size())):
 			
 			var slot_data = loaded_inv_data[i]
-		
-			if slot_data != null:
+			if typeof(slot_data) == TYPE_DICTIONARY and slot_data.has("id"):
 			# 저장된 ID를 가져옴
 				var item_id = slot_data["id"]
 			
 			# 도감(get_item_by_id)을 이용해 실제 아이템(Resource)으로 복구!
 				var real_item = get_item_by_id(item_id)
-			
 				if real_item:
-				# (선택) 개수 복원 로직이 필요하면 real_item.amount = slot_data["amount"]
 					inventory[i] = real_item
-				else:
-					inventory[i] = null
-			else:
-				inventory[i] = null
+				
 		
 		var px = data.get("pos_x", 0.0)
 		var py = data.get("pos_y", 0.0)
@@ -298,7 +294,8 @@ func apply_hitstop(time_scale: float, duration: float):
 	Engine.time_scale = 1.0
 
 var item_database: Dictionary = {
-	"health_potion": "res://resources/items/health_potion.tres"
+	"health_potion": "res://resources/items/health_potion.tres",
+	"health_flask": "res://resources/items/health_flask.tres"
 }
 
 func get_item_by_id(item_id: String) -> ItemData:
@@ -341,8 +338,10 @@ func update_gold(amount: int) -> void:
 	
 # --- [추가됨] 실제로 씬을 변경하는 함수들 ---
 func _change_scene_safe(path: String) -> void:
-	# 씬 변경 시도
-	get_tree().change_scene_to_file(path)
+	
+	var error = get_tree().change_scene_to_file(path)
+	if error != OK:
+		print("Error Changing Scene: ", error)
 	# 변경 완료 후 리스폰 플래그 해제
 	is_respawning = false
 

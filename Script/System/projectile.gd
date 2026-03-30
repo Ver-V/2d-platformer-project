@@ -41,6 +41,10 @@ func _ready() -> void:
 	# 벽이나 바닥에 닿으면 사라짐 (Body Entered)
 	body_entered.connect(_on_body_entered)
 	
+	var notifier = get_node_or_null("VisibleOnScreenNotifier2D")
+	if notifier:
+		notifier.screen_exited.connect(queue_free)
+	
 	if start_homing and team == "enemy":
 		_is_homing = true
 		homing_turn_speed = enemy_homing_speed # 적 전용 회전 속도 적용
@@ -93,6 +97,7 @@ func _on_body_entered(body: Node) -> void:
 		
 		if applied:
 			_destroy_projectile()
+	
 
 func _is_same_team(body: Node) -> bool:
 	if team == "enemy" and body.is_in_group("enemies"):

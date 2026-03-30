@@ -127,17 +127,31 @@ radius = 22.0
 
 [node name="Esnake" instance=ExtResource("1_txgma")]
 script = ExtResource("3_esnake")
-gravity = 980.0
-max_fall_speed = 280.0
-snake_max_hp = 45
-snake_contact_damage = 15
-snake_move_speed = 40.0
-snake_knockback_res = 0.0
-turn_on_wall = true
-turn_on_ledge = true
-floor_ray_x = 14.0
-floor_ray_y = 24.0
-attack_distance = 15.0
+gravity = null
+max_fall_speed = null
+snake_max_hp = null
+snake_contact_damage = null
+snake_move_speed = null
+snake_knockback_res = null
+turn_on_wall = null
+turn_on_ledge = null
+floor_ray_x = null
+floor_ray_y = null
+attack_distance = null
+drop_gold_amount = null
+persist_id = null
+max_hp_base = null
+contact_damage_base = null
+move_speed_base = null
+contact_knockback_x = null
+contact_knockback_y = null
+invuln_time = null
+blink_interval = null
+knockback_resist = null
+knockback_cooldown = null
+knockback_decay = null
+contact_tick = null
+disable_when_inactive = null
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 scale = Vector2(1.3, 1.3)

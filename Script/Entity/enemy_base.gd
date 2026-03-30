@@ -101,13 +101,10 @@ func _on_death() -> void:
 		
 	if anim_sprite and anim_sprite.sprite_frames.has_animation("died"):
 		anim_sprite.play("died")
-		await anim_sprite.animation_finished
-	elif anim_sprite and anim_sprite.is_playing():
-		await anim_sprite.animation_finished
-		
-	# 시체가 5초 동안 남아있게 대기
+		if not anim_sprite.sprite_frames.get_animation_loop("died"):
+			await anim_sprite.animation_finished
+
 	await get_tree().create_timer(5.0).timeout
-		
 	queue_free()
 
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
@@ -154,11 +151,11 @@ func spawn_gold():
 	
 	# 1. 금화 (1000원 단위) 계산
 	var gold_count = remaining_gold / 1000  # 2500 / 1000 = 2개
-	remaining_gold = remaining_gold % 1000  # 나머지 500원
+	remaining_gold %= 1000  # 나머지 500원
 	
 	# 2. 은화 (100원 단위) 계산
 	var silver_count = remaining_gold / 100 # 500 / 100 = 5개
-	remaining_gold = remaining_gold % 100   # 나머지 0원
+	remaining_gold %= 100   # 나머지 0원
 	
 	# 3. 동화 (10원 단위) 계산 (나머지 전부)
 	var bronze_count = remaining_gold / 10

@@ -9,6 +9,9 @@ extends CanvasLayer
 @onready var left_portrait: TextureRect = $PortraitsContainer/LeftPortrait
 @onready var right_portrait: TextureRect = $PortraitsContainer/RightPortrait
 
+var left_base_y: float = 100.0 # 예시 값: 실제 씬의 LeftPortrait Y좌표
+var right_base_y: float = 100.0 # 예시 값: 실제 씬의 RightPortrait Y좌표
+	
 signal dialogue_finished
 
 var portrait_path = "res://resources/Portraits/" # 이미지가 저장된 폴더 경로
@@ -25,6 +28,8 @@ var portrait_tween: Tween # 일러스트 움직임용 트윈
 func _ready():
 	visible = false # 평소엔 숨김
 	type_timer.timeout.connect(_on_type_timer_timeout)
+	left_base_y = left_portrait.position.y
+	right_base_y = right_portrait.position.y
 
 func _input(event):
 	if not is_dialogue_active:
@@ -103,10 +108,6 @@ func emphasis_speaker(speaker_side: String):
 	if portrait_tween:
 		portrait_tween.kill()
 	portrait_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	
-	# 원래 위치들 (씬에서 배치한 Y좌표를 기준으로 잡으세요)
-	var left_base_y = 100 # 예시 값: 실제 씬의 LeftPortrait Y좌표
-	var right_base_y = 100 # 예시 값: 실제 씬의 RightPortrait Y좌표
 
 	if speaker_side == "left":
 		# [왼쪽 강조] 밝게, 위로 올라감
