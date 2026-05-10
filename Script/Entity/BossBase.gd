@@ -21,12 +21,12 @@ func _ready() -> void:
 		add_to_group("bosses")
 	
 	var id = get_persist_id()
+	print("[Boss Debug] _ready 실행됨. ID: ", id)
 	
 	if id != "" and GameManager.defeated_bosses.get(id, false):
+		print("[Boss Debug] !!! 보스 삭제됨: 이미 처치한 보스 목록에 존재합니다. ID: ", id)
 		queue_free()
 		return
-	
-	# [수정] _ready에서 즉시 시작하지 않고 set_active에서 처리합니다.
 
 func _on_dialogue_event(event_name: String) -> void:
 	if event_name == "play_boss_bgm":
@@ -96,17 +96,21 @@ func _stop_boss_music():
 		stage_bgm.play()
 
 func _start_intro() -> void:
+	print("[Boss Debug] _start_intro 시작됨")
 	current_state = State.INTRO
 	velocity = Vector2.ZERO
 	if dialogue_file != "":
+		print("[Boss Debug] 대화 시작 시도: ", dialogue_file)
 		DialogueManager.start_dialogue(dialogue_file)
 		
 		await DialogueManager.dialogue_finished
+		print("[Boss Debug] 대화 종료됨")
 		
 		var id = get_persist_id()
 		if id != "":
 			GameManager.talked_bosses[id] = true
 			GameManager.save_game()
+			print("[Boss Debug] 대화 완료 기록 및 저장됨")
 			
 	_start_combat()
 
@@ -149,6 +153,7 @@ func _dead_state(_delta:float) -> void:
 
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time)
+	print("Boss HP: ", hp, "/", max_hp, " (Damaged by: ", amount, ")")
 	
 	if took_damage and hp > 0 and boss_sprite != null:
 		boss_sprite.play("gethit")
@@ -156,26 +161,26 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	return took_damage
 
 func _on_death() -> void:
+	print("Boss _on_death called!")
 	current_state = State.DEAD
 	
+	# [추가] 보스가 죽는 순간 플레이어를 무적으로 만듦 (연출 도중 사망 방지)
+	if is_instance_valid(target) and target.has_method("start_invuln"):
+		target.start_invuln(10.0) # 넉넉하게 10초 무적 부여
+	
 	_stop_boss_music()
-	
-	# [추가] 보스가 죽으면 문 열기!
 	_set_boss_doors(false)
-	
-	if persist_id != "":
-		GameManager.defeated_bosses[persist_id] = true
 	
 	if outro_dialogue_file != "":
 		DialogueManager.start_dialogue(outro_dialogue_file)
 		await DialogueManager.dialogue_finished
-	# [수정] 골드 드랍 및 사망 처리를 먼저 수행 (돈이 먼저 생겨야 함)
+
+	# 보스 처치 기록 및 저장은 stage.gd의 _on_enemy_died에서 통합 처리됨
 	super._on_death() 
 	
-	# [수정] 그 후 저장 (그래야 늘어난 골드/보스 처치 기록이 동시에 저장됨)
-	# 보스의 경우 골드 코인을 뿌리는 것보다 즉시 지급하는 것이 세이브 데이터 안정성에 더 좋습니다.
 	GameManager.add_gold(drop_gold_amount)
-	GameManager.save_game()
+	# GameManager.save_game() <- stage.gd에서 이미 수행하므로 중복 방지를 위해 주석 처리
+
 	print("보스 처치 완료 및 데이터 저장됨. 획득 골드: ", drop_gold_amount)
 
 # [추가] 보스는 코인을 뿌리지 않고 바로 GameManager.add_gold로 지급하므로 부모의 spawn_gold를 덮어씁니다.

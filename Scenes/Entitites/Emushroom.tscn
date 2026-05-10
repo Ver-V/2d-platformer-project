@@ -266,7 +266,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_7kjjq")
 }],
 "loop": false,
-"name": &"died",
+"name": &"dead",
 "speed": 7.0
 }, {
 "frames": [{
@@ -352,7 +352,7 @@ drop_gold_amount = 20
 [node name="AnimatedSprite2D" parent="." index="0"]
 scale = Vector2(1.2, 1.2)
 sprite_frames = SubResource("SpriteFrames_l6i1k")
-animation = &"jump"
+animation = &"dead"
 
 [node name="CollisionShape2D" parent="." index="1"]
 position = Vector2(0, 9.5)
