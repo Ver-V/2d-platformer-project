@@ -11,11 +11,19 @@ var is_attacking: bool = false
 @onready var shooter: ShooterComponent = $ShooterComponent
 
 const Fire_projectile = preload("res://Scenes/Projectile/projectilefire.tscn")
+const TELEPORT_SHADER = preload("res://resources/Shaders/teleport_flash.gdshader")
+
+var teleport_material: ShaderMaterial
 
 func _ready() -> void:
 	super._ready()
 	call_deferred("_setup_teleports_points")
 	
+	teleport_material = ShaderMaterial.new()
+	teleport_material.shader = TELEPORT_SHADER
+	if boss_sprite:
+		boss_sprite.material = teleport_material
+
 func _setup_teleports_points() -> void:
 	var points_node = get_tree().get_first_node_in_group("teleport_points_stage1")
 	if points_node:
@@ -34,21 +42,38 @@ func _combat_state(delta:float) -> void:
 			_attack_state(delta)
 
 func _teleport_state(delta:float) -> void:
+	if is_attacking: return # 텔레포트 연출 중 중복 실행 방지
+	
 	teleport_timer += delta
 	if teleport_timer >= 3.0:
 		teleport_timer = 0.0
-		var candidate_markers: Array[Node] = []
-		for marker in teleport_markers:
-			if global_position.distance_to(marker.global_position) > 10.0 :
-				candidate_markers.append(marker)
+		_execute_teleport_sequence()
+
+func _execute_teleport_sequence() -> void:
+	is_attacking = true
+	
+	if teleport_material:
+		var tween = create_tween()
+		tween.tween_property(teleport_material, "shader_parameter/flash_modifier", 1.0, 0.15)
+		await tween.finished
 		
-		if candidate_markers.size() > 0:
-			var random_marker = candidate_markers.pick_random()
-			global_position = random_marker.global_position
-			velocity = Vector2.ZERO
+	var candidate_markers: Array[Node] = []
+	for marker in teleport_markers:
+		if global_position.distance_to(marker.global_position) > 10.0 :
+			candidate_markers.append(marker)
+	
+	if candidate_markers.size() > 0:
+		var random_marker = candidate_markers.pick_random()
+		global_position = random_marker.global_position
+		velocity = Vector2.ZERO
+	
+	if teleport_material:
+		var tween2 = create_tween()
+		tween2.tween_property(teleport_material, "shader_parameter/flash_modifier", 0.0, 0.15)
+		await tween2.finished
 		
-		is_attacking = false
-		current_state1 = CombatState.ATTACK
+	is_attacking = false
+	current_state1 = CombatState.ATTACK
 				
 func _attack_state(_delta:float) -> void:
 	if is_attacking:
@@ -73,6 +98,7 @@ func _attack_state(_delta:float) -> void:
 	if boss_sprite and boss_sprite.animation == "attack":
 		boss_sprite.play("idle")
 		
+	is_attacking = false
 	current_state1 = CombatState.TELEPORT
 
 func _attack_pattern_1() -> void:

@@ -5,15 +5,17 @@ enum State {INTRO, IDLE, COMBAT, DEAD}
 var current_state = State.INTRO
 
 @export_file("*.json") var dialogue_file: String = ""
+@export_file("*.json") var outro_dialogue_file: String = ""
 @export var bgm_player : AudioStreamPlayer
 @export var boss_sprite : AnimatedSprite2D
 @export var boss_door_group: String = "boss_doors" # [추가] 보스 방 문들이 속한 그룹 이름
+
 
 var boss_started: bool = false # 인트로/전투 시작 여부 확인용
 
 func _ready() -> void:
 	super._ready() # 부모(EnemyBase)의 _ready 실행 (체력 설정 등)
-	
+	DialogueManager.dialogue_event.connect(_on_dialogue_event)
 	# 코드에서도 다시 한번 그룹 확인
 	if not is_in_group("bosses"):
 		add_to_group("bosses")
@@ -26,6 +28,9 @@ func _ready() -> void:
 	
 	# [수정] _ready에서 즉시 시작하지 않고 set_active에서 처리합니다.
 
+func _on_dialogue_event(event_name: String) -> void:
+	if event_name == "play_boss_bgm":
+		_play_boss_music()
 # 보스 방 문(Boss Doors)을 관리하는 함수
 func _set_boss_doors(active: bool) -> void:
 	if boss_door_group == "": return
@@ -161,6 +166,9 @@ func _on_death() -> void:
 	if persist_id != "":
 		GameManager.defeated_bosses[persist_id] = true
 	
+	if outro_dialogue_file != "":
+		DialogueManager.start_dialogue(outro_dialogue_file)
+		await DialogueManager.dialogue_finished
 	# [수정] 골드 드랍 및 사망 처리를 먼저 수행 (돈이 먼저 생겨야 함)
 	super._on_death() 
 	
@@ -169,3 +177,7 @@ func _on_death() -> void:
 	GameManager.add_gold(drop_gold_amount)
 	GameManager.save_game()
 	print("보스 처치 완료 및 데이터 저장됨. 획득 골드: ", drop_gold_amount)
+
+# [추가] 보스는 코인을 뿌리지 않고 바로 GameManager.add_gold로 지급하므로 부모의 spawn_gold를 덮어씁니다.
+func spawn_gold() -> void:
+	pass

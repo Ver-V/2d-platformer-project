@@ -1,0 +1,32 @@
+[
+	
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "I said it's different this time. And I meant it."
+	},
+	{
+		"speaker": "right", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Big Bunny",
+		"text": "(Sigh)... Looks like you'll be having dinner with just our youngest tonight.",
+	},
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "Go ahead and eat without me. I'll be back before you know it."
+	},
+	{
+		"speaker": "right", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Big Bunny",
+		"text": "Okay, watch your back. It’s a lot tougher out there than you might expect.",
+	},
+	
+]
