@@ -138,6 +138,9 @@ func attempt_parry(source_pos: Vector2) -> bool:
 	damage = ceil(damage * 1.5)
 	speed *= 2.0 # 유도탄이니까 속도는 2배만 (너무 빠르면 선회하기 힘듦)
 	velocity = direction * speed  # <-- 이거 꼭 있어야 날아갑니다!
+	
+	# [추가] 패링된 탄환은 5초 내로 못 맞추면 소멸
+	_current_life = 5.0
 
 	modulate = Color.CYAN
 

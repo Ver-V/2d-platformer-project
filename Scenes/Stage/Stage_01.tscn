@@ -425,37 +425,37 @@ collision_mask = 2
 
 [node name="Boss" type="Node" parent="."]
 
-[node name="boss_doors" type="StaticBody2D" parent="." groups=["boss_doors"]]
+[node name="boss_doors" type="StaticBody2D" parent="Boss" groups=["boss_doors"]]
 position = Vector2(3203, 569)
 collision_mask = 2
 physics_material_override = SubResource("PhysicsMaterial_v4g68")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="boss_doors"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boss/boss_doors"]
 position = Vector2(-10, -30)
 shape = SubResource("RectangleShape2D_asn4q")
 disabled = true
 
-[node name="CollisionShape2D2" type="CollisionShape2D" parent="boss_doors"]
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Boss/boss_doors"]
 position = Vector2(644, -26)
 shape = SubResource("RectangleShape2D_asn4q")
 disabled = true
 
-[node name="Boss_stage1" parent="." instance=ExtResource("15_v4g68")]
+[node name="Boss_stage1" parent="Boss" instance=ExtResource("15_v4g68")]
 position = Vector2(3520, 474)
 dialogue_file = "res://resources/Dialogues/boss_Stage1_0.json"
 outro_dialogue_file = "res://resources/Dialogues/boss_Stage1_1.json"
 
-[node name="BossTeleportPoints" type="Node2D" parent="." groups=["teleport_points_stage1"]]
-position = Vector2(-3840, -369)
+[node name="BossTeleportPoints" type="Node2D" parent="Boss" groups=["teleport_points_stage1"]]
+position = Vector2(3520, 463)
 
-[node name="TP1" type="Marker2D" parent="BossTeleportPoints"]
-position = Vector2(7133, 908)
+[node name="TP1" type="Marker2D" parent="Boss/BossTeleportPoints"]
+position = Vector2(-221, 70)
 
-[node name="TP2" type="Marker2D" parent="BossTeleportPoints"]
-position = Vector2(7562, 908)
+[node name="TP2" type="Marker2D" parent="Boss/BossTeleportPoints"]
+position = Vector2(-5, 2)
 
-[node name="TP3" type="Marker2D" parent="BossTeleportPoints"]
-position = Vector2(7353, 847)
+[node name="TP3" type="Marker2D" parent="Boss/BossTeleportPoints"]
+position = Vector2(198, 71)
 
 [connection signal="body_entered" from="Entities/MerchantNPC" to="." method="_on_merchant_npc_body_entered"]
 

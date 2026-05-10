@@ -99,9 +99,9 @@ func _on_death() -> void:
 	if not anim_sprite and "boss_sprite" in self:
 		anim_sprite = get("boss_sprite")
 		
-	if anim_sprite and anim_sprite.sprite_frames.has_animation("died"):
-		anim_sprite.play("died")
-		if not anim_sprite.sprite_frames.get_animation_loop("died"):
+	if anim_sprite and anim_sprite.sprite_frames.has_animation("dead"):
+		anim_sprite.play("dead")
+		if not anim_sprite.sprite_frames.get_animation_loop("dead"):
 			await anim_sprite.animation_finished
 
 	await get_tree().create_timer(5.0).timeout
