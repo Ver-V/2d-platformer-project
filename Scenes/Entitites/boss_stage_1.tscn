@@ -358,6 +358,7 @@ radius = 475.08527
 script = ExtResource("2_sxivi")
 bgm_player = NodePath("BGMPlayer")
 boss_sprite = NodePath("AnimatedSprite2D")
+boss_door_group = "boss_doors"
 drop_gold_amount = 300
 coin_scene = ExtResource("3_7n545")
 persist_id = &"bosss1"
@@ -371,15 +372,15 @@ sprite_frames = SubResource("SpriteFrames_vlss1")
 animation = &"died"
 
 [node name="CollisionShape2D" parent="." index="1"]
-position = Vector2(-6, 2)
+position = Vector2(-3, 1)
 shape = SubResource("RectangleShape2D_skxjc")
 
 [node name="CollisionShape2D" parent="Hurtbox" index="0"]
-position = Vector2(-6, 2)
+position = Vector2(-3, 1)
 shape = SubResource("RectangleShape2D_hy2bf")
 
 [node name="CollisionShape2D" parent="Hitbox" index="0"]
-position = Vector2(-6, 2)
+position = Vector2(-3, 1)
 shape = SubResource("RectangleShape2D_q4xqk")
 
 [node name="DetectArea" parent="." index="6"]

@@ -1,0 +1,67 @@
+[
+	
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "Hey, big sis. Long time no see. You’re working hard. So, when do you get off?"
+	},
+	{
+		"speaker": "right", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Big Bunny",
+		"text": "You know how it is. I should be done by dinner time, I guess."
+	},
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "I'm Sorry. sis. I have something to tell you."
+	},
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "I'm going outside! sis. I want to see what the world is really like!"
+	},
+	{
+		"speaker": "right", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Big Bunny",
+		"text": "Um, sorry... I lost count. Which time is this again?"
+	},
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "This time, it's different. I mean it."
+	},
+	{
+		"speaker": "right", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Big Bunny",
+		"text": "Oh, really? Then let’s see if you're actually ready. Or else, you'll be having dinner at home with me.",
+		"event" : "play_boss_bgm"
+	},
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Pink Bunny",
+		"text": "Keep acting relaxed, and you'll regret it!"
+	},
+	{
+		"speaker": "right", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "",
+		"name": "Big Bunny",
+		"text": "Hmm... Looks like I'll be able to grab dinner as soon as I finish this."
+	}
+]

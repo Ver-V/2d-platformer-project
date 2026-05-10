@@ -36,24 +36,29 @@ func _input(event):
 		
 		if FileAccess.file_exists(file_path):
 			DialogueManager.start_dialogue(file_path)
-			talk_count += 1
 		
 			await DialogueManager.dialogue_finished 
+			
+			# 대화가 끝났는데 플레이어가 범위 밖에 있다면 (넉백 등 강제 취소됨)
+			if not player_in_range:
+				return
+				
+			# 정상적으로 끝났을 때만 횟수 증가 및 상점 오픈
+			talk_count += 1
 			ShopUI.open_shop(location_name)
 			
 		else:
 			if talk_count > 0:
-				talk_count -= 1 
-				var last_file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count) + ".json"
+				var last_file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count - 1) + ".json"
 				
 				if FileAccess.file_exists(last_file_path):
 					DialogueManager.start_dialogue(last_file_path)
-					
-					# [수정] 대사가 끝날 때까지 코드 실행을 일시정지!
 					await DialogueManager.dialogue_finished 
 					
-					# 대사가 완전히 화면에서 사라진 직후 상점 열기
-					ShopUI.open_shop() 
+					if not player_in_range:
+						return
+					
+					ShopUI.open_shop(location_name) 
 				else:
 					print("에러: 마지막 대사 파일조차 찾을 수 없습니다.")
 			else:
@@ -68,3 +73,7 @@ func _on_body_exited(body):
 	if body.is_in_group("player"):
 		player_in_range = false
 		GameManager.interact_msg_hidden.emit()
+		
+		# 플레이어가 멀어지면 대화창 강제 종료!
+		if DialogueManager.is_dialogue_active:
+			DialogueManager.force_close()

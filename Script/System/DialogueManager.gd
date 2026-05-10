@@ -9,10 +9,11 @@ extends CanvasLayer
 @onready var left_portrait: TextureRect = $PortraitsContainer/LeftPortrait
 @onready var right_portrait: TextureRect = $PortraitsContainer/RightPortrait
 
-var left_base_y: float = 100.0 # 예시 값: 실제 씬의 LeftPortrait Y좌표
-var right_base_y: float = 100.0 # 예시 값: 실제 씬의 RightPortrait Y좌표
+var left_base_y: float = 50.0 # 예시 값: 실제 씬의 LeftPortrait Y좌표
+var right_base_y: float = 50.0 # 예시 값: 실제 씬의 RightPortrait Y좌표
 	
 signal dialogue_finished
+signal dialogue_event
 
 var portrait_path = "res://resources/Portraits/" # 이미지가 저장된 폴더 경로
 const DIM_COLOR = Color(0.5, 0.5, 0.5, 1.0) # 어두워질 색 (회색)
@@ -28,6 +29,11 @@ var portrait_tween: Tween # 일러스트 움직임용 트윈
 func _ready():
 	visible = false # 평소엔 숨김
 	type_timer.timeout.connect(_on_type_timer_timeout)
+	
+	# 일러스트가 위로 강조될 때 위가 잘리지 않도록 기본 위치를 낮춤
+	left_portrait.position.y += 30.0
+	right_portrait.position.y += 30.0
+	
 	left_base_y = left_portrait.position.y
 	right_base_y = right_portrait.position.y
 
@@ -99,6 +105,9 @@ func show_next_line():
 		# 3. [⭐강조 효과] 말하는 쪽 하이라이트!
 		emphasis_speaker(line["speaker"])
 		
+		if line.has("event") and line["event"] != "":
+			dialogue_event.emit(line["event"])
+		
 		current_index += 1
 	else:
 		end_dialogue()
@@ -135,6 +144,7 @@ func _on_type_timer_timeout():
 		is_typing = false
 		type_timer.stop()
 
+# 대화가 끝까지 정상적으로 진행되었을 때
 func end_dialogue():
 	if portrait_tween:
 		portrait_tween.kill()
@@ -145,3 +155,16 @@ func end_dialogue():
 	left_portrait.visible = false
 	right_portrait.visible = false
 	dialogue_finished.emit()
+
+# 외부 요인(멀어짐 등)으로 인해 강제로 창을 닫아야 할 때
+func force_close():
+	if is_dialogue_active:
+		if portrait_tween:
+			portrait_tween.kill()
+		is_dialogue_active = false
+		visible = false
+		GameManager.is_menu_open = false
+		left_portrait.visible = false
+		right_portrait.visible = false
+		type_timer.stop()
+		dialogue_finished.emit()

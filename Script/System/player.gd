@@ -202,6 +202,10 @@ func _on_sword_area_entered(area: Area2D) -> void:
 		if p.attempt_parry(global_position):
 			is_parry_success = true
 			
+			var stage = get_tree().current_scene
+			if stage and stage.has_method("apply_camera_shake"):
+				stage.apply_camera_shake(3.0)
+			
 			# 성공했을 때만 잠깐 대기 후 히트스탑
 			await get_tree().create_timer(0.05).timeout
 			GameManager.apply_hitstop(0.15, 0.2)
@@ -224,9 +228,17 @@ func _on_sword_body_entered(body: Node) -> void:
 			body.apply_damage(int(attack_damage), knock_force)
 			GameManager.apply_hitstop(0.25, 0.1)
 			
+			var stage = get_tree().current_scene
+			if stage and stage.has_method("apply_camera_shake"):
+				stage.apply_camera_shake(2.0)
+			
 		elif body.has_method("take_damage"):
 			body.take_damage(attack_damage, global_position)
 			GameManager.apply_hitstop(0.25, 0.1)
+			
+			var stage = get_tree().current_scene
+			if stage and stage.has_method("apply_camera_shake"):
+				stage.apply_camera_shake(2.0)
 			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
 	# [체크 1] super(부모)를 호출해서 실제 체력을 깎고 결과를 받아야 함!
@@ -234,10 +246,6 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	
 	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
-		var stage = get_tree().current_scene
-		if stage and stage.has_method("apply_camera_shake"):
-			stage.apply_camera_shake(5.0)
-		
 		GameManager.update_hp(hp)
 		HUD.show_hud_temporarily()
 		is_attacking = false
@@ -255,11 +263,16 @@ func _physics_process(delta: float) -> void:
 		return
 		
 	if GameManager.is_menu_open:
-		velocity = Vector2.ZERO
+		velocity.x = 0
 		if not is_on_floor():
-			velocity += get_gravity() * delta
+			var g := get_gravity()
+			var mult := 1.0
+			if velocity.y > 0.0: mult = fall_gravity_mult
+			velocity += g * mult * delta
+			if velocity.y > max_fall_speed:
+				velocity.y = max_fall_speed
 		move_and_slide()
-		sprite.play("Stand")
+		_update_animation(0)
 		return
 		
 	if hp <= 0:
