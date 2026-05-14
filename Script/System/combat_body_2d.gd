@@ -128,10 +128,15 @@ func _play_hit_effects() -> void:
 	# 1. 파티클 소환
 	if hit_spark_scene:
 		var spark = hit_spark_scene.instantiate()
-		get_parent().add_child(spark)
-		spark.global_position = global_position
-		spark.emitting = true
-		get_tree().create_timer(spark.lifetime).timeout.connect(func(): spark.queue_free())
+		var target_parent = get_parent()
+		if target_parent == null:
+			target_parent = get_tree().current_scene
+			
+		if target_parent:
+			target_parent.add_child(spark)
+			spark.global_position = global_position
+			spark.emitting = true
+			get_tree().create_timer(spark.lifetime).timeout.connect(func(): if is_instance_valid(spark): spark.queue_free())
 
 	# 2. 쉐이더 외곽선 효과 (스프라이트에 outline.gdshader가 있어야 함)
 	var node = get_blink_node()
