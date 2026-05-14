@@ -119,7 +119,7 @@ func set_parryable_mode(active: bool, cue_color: Color = Color.YELLOW) -> void:
 	else:
 		modulate = Color.WHITE
 
-func attempt_parry(source_pos: Vector2) -> bool:
+func attempt_parry(source_pos: Vector2, extra_damage: int = 0) -> bool:
 	if not is_parryable:
 		return false
 	
@@ -135,7 +135,7 @@ func attempt_parry(source_pos: Vector2) -> bool:
 	# 일단 튕겨나가는 초기 방향은 플레이어가 바라보는 방향 or 반사각
 	# (유도탄이라 초기 방향은 크게 중요하지 않지만, 멋을 위해 반대편으로 설정)
 	direction = (global_position - source_pos).normalized()
-	damage = ceil(damage * 1.5)
+	damage = ceil(damage * 1.5) + extra_damage
 	speed *= 2.0 # 유도탄이니까 속도는 2배만 (너무 빠르면 선회하기 힘듦)
 	velocity = direction * speed  # <-- 이거 꼭 있어야 날아갑니다!
 	

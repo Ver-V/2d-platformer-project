@@ -12,10 +12,6 @@ var rng = RandomNumberGenerator.new()
 @onready var shooter: ShooterComponent = $ShooterComponent
 
 const Fire_projectile = preload("res://Scenes/Projectile/projectilefire.tscn")
-const TELEPORT_SHADER = preload("res://resources/Shaders/teleport_flash.gdshader")
-
-var teleport_material: ShaderMaterial
-
 func _ready() -> void:
 	super._ready()
 	rng.randomize() # 보스 전용 랜덤 시드 초기화
@@ -26,11 +22,6 @@ func _ready() -> void:
 		shooter = get_node_or_null("ShooterComponent")
 	if not shooter:
 		shooter = find_child("ShooterComponent")
-	
-	teleport_material = ShaderMaterial.new()
-	teleport_material.shader = TELEPORT_SHADER
-	if boss_sprite:
-		boss_sprite.material = teleport_material
 
 func _setup_teleports_points() -> void:
 	var points_node = get_tree().get_first_node_in_group("teleport_points_stage1")
@@ -76,9 +67,9 @@ func _execute_teleport_sequence() -> void:
 	is_attacking = true
 	print("[Boss Debug] 텔레포트 시퀀스 시작 (마커 개수: ", teleport_markers.size(), ")")
 	
-	if teleport_material:
+	if boss_sprite and boss_sprite.material:
 		var tween = create_tween()
-		tween.tween_property(teleport_material, "shader_parameter/flash_modifier", 1.0, 0.15)
+		tween.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 1.0, 0.15)
 		# await 대신 타이머를 사용하여 혹시 모를 멈춤 방지
 		await get_tree().create_timer(0.2).timeout
 		
@@ -95,9 +86,9 @@ func _execute_teleport_sequence() -> void:
 	else:
 		print("[Boss Debug] 경고: 텔레포트할 유효한 마커를 찾지 못했습니다!")
 	
-	if teleport_material:
+	if boss_sprite and boss_sprite.material:
 		var tween2 = create_tween()
-		tween2.tween_property(teleport_material, "shader_parameter/flash_modifier", 0.0, 0.15)
+		tween2.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 0.0, 0.15)
 		await get_tree().create_timer(0.2).timeout
 		
 	print("[Boss Debug] 텔레포트 완료 -> 공격 상태로 전환")

@@ -46,6 +46,15 @@ var _cooldown_left: float = 0.0
 var is_parry_success: bool = false
 var status_tween: Tween # [추가됨] 팝업 애니메이션 겹침 방지용
 
+# --- 가드 관련 변수 (Active Guard) ---
+var is_guarding: bool = false
+var guard_timer: float = 0.0
+var guard_cooldown_timer: float = 0.0
+
+const GUARD_DURATION: float = 0.5          # 가드 지속 시간
+const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
+const GUARD_COOLDOWN_TIME: float = 3.0      # 가드 재사용 대기 시간
+
 signal died
 signal death_started
 
@@ -199,7 +208,14 @@ func _on_sword_area_entered(area: Area2D) -> void:
 	if area is Projectile:
 		var p: Projectile = area as Projectile
 
-		if p.attempt_parry(global_position):
+		# 퍼펙트 가드 보너스가 있으면 +10 전달
+		var extra = 0
+		if has_perfect_guard_bonus:
+			extra = 10
+			has_perfect_guard_bonus = false
+			show_popup("Counter Parry!", Color.CYAN)
+
+		if p.attempt_parry(global_position, extra):
 			is_parry_success = true
 			
 			var stage = get_tree().current_scene
@@ -218,14 +234,23 @@ func _on_sword_body_entered(body: Node) -> void:
 	# 1. 적 그룹인지 확인
 	if body.is_in_group("enemies"):
 		await get_tree().process_frame
+		
+		# 이미 투사체를 패링했다면 검으로 직접 데미지를 주지 않음
 		if is_parry_success:
 			return
 
 		if body.has_method("apply_damage"):
+			# 데미지 계산 (보너스 확인)
+			var final_damage = attack_damage
+			if has_perfect_guard_bonus:
+				final_damage += 10
+				has_perfect_guard_bonus = false
+				show_popup("Counter Hit!", Color.ORANGE)
+
 			# 넉백 방향 계산 (플레이어 -> 적)
 			var knock_dir = (body.global_position - global_position).normalized()
 			var knock_force = Vector2(knock_dir.x * 400, -200)
-			body.apply_damage(int(attack_damage), knock_force)
+			body.apply_damage(int(final_damage), knock_force)
 			GameManager.apply_hitstop(0.25, 0.1)
 			
 			var stage = get_tree().current_scene
@@ -233,7 +258,14 @@ func _on_sword_body_entered(body: Node) -> void:
 				stage.apply_camera_shake(2.0)
 			
 		elif body.has_method("take_damage"):
-			body.take_damage(attack_damage, global_position)
+			# take_damage를 쓰는 적들을 위한 처리
+			var final_damage = attack_damage
+			if has_perfect_guard_bonus:
+				final_damage += 10
+				has_perfect_guard_bonus = false
+				show_popup("Counter Hit!", Color.ORANGE)
+
+			body.take_damage(final_damage, global_position)
 			GameManager.apply_hitstop(0.25, 0.1)
 			
 			var stage = get_tree().current_scene
@@ -241,6 +273,36 @@ func _on_sword_body_entered(body: Node) -> void:
 				stage.apply_camera_shake(2.0)
 			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
+	# --- [추가] 가드 데미지 처리 ---
+	if is_guarding and amount > 0 and not is_invulnerable():
+		# 독 데미지 등 방향성이 없는 공격(넉백 X)은 가드 불가
+		# 정면에서 오는 공격(넉백 방향과 플레이어 방향이 반대)만 가드 가능
+		var can_guard = false
+		if knockback.x != 0:
+			if (knockback.x * attack_pivot.scale.x) < 0:
+				can_guard = true
+				
+		if can_guard:
+			if guard_timer <= PERFECT_GUARD_WINDOW:
+				# 퍼펙트 가드: 데미지 무효
+				show_popup("Perfect Guard!", Color.CYAN)
+				GameManager.apply_hitstop(0.15, 0.1)
+				# [추가] 다음 공격 데미지 보너스 부여
+				has_perfect_guard_bonus = true
+				# 무적 시간 살짝 부여 (연속 공격 방지)
+				start_invuln(0.2)
+				return false
+			else:
+				# 일반 가드: 데미지 -5 경감
+				var reduced_amount = max(0, amount - 5)
+				amount = int(reduced_amount)
+				if amount <= 0:
+					show_popup("Blocked!", Color.GRAY)
+					start_invuln(0.2)
+					return false
+				else:
+					show_popup("Guard", Color.GRAY)
+
 	# [체크 1] super(부모)를 호출해서 실제 체력을 깎고 결과를 받아야 함!
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time)
 	
@@ -325,6 +387,28 @@ func _physics_process(delta: float) -> void:
 		if GameManager.use_flask():
 			pass
 		
+	# --- [수정] 액티브 가드 시스템 로직 ---
+	# 1. 쿨다운 타이머 감소
+	if guard_cooldown_timer > 0:
+		guard_cooldown_timer -= delta
+
+	# 2. 가드 시작 입력 (한 번 누르기)
+	if Input.is_action_just_pressed("guard") and not is_guarding and guard_cooldown_timer <= 0:
+		if is_on_floor() and not is_attacking:
+			is_guarding = true
+			guard_timer = 0.0
+			velocity.x = 0 # 시작 시 즉시 정지
+	
+	# 3. 가드 지속 및 종료 처리
+	if is_guarding:
+		guard_timer += delta
+		velocity.x = 0 # 가드 중 이동 불가
+		
+		# 0.5초가 지나면 가드 종료 및 쿨다운 시작
+		if guard_timer >= GUARD_DURATION:
+			is_guarding = false
+			guard_cooldown_timer = GUARD_COOLDOWN_TIME
+
 	# 6. 방향 전환
 	if not is_attacking and dir_input != 0:
 		if dir_input > 0:
@@ -368,12 +452,17 @@ func _physics_process(delta: float) -> void:
 func spawn_dust(offset: Vector2 = Vector2.ZERO) -> void:
 	if dust_particles_scene:
 		var dust = dust_particles_scene.instantiate()
-		get_parent().add_child(dust)
-		dust.global_position = global_position + offset
-		dust.emitting = true
-		# 수명이 다하면 자동으로 삭제되도록 타이머 연결
-		await get_tree().create_timer(dust.lifetime).timeout
-		dust.queue_free()
+		var target_parent = get_parent()
+		if target_parent == null:
+			target_parent = get_tree().current_scene
+			
+		if target_parent:
+			target_parent.add_child(dust)
+			dust.global_position = global_position + offset
+			dust.emitting = true
+			# 수명이 다하면 자동으로 삭제되도록 타이머 연결
+			await get_tree().create_timer(dust.lifetime).timeout
+			dust.queue_free()
 	
 func get_knockback_cooldown() -> float:
 	return 0.7  # 0.7초 뒤에는 바로 움직일 수 있음!
@@ -389,6 +478,14 @@ func _update_animation(dir_input: float) -> void:
 		# 점프 애니메이션이 있다면 사용 (없으면 그냥 둠)
 		if sprite.sprite_frames.has_animation("Jump"):
 			sprite.play("Jump")
+		return
+
+	# 가드 중일 때
+	if is_guarding:
+		if sprite.sprite_frames.has_animation("Guard"):
+			sprite.play("Guard")
+		else:
+			sprite.play("Stand")
 		return
 
 	# 바닥에 있을 때
@@ -430,6 +527,10 @@ func show_status(action_type: String) -> void:
 		
 func _on_magnet_area_area_entered(area):
 	# 닿은 녀석(area)이 'attract_to'라는 함수를 가지고 있나? (즉, 코인인가?)
+	if area.has_method("attract_to"):
+		# "나(self)한테 빨려와라!" 명령
+		area.attract_to(self)
+, 코인인가?)
 	if area.has_method("attract_to"):
 		# "나(self)한테 빨려와라!" 명령
 		area.attract_to(self)
