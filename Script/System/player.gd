@@ -1,6 +1,9 @@
 extends CombatBody2D
 class_name Player
 
+enum State { IDLE, RUN, JUMP, FALL, ATTACK, GUARD, DEAD }
+var current_state: State = State.IDLE
+
 @onready var sprite: AnimatedSprite2D = $PlayerAni
 @onready var sword_area: Area2D = $AttackPivot/SwordArea
 @onready var sword_shape: CollisionShape2D = $AttackPivot/SwordArea/CollisionShape2D
@@ -55,6 +58,8 @@ const GUARD_DURATION: float = 0.5          # 가드 지속 시간
 const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
 const GUARD_COOLDOWN_TIME: float = 3.0      # 가드 재사용 대기 시간
 
+var has_perfect_guard_bonus: bool = false # [추가] 퍼펙트 가드 시 다음 공격 보너스 플래그
+
 signal died
 signal death_started
 
@@ -81,8 +86,6 @@ func _ready() -> void:
 	# ----------------------------------------------------------------
 	if sprite != null:
 		sprite.play("Stand")
-		if not sprite.animation_finished.is_connected(_on_animation_finished):
-			sprite.animation_finished.connect(_on_animation_finished)
 	
 	if sword_area != null:
 		sword_area.area_entered.connect(_on_sword_area_entered)
@@ -103,11 +106,64 @@ func _ready() -> void:
 	velocity = Vector2.ZERO
 	floor_snap_length = 2.0
 	apply_floor_snap()
+	
+	change_state(State.IDLE)
 	move_and_slide()
 
-func _on_animation_finished() -> void:
-	if sprite.animation == "Attack":
-		is_attacking = false
+# --- FSM 상태 전환 함수 ---
+func change_state(new_state: State) -> void:
+	if current_state == new_state: return
+	
+	# 1. 이전 상태 종료(Exit) 처리
+	match current_state:
+		State.ATTACK:
+			is_attacking = false
+			sword_shape.set_deferred("disabled", true)
+		State.GUARD:
+			is_guarding = false
+			guard_cooldown_timer = GUARD_COOLDOWN_TIME
+
+	current_state = new_state
+	
+	# 2. 새로운 상태 진입(Enter) 처리
+	match current_state:
+		State.ATTACK:
+			is_attacking = true
+			is_parry_success = false 
+			sprite.play("Attack")
+			sword_shape.disabled = false
+			_cooldown_left = attack_cooldown
+			
+			# 공격 종료 타이머 (기존 애니메이션 종료 시그널 대신 코루틴 사용)
+			get_tree().create_timer(0.25).timeout.connect(func():
+				if current_state == State.ATTACK:
+					change_state(State.IDLE if is_on_floor() else State.FALL)
+			)
+		State.GUARD:
+			is_guarding = true
+			guard_timer = 0.0
+			velocity.x = 0
+			if sprite.sprite_frames.has_animation("Guard"):
+				sprite.play("Guard")
+			else:
+				sprite.play("Stand")
+		State.DEAD:
+			# 사망 처리 로직
+			collision_stand.set_deferred("disabled", true)
+			collision_died.set_deferred("disabled", false)
+			velocity.x = 0 
+			reset_combat_state()
+			set_process_input(false)
+			sprite.play("died")
+			HUD.show_death_screen()
+			
+			if is_attacking:
+				sword_shape.set_deferred("disabled",true)
+				
+			get_tree().create_timer(4.0).timeout.connect(func():
+				set_physics_process(false)
+				died.emit()
+			)
 
 # -------------------------------------------------------
 # [수정] 데이터는 GM에게 요청하고, Player는 시각 처리만 함
@@ -170,40 +226,6 @@ func show_popup(text: String, color: Color = Color.YELLOW) -> void:
 	tween.chain().tween_callback(func(): status_label.visible = false)
 	
 	
-func _on_death() -> void:
-	death_started.emit()
-	collision_stand.set_deferred("disabled", true)
-	collision_died.set_deferred("disabled", false)
-	velocity.x = 0 
-	reset_combat_state()
-	set_process_input(false)
-	sprite.play("died")
-	HUD.show_death_screen()
-	
-	is_attacking = false
-	sword_shape.set_deferred("disabled",true)
-	
-	await get_tree().create_timer(4.0).timeout
-	
-	set_physics_process(false)
-	died.emit()
-
-func attack() -> void:
-	if is_attacking or _cooldown_left > 0.0 : return
-	
-	_cooldown_left = attack_cooldown
-	is_attacking = true
-	is_parry_success = false 
-	
-	sprite.play("Attack")
-	
-	sword_shape.disabled = false
-	await get_tree().create_timer(0.25).timeout
-	
-	# 데미지를 입어서 캔슬되지 않았을 때만 원상복구
-	if is_instance_valid(sword_shape) and is_attacking:
-		sword_shape.disabled = true
-
 func _on_sword_area_entered(area: Area2D) -> void:
 	if area is Projectile:
 		var p: Projectile = area as Projectile
@@ -310,115 +332,126 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	if took_damage:
 		GameManager.update_hp(hp)
 		HUD.show_hud_temporarily()
-		is_attacking = false
-		sword_shape.set_deferred("disabled", true)
 		GameManager.apply_hitstop(0.25, 0.2)
 		
 		# [수정 1] 죽었을 때 확인
 		if hp <= 0:
-			velocity.x = 0 # 좌우 이동만 멈춤 (떨어지는 건 유지!)
+			change_state(State.DEAD)
+		elif current_state == State.ATTACK or current_state == State.GUARD:
+			# 데미지를 입으면 액션 취소
+			change_state(State.IDLE if is_on_floor() else State.FALL)
 	
 	return took_damage
 	
+func apply_gravity(delta: float) -> void:
+	if is_on_floor(): return
+	
+	var g := get_gravity()
+	var mult := 1.0
+	if velocity.y > 0.0: mult = fall_gravity_mult
+	
+	velocity += g * mult * delta
+	
+	# 점프 컷 (점프 키 뗐을 때 상승력 감소)
+	if not GameManager.is_menu_open and hp > 0:
+		if Input.is_action_just_released("jump") and velocity.y < 0.0:
+			velocity.y *= jump_cut_factor
+			
+	if velocity.y > max_fall_speed:
+		velocity.y = max_fall_speed
+
 func _physics_process(delta: float) -> void:
 	if get_tree().paused:
 		return
 		
 	if GameManager.is_menu_open:
 		velocity.x = 0
-		if not is_on_floor():
-			var g := get_gravity()
-			var mult := 1.0
-			if velocity.y > 0.0: mult = fall_gravity_mult
-			velocity += g * mult * delta
-			if velocity.y > max_fall_speed:
-				velocity.y = max_fall_speed
+		apply_gravity(delta)
 		move_and_slide()
 		_update_animation(0)
 		return
 		
-	if hp <= 0:
-		# 공중에 떠 있다면? -> 중력 적용!
-		if not is_on_floor():
-			velocity += get_gravity() * delta
-		else:
-			# 바닥에 닿았다면 -> 미끄러짐 방지
+	if hp <= 0: # DEAD 상태 보완 (낙하 등)
+		apply_gravity(delta)
+		if is_on_floor():
 			velocity.x = 0
-			
-		move_and_slide() # [중요] 이게 있어야 실제로 떨어집니다!
-		return # 살았을 때 로직은 실행하지 않고 종료
-	# 쿨타임 감소
-	if _cooldown_left > 0.0:
-		_cooldown_left -= delta
-	
-	# [조작감 개선] 1. 타이머 감소
+		move_and_slide()
+		return
+		
+	# 공통 타이머 감소
+	if _cooldown_left > 0.0: _cooldown_left -= delta
+	if guard_cooldown_timer > 0.0: guard_cooldown_timer -= delta
 	_coyote_timer -= delta
 	_jump_buffer_timer -= delta
 	
 	if is_on_floor():
 		_coyote_timer = coyote_time
-
-	# 2. 중력
-	var g := get_gravity()
-	if not is_on_floor():
-		var mult := 1.0
-		if velocity.y > 0.0: mult = fall_gravity_mult
-		velocity += g * mult * delta
-		if Input.is_action_just_released("jump") and velocity.y < 0.0:
-			velocity.y *= jump_cut_factor
-		if velocity.y > max_fall_speed:
-			velocity.y = max_fall_speed
-
-	# 3. 이동 입력값 계산
-	var dir_input := Input.get_axis("left", "right")
-
-	# 4. 공격 캔슬 로직
-	if is_attacking:
-		var facing_dir = attack_pivot.scale.x 
-		if dir_input != 0 and dir_input != facing_dir:
-			is_attacking = false
-			sword_shape.disabled = true
-
-	# 5. 공격 시작 입력
-	if Input.is_action_just_pressed("attack"):
-		attack()
-	
-	if Input.is_action_just_pressed("use_flask"):
-		if GameManager.use_flask():
-			pass
-		
-	# --- [수정] 액티브 가드 시스템 로직 ---
-	# 1. 쿨다운 타이머 감소
-	if guard_cooldown_timer > 0:
-		guard_cooldown_timer -= delta
-
-	# 2. 가드 시작 입력 (한 번 누르기)
-	if Input.is_action_just_pressed("guard") and not is_guarding and guard_cooldown_timer <= 0:
-		if is_on_floor() and not is_attacking:
-			is_guarding = true
-			guard_timer = 0.0
-			velocity.x = 0 # 시작 시 즉시 정지
-	
-	# 3. 가드 지속 및 종료 처리
-	if is_guarding:
-		guard_timer += delta
-		velocity.x = 0 # 가드 중 이동 불가
-		
-		# 0.5초가 지나면 가드 종료 및 쿨다운 시작
-		if guard_timer >= GUARD_DURATION:
-			is_guarding = false
-			guard_cooldown_timer = GUARD_COOLDOWN_TIME
-
-	# 6. 방향 전환
-	if not is_attacking and dir_input != 0:
-		if dir_input > 0:
-			sprite.flip_h = false
-			attack_pivot.scale.x = 1
+		if current_state == State.FALL or current_state == State.JUMP:
+			if current_state != State.ATTACK and current_state != State.GUARD:
+				change_state(State.IDLE)
+				
+	if not is_on_floor() and current_state != State.ATTACK and current_state != State.GUARD:
+		if velocity.y > 0:
+			change_state(State.FALL)
 		else:
-			sprite.flip_h = true
-			attack_pivot.scale.x = -1
+			change_state(State.JUMP)
+
+	# 글로벌 입력 처리 (어느 상태에서든 입력 받으면 플라스크/상호작용 가능)
+	if Input.is_action_just_pressed("use_flask"):
+		GameManager.use_flask()
+
+	match current_state:
+		State.IDLE, State.RUN, State.JUMP, State.FALL:
+			_process_movement(delta)
+		State.ATTACK:
+			_process_attack(delta)
+		State.GUARD:
+			_process_guard(delta)
+		State.DEAD:
+			pass
+
+	# 착지 이펙트 로직
+	if is_on_floor() and not _was_on_floor:
+		spawn_dust(Vector2(0, 0))
+	_was_on_floor = is_on_floor()
+
+func _process_movement(delta: float) -> void:
+	var dir_input := Input.get_axis("left", "right")
 	
-	# [조작감 개선] 7. 가감속을 적용한 이동 처리
+	# 상태 전환: 방향키 입력 시 RUN, 아니면 IDLE (바닥일 때만)
+	if is_on_floor():
+		if dir_input != 0:
+			if current_state != State.RUN: change_state(State.RUN)
+		else:
+			if current_state != State.IDLE: change_state(State.IDLE)
+
+	# 상태 전이 (공격, 가드)
+	if Input.is_action_just_pressed("attack") and _cooldown_left <= 0.0:
+		change_state(State.ATTACK)
+		return
+		
+	if Input.is_action_just_pressed("guard") and is_on_floor() and guard_cooldown_timer <= 0.0:
+		change_state(State.GUARD)
+		return
+
+	# 점프 선입력
+	if Input.is_action_just_pressed("jump"):
+		_jump_buffer_timer = jump_buffer_time
+
+	# 점프 실행
+	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
+		velocity.y = jumpforce
+		_jump_buffer_timer = 0.0
+		_coyote_timer = 0.0
+		spawn_dust(Vector2(0, 0))
+		change_state(State.JUMP)
+
+	# 방향 전환
+	if dir_input != 0:
+		sprite.flip_h = dir_input < 0
+		attack_pivot.scale.x = 1 if dir_input > 0 else -1
+
+	# 가감속 물리 이동
 	var target_speed = dir_input * movespeed
 	if is_on_floor():
 		if dir_input != 0:
@@ -427,8 +460,17 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0, friction * delta)
 	else:
 		velocity.x = target_speed
+
+	apply_gravity(delta)
+	move_with_knockback(delta)
+	_update_animation(dir_input)
+
+func _process_attack(delta: float) -> void:
+	apply_gravity(delta)
 	
-	# [조작감 개선] 8. 점프 (선입력 & 코요테 타임 적용)
+	var dir_input := Input.get_axis("left", "right")
+
+	# 인터럽트 1: 점프 (즉시 캔슬 후 점프)
 	if Input.is_action_just_pressed("jump"):
 		_jump_buffer_timer = jump_buffer_time
 
@@ -436,17 +478,31 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jumpforce
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
-		spawn_dust(Vector2(0, 0)) # 점프 시 발밑에 먼지 생성
+		spawn_dust(Vector2(0, 0))
+		change_state(State.JUMP)
+		return
+		
+	# 인터럽트 2: 방향 전환 (뒤로 돌면 즉시 캔슬)
+	var facing_dir = attack_pivot.scale.x 
+	if dir_input != 0 and dir_input != facing_dir:
+		change_state(State.RUN if is_on_floor() else State.FALL)
+		return
 
-	# [추가] 착지 순간 감지
-	if is_on_floor() and not _was_on_floor:
-		spawn_dust(Vector2(0, 0)) # 착지 시 발밑에 먼지 생성
-	
-	_was_on_floor = is_on_floor() # 상태 업데이트
-	
+	# 공격 중 마찰력 적용 (미끄러짐)
+	if is_on_floor():
+		velocity.x = move_toward(velocity.x, 0, friction * delta)
+
 	move_with_knockback(delta)
+
+func _process_guard(delta: float) -> void:
+	apply_gravity(delta)
+	velocity.x = 0 # 가드 중 이동 불가
 	
-	_update_animation(dir_input)
+	guard_timer += delta
+	if guard_timer >= GUARD_DURATION:
+		change_state(State.IDLE)
+		
+	move_with_knockback(delta)
 
 # [추가] 먼지 파티클 소환 함수
 func spawn_dust(offset: Vector2 = Vector2.ZERO) -> void:
@@ -469,30 +525,21 @@ func get_knockback_cooldown() -> float:
 	
 # 애니메이션 관리 전용 함수
 func _update_animation(dir_input: float) -> void:
-	# 공격 중이면 다른 애니메이션이 덮어쓰지 못하게 리턴
-	if is_attacking:
-		return
-		
-	# 공중에 있을 때 (점프/낙하)
-	if not is_on_floor():
-		# 점프 애니메이션이 있다면 사용 (없으면 그냥 둠)
-		if sprite.sprite_frames.has_animation("Jump"):
-			sprite.play("Jump")
-		return
-
-	# 가드 중일 때
-	if is_guarding:
-		if sprite.sprite_frames.has_animation("Guard"):
-			sprite.play("Guard")
-		else:
+	match current_state:
+		State.ATTACK:
+			pass # Attack 애니메이션은 change_state에서 play() 됨
+		State.GUARD:
+			pass # Guard 애니메이션은 change_state에서 play() 됨
+		State.DEAD:
+			pass # Dead 애니메이션은 change_state에서 play() 됨
+		State.JUMP:
+			if sprite.sprite_frames.has_animation("Jump"): sprite.play("Jump")
+		State.FALL:
+			if sprite.sprite_frames.has_animation("Jump"): sprite.play("Jump") # 추후 Fall 애니메이션 분리 가능
+		State.RUN:
+			if dir_input != 0: sprite.play("Run")
+		State.IDLE:
 			sprite.play("Stand")
-		return
-
-	# 바닥에 있을 때
-	if dir_input != 0:
-		sprite.play("Run")  # 혹은 "Walk"
-	else:
-		sprite.play("Stand") # 혹은 "Idle"
 		
 func show_status(action_type: String) -> void:
 	var msg: String = ""
@@ -526,11 +573,7 @@ func show_status(action_type: String) -> void:
 	show_popup(msg, color)
 		
 func _on_magnet_area_area_entered(area):
-	# 닿은 녀석(area)이 'attract_to'라는 함수를 가지고 있나? (즉, 코인인가?)
-	if area.has_method("attract_to"):
-		# "나(self)한테 빨려와라!" 명령
-		area.attract_to(self)
-, 코인인가?)
+	# 닿은 녀석(area)이 'attract_to'라는 함수를 가지고 있나?
 	if area.has_method("attract_to"):
 		# "나(self)한테 빨려와라!" 명령
 		area.attract_to(self)

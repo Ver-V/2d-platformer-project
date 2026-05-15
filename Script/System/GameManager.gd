@@ -28,8 +28,6 @@ signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
 signal interact_msg_requested(msg)    # [추가] 상호작용 텍스트 띄우기 요청
 signal interact_msg_hidden()          # [추가] 상호작용 텍스트 숨기기 요청
 
-const SAVE_PATH = "user://save_game.json"
-
 # 리스폰 중복 방지 플래그
 var is_respawning: bool = false
 
@@ -162,30 +160,34 @@ func ui_closed() -> void:
 		CustomCursor.hide_cursor()
 	
 func save_game() -> void:
-	# 플레이어 체력 0이하면 저장 안하기. (꼼수로 보스, 스테이지 깨기 방지)
-	if player_current_hp <= 0:
-		return
+	if player_current_hp <= 0: return
+	var data = get_data_for_save()
+	SaveManager.save_game(data)
+
+func load_game() -> bool:
+	var data = SaveManager.load_game()
+	if data.is_empty(): return false
 	
+	load_data_from_save(data)
+	return true
+
+# --- [데이터 직렬화] 저장용 딕셔너리 생성 ---
+func get_data_for_save() -> Dictionary:
 	var inventory_save_data = []
 	for item in inventory:
 		if item == null:
-			inventory_save_data.append(null) # 빈칸은 null로
+			inventory_save_data.append(null)
 		else:
-			# 아이템 오브젝트에서 중요한 정보(ID, 개수)만 뽑아서 저장
-			var data = {
-				"id": item.id,       # "potion_red"
-				# 만약 개수가 있다면 "amount": item.amount 도 추가
-			}
-			inventory_save_data.append(data)
+			inventory_save_data.append({"id": item.id})
 			
-	var save_data = {
+	return {
 		"gold": gold,
 		"current_hp": player_current_hp,
 		"max_hp": player_max_hp,
 		"damage": player_damage,
 		"parrydamage": player_parry_damage_multifac,
 		"defeated_bosses": defeated_bosses,
-		"talked_bosses": talked_bosses, # [추가]
+		"talked_bosses": talked_bosses,
 		"defeated_mobs": defeated_mobs,
 		"has_checkpoint": has_checkpoint,
 		"scene_path": last_scene_path,
@@ -198,96 +200,50 @@ func save_game() -> void:
 		"flask_max": flask_max_charges,
 		"flask_current": flask_current_charges
 	}
-	
-	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file:
-		var json_string = JSON.stringify(save_data)
-		file.store_string(json_string)
-		print("게임 저장 완료!")
-	else:
-		print("게임 저장 실패! 경로 오류: ", FileAccess.get_open_error())
 
-# --- [함수 5] 스테이지 경로 생성 헬퍼 ---
+# --- [데이터 역직렬화] 불러온 데이터 적용 ---
+func load_data_from_save(data: Dictionary) -> void:
+	gold = data.get("gold", 0)
+	player_current_hp = data.get("current_hp", 100)
+	player_max_hp = data.get("max_hp", 100)
+	player_damage = data.get("damage", 10)
+	player_parry_damage_multifac = data.get("parrydamage", 1.5)
+	defeated_mobs = data.get("defeated_mobs", [])
+	defeated_bosses = data.get("defeated_bosses", {})
+	talked_bosses = data.get("talked_bosses", {})
+	has_checkpoint = data.get("has_checkpoint", false)
+	
+	var loaded_path = data.get("scene_path", "")
+	if loaded_path == "" or loaded_path == "res://Scenes/Stage/Stage.tscn":
+		last_scene_path = get_stage_path(1)
+	else:
+		last_scene_path = loaded_path
+	
+	collected_items = data.get("collected_items", [])
+	merchant_stocks = data.get("merchant_stocks", {})
+	flask_max_charges = data.get("flask_max", 1)
+	flask_current_charges = data.get("flask_current", 1)
+	
+	# 미니맵 방문 기록 복구
+	visited_rooms.clear()
+	for r in data.get("visited_rooms", []):
+		visited_rooms.append(Vector2i(int(r.get("x", 0)), int(r.get("y", 0))))
+	
+	# 인벤토리 복구
+	inventory.fill(null)
+	var loaded_inv = data.get("inventory", [])
+	for i in range(min(loaded_inv.size(), inventory.size())):
+		var slot = loaded_inv[i]
+		if typeof(slot) == TYPE_DICTIONARY and slot.has("id"):
+			inventory[i] = get_item_by_id(slot["id"])
+	
+	last_checkpoint_pos = Vector2(data.get("pos_x", 0.0), data.get("pos_y", 0.0))
+	is_respawning = false
+
+	
 func get_stage_path(stage_num: int) -> String:
 	return "res://Scenes/Stage/Stage_%02d.tscn" % stage_num
 
-# --- [기능 2] 게임 불러오기 (Load) ---
-func load_game() -> bool:
-	if not FileAccess.file_exists(SAVE_PATH):
-		print("📂 저장된 파일이 없습니다. (New Game)")
-		return false
-	
-	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		print("❌ 파일 열기 실패! (에러 코드: ", FileAccess.get_open_error(), ")")
-		return false
-
-	var json_string = file.get_as_text()
-	var data = JSON.parse_string(json_string)
-	
-	if data:
-		var raw_rooms = data.get("visited_rooms", [])
-		gold = data.get("gold", 0)
-		player_current_hp = data.get("current_hp", 100)
-		player_max_hp = data.get("max_hp", 100)
-		player_damage = data.get("damage", 10)
-		player_parry_damage_multifac = data.get("parrydamage", 1.5)
-		defeated_mobs = data.get("defeated_mobs", [])
-		defeated_bosses = data.get("defeated_bosses", {})
-		talked_bosses = data.get("talked_bosses", {})
-		has_checkpoint = data.get("has_checkpoint", false)
-		
-		# [수정] 경로 마이그레이션 및 유효성 검사
-		var loaded_path = data.get("scene_path", "")
-		if loaded_path == "" or loaded_path == "res://Scenes/Stage/Stage.tscn":
-			last_scene_path = get_stage_path(1) # 기본 스테이지 01로 설정
-		else:
-			last_scene_path = loaded_path
-		
-		collected_items = data.get("collected_items", [])
-		merchant_stocks = data.get("merchant_stocks",{})
-		flask_max_charges = data.get("flask_max", 1)
-		flask_current_charges = data.get("flask_current", 1)
-		
-		for r in raw_rooms:
-			var _pos: Vector2i
-			if typeof(r) == TYPE_DICTIONARY:
-				_pos = Vector2i(int(r.get("x", 0)), int(r.get("y", 0)))
-			elif typeof(r) == TYPE_STRING:
-				var parts = r.replace("(", "").replace(")", "").split(",")
-				if parts.size() >= 2: _pos = Vector2i(int(parts[0]), int(parts[1]))
-				
-			if not visited_rooms.has(_pos):
-				visited_rooms.append(_pos)
-		
-		# 인벤토리 불러오기
-		var loaded_inv_data = data.get("inventory", [])
-		inventory.fill(null)
-		
-		for i in range(min(loaded_inv_data.size(), inventory.size())):
-			
-			var slot_data = loaded_inv_data[i]
-			if typeof(slot_data) == TYPE_DICTIONARY and slot_data.has("id"):
-			# 저장된 ID를 가져옴
-				var item_id = slot_data["id"]
-			
-			# 도감(get_item_by_id)을 이용해 실제 아이템(Resource)으로 복구!
-				var real_item = get_item_by_id(item_id)
-				if real_item:
-					inventory[i] = real_item
-				
-		
-		var px = data.get("pos_x", 0.0)
-		var py = data.get("pos_y", 0.0)
-		last_checkpoint_pos = Vector2(px, py)
-		
-		# [추가] 로드 성공 시 리스폰 방지 플래그 해제
-		is_respawning = false
-
-		return true
-		
-	return false
-	
 func apply_hitstop(time_scale: float, duration: float):
 	Engine.time_scale = time_scale
 	await get_tree().create_timer(duration, true, false, true).timeout
