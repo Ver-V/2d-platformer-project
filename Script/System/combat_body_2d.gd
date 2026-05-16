@@ -99,7 +99,7 @@ func apply_knockback(knock_dir: Vector2, kb_x: float, kb_y: float = 0.0, ignore_
 
 # 기존 함수: func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_knockback_cooldown: bool = false) -> bool:
 # [수정된 함수] 맨 뒤에 'override_invuln_time' 추가 (기본값 -1.0)
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
+func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
 	if amount <= 0: return false
 	if hp <= 0: return false
 	if is_invulnerable(): return false

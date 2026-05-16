@@ -107,9 +107,9 @@ func _on_death() -> void:
 	await get_tree().create_timer(5.0).timeout
 	queue_free()
 
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
+func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
 	if not _active: return false
-	return super.apply_damage(amount, knockback, ignore_cd, or_invuln_time)
+	return super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
 
 # --- Logic ---
 func _process(delta: float) -> void:

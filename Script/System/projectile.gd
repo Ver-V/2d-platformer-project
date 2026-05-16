@@ -93,7 +93,7 @@ func _on_body_entered(body: Node) -> void:
 		# 데미지 적용
 		var knock_dir = velocity.normalized()
 		# 넉백값은 투사체 설정에 따라 조절 가능. 일단 하드코딩 혹은 export 변수 사용
-		var applied = body.apply_damage(damage, knock_dir * 150.0)
+		var applied = body.apply_damage(damage, knock_dir * 150.0, false, -1.0, true)
 		
 		if applied:
 			_destroy_projectile()

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://crdqgwgubi7ed"
-path="res://.godot/imported/HeroBunny_idle.png-43c314675eb3c02db1f48d367ebe9bde.ctex"
+uid="uid://d8c0tvw43xji"
+path="res://.godot/imported/HeroBunny_smile.png-bcaf7996e1ca84b3dcc9be6b68afc6db.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/Portraits/HeroBunny_idle.png"
-dest_files=["res://.godot/imported/HeroBunny_idle.png-43c314675eb3c02db1f48d367ebe9bde.ctex"]
+source_file="res://resources/Portraits/HeroBunny_smile.png"
+dest_files=["res://.godot/imported/HeroBunny_smile.png-bcaf7996e1ca84b3dcc9be6b68afc6db.ctex"]
 
 [params]
 
