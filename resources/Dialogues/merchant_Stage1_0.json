@@ -1,50 +1,50 @@
 [
 	{
 		"speaker": "left", 
-		"left_image": "HeroBunny_idle",
-		"right_image": "",
+		"left_image": "HeroBunny_surprise",
+		"right_image": "LittleBunny_idle",
 		"name": "Pink Bunny",
 		"text": "Wait, what are you doing here?"
 	},
 	{
 		"speaker": "right",
-		"left_image": "HeroBunny_idle",
-		"right_image": "",
+		"left_image": "HeroBunny_surprise",
+		"right_image": "LittleBunny_smile",
 		"name": "Little Bunny",
 		"text": "I just wanted to come outside world with you."
 	},
 	{
 		"speaker": "left",
-		"left_image": "HeroBunny_idle",
-		"right_image": "",
+		"left_image": "HeroBunny_surprise",
+		"right_image": "LittleBunny_smile",
 		"name": "Pink Bunny",
 		"text": "But… it could be dangerous outside world. Are you sure it’s okay?"
 	},
 	{
 		"speaker": "right",
-		"left_image": "HeroBunny_idle",
-		"right_image": "",
+		"left_image": "HeroBunny_surprise",
+		"right_image": "LittleBunny_idle",
 		"name": "Little Bunny",
 		"text": "But you came out because you wanted to see the outside world too."
 	},
 	{
 		"speaker": "left",
-		"left_image": "HeroBunny_idle",
-		"right_image": "",
+		"left_image": "HeroBunny_embarrassed",
+		"right_image": "LittleBunny_idle",
 		"name": "Pink Bunny",
 		"text": "Yeah… you’ve got a point."
 	},
 	{
 		"speaker": "right",
-		"left_image": "HeroBunny_idle",
-		"right_image": "",
+		"left_image": "HeroBunny_embarrassed",
+		"right_image": "LittleBunny_smile",
 		"name": "Little Bunny",
 		"text": "Yeah, sister. Since you’re already here, you might as well take a look at the stuff. I brought some things from Mom and Dad’s storage."
 	},
 	{
 		"speaker": "left",
-		"left_image": "HeroBunny_idle",
-		"right_image": "",
+		"left_image": "HeroBunny_tired",
+		"right_image": "LittleBunny_smile",
 		"name": "Pink Bunny",
 		"text": "(Sigh)... Alright."
 	}

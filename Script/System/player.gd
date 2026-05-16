@@ -33,7 +33,7 @@ var current_state: State = State.IDLE
 var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
 var _was_on_floor: bool = false # [추가] 착지 감지용
-
+var _menu_exit_cooldown: float = 0.0 # [추가] 메뉴 종료 직후 입력 무시용
 @export_group("Visuals")
 @export var dust_particles_scene: PackedScene = preload("res://Scenes/System/DustParticles.tscn")
 
@@ -294,9 +294,9 @@ func _on_sword_body_entered(body: Node) -> void:
 			if stage and stage.has_method("apply_camera_shake"):
 				stage.apply_camera_shake(2.0)
 			
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
+func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
 	# --- [추가] 가드 데미지 처리 ---
-	if is_guarding and amount > 0 and not is_invulnerable():
+	if is_guarding and amount > 0 and not is_invulnerable() and is_projectile:
 		# 독 데미지 등 방향성이 없는 공격(넉백 X)은 가드 불가
 		# 정면에서 오는 공격(넉백 방향과 플레이어 방향이 반대)만 가드 가능
 		var can_guard = false
@@ -326,7 +326,7 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 					show_popup("Guard", Color.GRAY)
 
 	# [체크 1] super(부모)를 호출해서 실제 체력을 깎고 결과를 받아야 함!
-	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time)
+	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
 	
 	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
@@ -368,7 +368,13 @@ func _physics_process(delta: float) -> void:
 		velocity.x = 0
 		apply_gravity(delta)
 		move_and_slide()
+		
+		# 대화나 메뉴 중일 때 바닥에 있으면 강제로 IDLE 상태로 전환하여 애니메이션 고정
+		if current_state != State.DEAD and is_on_floor():
+			change_state(State.IDLE)
+			
 		_update_animation(0)
+		_menu_exit_cooldown = 0.2 # 메뉴가 닫힐 때 0.2초간 입력 방지
 		return
 		
 	if hp <= 0: # DEAD 상태 보완 (낙하 등)
@@ -381,6 +387,7 @@ func _physics_process(delta: float) -> void:
 	# 공통 타이머 감소
 	if _cooldown_left > 0.0: _cooldown_left -= delta
 	if guard_cooldown_timer > 0.0: guard_cooldown_timer -= delta
+	if _menu_exit_cooldown > 0.0: _menu_exit_cooldown -= delta
 	_coyote_timer -= delta
 	_jump_buffer_timer -= delta
 	
@@ -426,7 +433,7 @@ func _process_movement(delta: float) -> void:
 			if current_state != State.IDLE: change_state(State.IDLE)
 
 	# 상태 전이 (공격, 가드)
-	if Input.is_action_just_pressed("attack") and _cooldown_left <= 0.0:
+	if Input.is_action_just_pressed("attack") and _cooldown_left <= 0.0 and _menu_exit_cooldown <= 0.0:
 		change_state(State.ATTACK)
 		return
 		
@@ -435,7 +442,7 @@ func _process_movement(delta: float) -> void:
 		return
 
 	# 점프 선입력
-	if Input.is_action_just_pressed("jump"):
+	if Input.is_action_just_pressed("jump") and _menu_exit_cooldown <= 0.0:
 		_jump_buffer_timer = jump_buffer_time
 
 	# 점프 실행

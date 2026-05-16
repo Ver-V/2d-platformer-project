@@ -9,14 +9,14 @@
 	{
 		"speaker": "right", 
 		"left_image": "",
-		"right_image": "HeroBunny_idle",
+		"right_image": "HeroBunny_tired",
 		"name": "Pink Bunny",
 		"text": "Ah... Wait. I have a bad feeling about this."
 	},
 	{
 		"speaker": "right", 
 		"left_image": "",
-		"right_image": "HeroBunny_idle",
+		"right_image": "HeroBunny_surprise",
 		"name": "Pink Bunny",
 		"text": "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah!",
 		"event": "block_fall"

@@ -151,8 +151,8 @@ func _combat_state(_delta:float) -> void:
 func _dead_state(_delta:float) -> void:
 	velocity = Vector2.ZERO
 
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0) -> bool:
-	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time)
+func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
+	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
 	print("Boss HP: ", hp, "/", max_hp, " (Damaged by: ", amount, ")")
 	
 	if took_damage and hp > 0 and boss_sprite != null:
