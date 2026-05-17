@@ -101,6 +101,7 @@ func _on_mode_selected(index: int):
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
 	
+	GameManager.save_settings()
 	print("화면 모드 변경됨: ", index)
 
 func _on_resolution_selected(index: int):
@@ -116,6 +117,7 @@ func _on_resolution_selected(index: int):
 	DisplayServer.window_set_size(target_size)
 	_center_window()
 	
+	GameManager.save_settings()
 	print("해상도 변경됨: ", target_size)
 
 func _on_fps_selected(index: int):
@@ -124,6 +126,7 @@ func _on_fps_selected(index: int):
 	
 	# 엔진의 최대 FPS 설정
 	Engine.max_fps = limit
+	GameManager.save_settings()
 	print("FPS 제한 변경됨: ", limit)
 
 # 창을 모니터 정중앙으로 옮기는 헬퍼 함수
@@ -151,6 +154,7 @@ func _on_exit_button_pressed() -> void:
 func _on_sens_changed(value: float):
 	GameManager.mouse_sensitivity = value
 	_update_sens_label(value)
+	GameManager.save_settings()
 
 func _update_sens_label(value: float):
 	# 0.5 -> "50%" 처럼 보기 좋게 변환
@@ -176,16 +180,20 @@ func _init_audio_sliders():
 	
 func _on_master_volume_changed(value: float):
 	AudioServer.set_bus_volume_db(bus_index_master, linear_to_db(value))
+	GameManager.save_settings()
 
 func _on_bgm_volume_changed(value: float):
 	AudioServer.set_bus_volume_db(bus_index_bgm, linear_to_db(value))
+	GameManager.save_settings()
 
 func _on_sfx_volume_changed(value: float):
 	AudioServer.set_bus_volume_db(bus_index_sfx, linear_to_db(value))
+	GameManager.save_settings()
 	
 func _on_shake_changed(value: float):
 	GameManager.screenshake_intensity = value
 	_update_shake_label(value)
+	GameManager.save_settings()
 
 func _update_shake_label(value: float):
 	lbl_shake_value.text = "Shake Value: " + str(int(value * 100)) + "%"

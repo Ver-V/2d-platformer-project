@@ -2,6 +2,7 @@
 extends Node
 
 const SAVE_PATH = "user://save_game.json"
+const SETTINGS_PATH = "user://settings.json"
 
 func save_game(data: Dictionary) -> void:
 	# 플레이어 체력 0이하면 저장 안하기 (GameManager에서 체크하지만 여기서도 안전장치)
@@ -39,3 +40,21 @@ func delete_save() -> void:
 	if FileAccess.file_exists(SAVE_PATH):
 		DirAccess.remove_absolute(SAVE_PATH)
 		print("SaveManager: 세이브 파일 삭제됨")
+
+# --- 설정(옵션) 저장 및 불러오기 ---
+func save_settings(data: Dictionary) -> void:
+	var file = FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(data))
+		print("SaveManager: 설정 저장 완료")
+
+func load_settings() -> Dictionary:
+	if not FileAccess.file_exists(SETTINGS_PATH):
+		return {}
+	var file = FileAccess.open(SETTINGS_PATH, FileAccess.READ)
+	if file:
+		var data = JSON.parse_string(file.get_as_text())
+		if typeof(data) == TYPE_DICTIONARY:
+			print("SaveManager: 설정 로드 성공")
+			return data
+	return {}

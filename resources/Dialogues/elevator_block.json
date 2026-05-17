@@ -9,14 +9,14 @@
 		{
 		  "text": "Ground Floor",
 		  "next": "Ground Floor",
-		"condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		"fail_text": "This feature is locked in the demo."
+		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
+		  "fail_text": "This feature is locked in the demo."
 		},
 		{
 		  "text": "B1",
 		  "next": "B1",
-		"condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		"fail_text": "This feature is locked in the demo."
+		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
+		  "fail_text": "This feature is locked in the demo."
 		},
 		{
 		  "text": "B2",
@@ -25,76 +25,68 @@
 		  "fail_text": "This feature is locked in the demo."
 		},
 		{
-		 "text": "B3",
+		  "text": "B3",
 		  "next": "B3",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
 		},
 		{
-			"text": "B4",
-		  "next": "B4",
-	  },
+		  "text": "B4",
+		  "next": "B4"
+		},
 		{
-			"text": "B5",
+		  "text": "B5",
 		  "next": "B5",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
-	  },
+		},
 		{
-			"text": "B6",
+		  "text": "B6",
 		  "next": "B6",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
-	  },
+		},
 		{
-			"text": "B7",
+		  "text": "B7",
 		  "next": "B7",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
-	  },
+		},
 		{
-			"text": "B8",
+		  "text": "B8",
 		  "next": "B8",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
-	  },
+		},
 		{
-			"text": "B9",
+		  "text": "B9",
 		  "next": "B9",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
-	  },
+		},
 		{
-			"text": "B10",
+		  "text": "B10",
 		  "next": "B10",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
-	  },
+		},
 		{
-			"text": "B11",
+		  "text": "B11",
 		  "next": "B11",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
-	  },
+		},
 		{
-			"text": "B12",
+		  "text": "B12",
 		  "next": "B12",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
 		  "fail_text": "This feature is locked in the demo."
-	  },
+		},
 		{
-			"text": "B12",
-		  "next": "B12",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
-	},
-		{
-			"text": "Ignore",
-		  "next": "ignore",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
-	}
-	]
+		  "text": "Ignore",
+		  "next": "ignore"
+		}
+	  ]
 	}
   ],
   "B4": [
@@ -109,7 +101,7 @@
 	{
 	  "name": "Pink Bunny",
 	  "text": "Let's come back later.",
-	"left_image": "HeroBunny_idle",
+	  "left_image": "HeroBunny_idle",
 	  "speaker": "left"
 	}
   ]

@@ -86,17 +86,23 @@ func _input(event):
 			show_next_line()
 
 func start_dialogue(json_file_path: String, start_block: String = "start"):
-	if not FileAccess.file_exists(json_file_path): return
+	print("[DialogueManager] Loading dialogue: ", json_file_path)
+	if not FileAccess.file_exists(json_file_path):
+		print("[DialogueManager] Error: File not found at ", json_file_path)
+		return
 	var file = FileAccess.open(json_file_path, FileAccess.READ)
 	var content = file.get_as_text()
 	var json = JSON.new()
-	if json.parse(content) == OK:
+	var error = json.parse(content)
+	if error == OK:
 		var data = json.data
 		dialogue_data = data if typeof(data) == TYPE_DICTIONARY else {"start": data}
 		is_dialogue_active = true
 		visible = true
 		GameManager.is_menu_open = true
 		_jump_to_block(start_block)
+	else:
+		print("[DialogueManager] JSON Parse Error: ", json.get_error_message(), " at line ", json.get_error_line())
 
 func _jump_to_block(block_name: String):
 	if dialogue_data.has(block_name):
