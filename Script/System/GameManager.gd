@@ -31,6 +31,50 @@ signal interact_msg_hidden()          # [추가] 상호작용 텍스트 숨기�
 # 리스폰 중복 방지 플래그
 var is_respawning: bool = false
 
+func _ready() -> void:
+	load_settings()
+
+# --- 설정(옵션) 관리 ---
+func save_settings() -> void:
+	var data = {
+		"master_vol": db_to_linear(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Master"))),
+		"bgm_vol": db_to_linear(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("BGM"))),
+		"sfx_vol": db_to_linear(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("SFX"))),
+		"mouse_sens": mouse_sensitivity,
+		"screen_shake": screenshake_intensity,
+		"window_mode": DisplayServer.window_get_mode(),
+		"resolution_x": DisplayServer.window_get_size().x,
+		"resolution_y": DisplayServer.window_get_size().y,
+		"fps_limit": Engine.max_fps
+	}
+	SaveManager.save_settings(data)
+
+func load_settings() -> void:
+	var data = SaveManager.load_settings()
+	if data.is_empty(): return
+	
+	# 오디오 적용
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(data.get("master_vol", 1.0)))
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("BGM"), linear_to_db(data.get("bgm_vol", 1.0)))
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("SFX"), linear_to_db(data.get("sfx_vol", 1.0)))
+	
+	# 게임플레이 설정
+	mouse_sensitivity = data.get("mouse_sens", 1.0)
+	screenshake_intensity = data.get("screen_shake", 0.5)
+	
+	# 그래픽 설정 (지연 실행)
+	call_deferred("_apply_graphics_settings", data)
+
+func _apply_graphics_settings(data: Dictionary) -> void:
+	Engine.max_fps = data.get("fps_limit", 60)
+	var mode = data.get("window_mode", DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_mode(mode)
+	
+	if mode == DisplayServer.WINDOW_MODE_WINDOWED:
+		var res_x = data.get("resolution_x", 640)
+		var res_y = data.get("resolution_y", 360)
+		DisplayServer.window_set_size(Vector2i(res_x, res_y))
+
 # --- 2. 체크포인트(세이브) 데이터 ---
 var has_checkpoint: bool = false
 var last_checkpoint_pos: Vector2
