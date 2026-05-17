@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_fkyq0"]
 [ext_resource type="Texture2D" uid="uid://drsnrtqjpb5s5" path="res://Assets/sprites/Mushroom_Spotted.png" id="2_c7aq3"]
-[ext_resource type="Script" uid="uid://dcnt2aa637mxh" path="res://Script/Entity/slime.gd" id="2_ge0j4"]
+[ext_resource type="Script" uid="uid://c5gckvu7utcsr" path="res://Script/Entity/mushroom.gd" id="2_ge0j4"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l6i1k"]
 atlas = ExtResource("2_c7aq3")
@@ -333,21 +333,16 @@ radius = 73.0
 script = ExtResource("2_ge0j4")
 gravity = 980.0
 max_fall_speed = 280.0
-slime_max_hp = 50
-slime_contact_damage = 15
-slime_move_speed = 50.0
-slime_knockback_res = 0.0
+mushroom_max_hp = 50
+mushroom_contact_damage = 15
+mushroom_move_speed = 50.0
+mushroom_knockback_res = 0.0
 turn_on_wall = true
 turn_on_ledge = true
 floor_ray_x = 14.0
 floor_ray_y = 24.0
-jump_impulse = -200.0
-jump_cooldown = 2.0
-jump_only_when_player_near = true
-jump_chase_speed = 100.0
-jump_chase_time = 0.3
-attack_distance = 15.0
-drop_gold_amount = 20
+attack_distance = 20.0
+coin_scene = null
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 scale = Vector2(1.2, 1.2)

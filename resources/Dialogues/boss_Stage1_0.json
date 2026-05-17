@@ -1,5 +1,11 @@
 [
-	
+	{
+		"speaker": "right", 
+		"left_image": "HeroBunny_idle",
+		"right_image": "BigBunny_surprise",
+		"name": "Big Bunny",
+		"text": "Look who it is!"
+	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_idle",

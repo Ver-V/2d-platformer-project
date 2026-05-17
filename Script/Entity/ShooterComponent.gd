@@ -7,45 +7,69 @@ class_name ShooterComponent
 @export var parry_interval: int = 3          # 몇 발마다 패링 가능한가?
 @export var parry_cue_color: Color = Color(1, 0.6, 1)
 
+# [추가] 자동 발사 설정
+@export_group("Auto Shoot Settings")
+@export var auto_shoot: bool = false      # 켜면 스스로 쏨
+@export var fire_rate: float = 2.0        # 발사 간격 (초)
+@export var attack_range: float = 250.0   # 사거리
+
 # [내부 변수]
 var _shot_count: int = 0
+var _timer: float = 0.0
 
-# 외부(보스나 몹)에서 이 함수를 부르면 총알이 나갑니다.
-# target_node: 누구를 향해 쏠 건지
-# spawn_pos: 어디서 쏠 건지 (보스 손, 입 등)
+func _ready() -> void:
+	# 시작할 때 약간의 랜덤 딜레이를 주어 여러 몹이 동시에 쏘는 것 방지
+	_timer = randf_range(0.0, fire_rate)
+
+func _physics_process(delta: float) -> void:
+	if not auto_shoot: return
+	
+	var parent = get_parent()
+	# 부모 노드가 타겟을 가지고 있는지 확인
+	if not parent or not ("target" in parent) or parent.target == null:
+		return
+	
+	# 부모가 활성화 상태(EnemyBase)이고 살아있는지 확인
+	if "_active" in parent and not parent._active: return
+	if "hp" in parent and parent.hp <= 0: return
+
+	_timer -= delta
+	if _timer <= 0.0:
+		var dist = global_position.distance_to(parent.target.global_position)
+		if dist <= attack_range:
+			# 스스로 쏨 (부모, 타겟, 현재 내 위치)
+			shoot(parent, parent.target, global_position)
+			_timer = fire_rate
+
+# 외부에서 수동으로 부를 수도 있는 함수들 (기본 기능 유지)
 func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> Node2D:
 	if projectile_scene == null or target_node == null:
 		return null
 		
 	_shot_count += 1
 	
-	# 1. 총알 생성
 	var p = projectile_scene.instantiate()
-	p.shooter = shooter_mob # 쏜 사람 등록
+	p.shooter = shooter_mob
 	p.global_position = spawn_pos
 	
-	# 2. 방향 계산 (타겟의 가슴/중앙 조준)
-	var target_center = target_node.global_position + Vector2(0, -10)
+	# 타겟 중앙 조준
+	var target_center = target_node.global_position + Vector2(0, -8)
 	var dir = (target_center - spawn_pos).normalized()
 	
 	p.direction = dir
 	p.rotation = dir.angle()
-	p.team = "enemy" # 보스도 적 팀
+	p.team = "enemy"
 	
-	# 유도탄 타겟 직접 지정 (탐색 연산 최적화)
-	if p.start_homing:
+	if "start_homing" in p and p.start_homing:
 		p._homing_target = target_node
 	
-	# 3. [핵심] N번째 탄환 패링 설정 로직 (여기서 통합 관리!)
 	var is_parry_shot = (_shot_count % parry_interval == 0)
-	
 	if p.has_method("set_parryable_mode"):
 		if is_parry_shot:
 			p.set_parryable_mode(true, parry_cue_color)
 		else:
 			p.set_parryable_mode(false)
 			
-	# 4. 씬에 추가
 	var current_scene = get_tree().current_scene
 	if current_scene:
 		current_scene.call_deferred("add_child", p)
@@ -57,37 +81,28 @@ func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> Node
 func reset_count() -> void:
 	_shot_count = 0
 
-# 특정 방향으로 투사체를 발사하는 함수
 func shoot_dir(shooter_mob: Node2D, dir: Vector2, spawn_pos: Vector2) -> Node2D:
 	if projectile_scene == null:
 		return null
 		
 	_shot_count += 1
-	
-	# 1. 총알 생성
 	var p = projectile_scene.instantiate()
 	p.shooter = shooter_mob
 	p.global_position = spawn_pos
-	
-	# 2. 방향 및 각도 설정
 	p.direction = dir.normalized()
 	p.rotation = p.direction.angle()
 	p.team = "enemy" 
 	
-	# 탄막 패턴이므로 유도탄 속성을 강제로 끔
 	if "start_homing" in p:
 		p.start_homing = false 
 	
-	# 3. 패링 설정
 	var is_parry_shot = (_shot_count % parry_interval == 0)
-	
 	if p.has_method("set_parryable_mode"):
 		if is_parry_shot:
 			p.set_parryable_mode(true, parry_cue_color)
 		else:
 			p.set_parryable_mode(false)
 			
-	# 4. 씬에 추가
 	var current_scene = get_tree().current_scene
 	if current_scene:
 		current_scene.call_deferred("add_child", p)

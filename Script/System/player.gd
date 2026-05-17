@@ -48,6 +48,8 @@ var _menu_exit_cooldown: float = 0.0 # [추가] 메뉴 종료 직후 입력 무�
 var _cooldown_left: float = 0.0
 var is_parry_success: bool = false
 var status_tween: Tween # [추가됨] 팝업 애니메이션 겹침 방지용
+var _squash_tween: Tween # [추가] 시각적 효과용 트윈
+var _base_sprite_scale: Vector2 # [추가] 원래 스케일 저장용
 
 # --- 가드 관련 변수 (Active Guard) ---
 var is_guarding: bool = false
@@ -65,6 +67,9 @@ signal death_started
 
 func _ready() -> void:
 	add_to_group("player")
+	
+	if sprite:
+		_base_sprite_scale = sprite.scale
 	
 	# ----------------------------------------------------------------
 	# [1] 위치 동기화 (체크포인트)
@@ -409,8 +414,10 @@ func _physics_process(delta: float) -> void:
 
 	match current_state:
 		State.IDLE, State.RUN, State.JUMP, State.FALL:
+			_handle_corner_correction() # 천장 보정 적용
 			_process_movement(delta)
 		State.ATTACK:
+			_handle_corner_correction()
 			_process_attack(delta)
 		State.GUARD:
 			_process_guard(delta)
@@ -420,6 +427,7 @@ func _physics_process(delta: float) -> void:
 	# 착지 이펙트 로직
 	if is_on_floor() and not _was_on_floor:
 		spawn_dust(Vector2(0, 0))
+		apply_squash(1.2, 0.8) # 착지 시 납작하게
 	_was_on_floor = is_on_floor()
 
 func _process_movement(delta: float) -> void:
@@ -451,6 +459,7 @@ func _process_movement(delta: float) -> void:
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
 		spawn_dust(Vector2(0, 0))
+		apply_squash(0.8, 1.2) # 점프 시 길쭉하게
 		change_state(State.JUMP)
 
 	# 방향 전환
@@ -486,6 +495,7 @@ func _process_attack(delta: float) -> void:
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
 		spawn_dust(Vector2(0, 0))
+		apply_squash(0.8, 1.2) # 점프 시 길쭉하게
 		change_state(State.JUMP)
 		return
 		
@@ -527,6 +537,39 @@ func spawn_dust(offset: Vector2 = Vector2.ZERO) -> void:
 			await get_tree().create_timer(dust.lifetime).timeout
 			dust.queue_free()
 	
+# [추가] 시각적 찰진 효과 (Squash and Stretch)
+func apply_squash(x: float, y: float) -> void:
+	if _squash_tween:
+		_squash_tween.kill()
+	
+	_squash_tween = create_tween()
+	# 원래 스케일에 비례해서 squash 적용
+	sprite.scale = Vector2(_base_sprite_scale.x * x, _base_sprite_scale.y * y)
+	# 복구할 때도 원래 스케일(_base_sprite_scale)로 복구
+	_squash_tween.tween_property(sprite, "scale", _base_sprite_scale, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+# [추가] 모서리 보정 
+func _handle_corner_correction() -> void:
+	if velocity.y >= 0: return # 상승 중일 때만 작동
+	
+	# 캐릭터 위쪽 판정을 위해 약간 위쪽 위치에서 테스트
+	var step := 2.0
+	var check_dist := 4.0 # 보정해줄 최대 픽셀 거리 (보통 4~8픽셀)
+	
+	# 머리 바로 위가 막혀있는지 확인
+	if test_move(global_transform, Vector2(0, -step)):
+		# 왼쪽으로 살짝 옮기면 비어있는지 확인
+		for i in range(1, int(check_dist) + 1):
+			if not test_move(global_transform.translated(Vector2(-i, -step)), Vector2(0, 0)):
+				global_position.x -= 1.2 # 살짝 밀어줌
+				return
+		
+		# 오른쪽으로 살짝 옮기면 비어있는지 확인
+		for i in range(1, int(check_dist) + 1):
+			if not test_move(global_transform.translated(Vector2(i, -step)), Vector2(0, 0)):
+				global_position.x += 1.2 # 살짝 밀어줌
+				return
+
 func get_knockback_cooldown() -> float:
 	return 0.7  # 0.7초 뒤에는 바로 움직일 수 있음!
 	

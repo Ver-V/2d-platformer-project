@@ -530,7 +530,7 @@ position = Vector2(14, 21.5)
 shape = SubResource("RectangleShape2D_22r6i")
 
 [node name="MerchantNPC" parent="Entities" instance=ExtResource("15_vqt1q")]
-position = Vector2(136, 22)
+position = Vector2(157, 13)
 collision_mask = 2
 
 [node name="ElevatorBlock" type="Area2D" parent="Entities"]

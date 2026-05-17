@@ -19,7 +19,7 @@ grow_vertical = 2
 [node name="LeftPortrait" type="TextureRect" parent="PortraitsContainer"]
 texture_filter = 4
 layout_mode = 0
-offset_right = 233.0
+offset_right = 228.0
 offset_bottom = 360.0
 expand_mode = 2
 stretch_mode = 4
@@ -27,7 +27,7 @@ stretch_mode = 4
 [node name="RightPortrait" type="TextureRect" parent="PortraitsContainer"]
 texture_filter = 4
 layout_mode = 0
-offset_left = 400.0
+offset_left = 368.5
 offset_right = 640.0
 offset_bottom = 360.0
 expand_mode = 2
