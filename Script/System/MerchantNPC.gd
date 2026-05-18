@@ -26,11 +26,10 @@ func _on_shop_closed(bought: bool):
 func _input(event):
 	if player_in_range and event.is_action_pressed("interact"):
 		
-		# ⭐ [수정된 핵심 방어막] 대화 중이거나, 상점이 열려있다면 무조건 무시!
+		# 대화 중이거나, 상점이 열려있다면 무조건 무시!
 		if DialogueManager.is_dialogue_active or ShopUI.is_open:
 			return
 			
-		# ⭐ [입력 삼키기] E키를 여기서 꿀꺽해서 다른 애들이 못 듣게 합니다.
 		get_viewport().set_input_as_handled()
 		var file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count) + ".json"
 		
@@ -39,7 +38,7 @@ func _input(event):
 		
 			await DialogueManager.dialogue_finished 
 			
-			# 대화가 끝났는데 플레이어가 범위 밖에 있다면 (넉백 등 강제 취소됨)
+			# 대화가 끝났는데 플레이어가 범위 밖에 있다면
 			if not player_in_range:
 				return
 				
@@ -59,10 +58,6 @@ func _input(event):
 						return
 					
 					ShopUI.open_shop(location_name) 
-				else:
-					print("에러: 마지막 대사 파일조차 찾을 수 없습니다.")
-			else:
-				print("에러: 상인의 첫 번째 대사 파일이 없습니다.")
 
 func _on_body_entered(body):
 	if body.is_in_group("player"):

@@ -1,6 +1,6 @@
-[gd_scene load_steps=31 format=4 uid="uid://dfx7ligqjd22g"]
+[gd_scene load_steps=32 format=4 uid="uid://dfx7ligqjd22g"]
 
-[ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/System/stage.gd" id="1_pgns6"]
+[ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/System/stage_base.gd" id="1_pgns6"]
 [ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="2_v4g68"]
 [ext_resource type="PackedScene" uid="uid://bqw80wdrftg4s" path="res://Scenes/System/PauseMenu.tscn" id="3_asn4q"]
 [ext_resource type="Texture2D" uid="uid://cneqp6xfnb1wq" path="res://Assets/backgroundreal.png" id="4_22r6i"]
@@ -19,6 +19,7 @@
 [ext_resource type="PackedScene" uid="uid://cepa2x7wfxccs" path="res://Scenes/Entitites/MerchantNPC.tscn" id="15_vqt1q"]
 [ext_resource type="AudioStream" uid="uid://bjb33qep6eamb" path="res://resources/Music/wild-road.mp3" id="16_vrmrq"]
 [ext_resource type="Script" uid="uid://phnb6d4u7i25" path="res://Script/System/elevator_block.gd" id="18_22r6i"]
+[ext_resource type="PackedScene" uid="uid://c0gju76svf4ot" path="res://Scenes/Entitites/Emushroom.tscn" id="18_qsy5d"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qohnl"]
 texture = ExtResource("5_qsy5d")
@@ -416,6 +417,7 @@ size = Vector2(18, 356)
 
 [node name="Stage_01" type="Node2D"]
 script = ExtResource("1_pgns6")
+stage_title = "Bunny's Forest"
 player_scene = ExtResource("2_v4g68")
 
 [node name="PauseMenu" parent="." instance=ExtResource("3_asn4q")]
@@ -446,7 +448,7 @@ tile_map_data = PackedByteArray("AAAKAAMAAgACAAIAAAAJAAMAAgABAAIAAAAIAAMAAgABAAI
 tile_set = SubResource("TileSet_km80h")
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(4814, 476)
+position = Vector2(20, 6)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(2, 2)
@@ -472,28 +474,38 @@ bus = &"BGM"
 [node name="Coin" parent="Item" instance=ExtResource("10_nijh8")]
 position = Vector2(665, 41)
 is_field_coin = true
-gold_amount = 100
+gold_amount = 150
 
 [node name="FieldItem" parent="Item" instance=ExtResource("11_an4tw")]
-position = Vector2(39, 440)
+position = Vector2(43, 440)
 scale = Vector2(0.8, 0.8)
+id = "Field_Potion_01_01"
 item_resource = ExtResource("12_tdvhl")
+collection_tutorial = null
+
+[node name="FieldItem2" parent="Item" instance=ExtResource("11_an4tw")]
+position = Vector2(3016, 940.99994)
+scale = Vector2(0.64000005, 0.64000005)
+id = "Field_Potion_01_02"
+item_resource = ExtResource("12_tdvhl")
+collection_tutorial = null
 
 [node name="Coin2" parent="Item" instance=ExtResource("10_nijh8")]
-position = Vector2(138, 13)
+position = Vector2(791, 1008)
 is_field_coin = true
-gold_amount = 500
+gold_amount = 250
+
+[node name="Coin3" parent="Item" instance=ExtResource("10_nijh8")]
+position = Vector2(2528, 660)
+is_field_coin = true
+gold_amount = 150
+
+[node name="Coin4" parent="Item" instance=ExtResource("10_nijh8")]
+position = Vector2(2553, 1039)
+is_field_coin = true
+gold_amount = 250
 
 [node name="Entities" type="Node" parent="."]
-
-[node name="Slime1" parent="Entities" instance=ExtResource("13_lg3tr")]
-position = Vector2(377, 58)
-slime_move_speed = 60.0
-jump_horizontal_force = 120.0
-
-[node name="Esnake" parent="Entities" instance=ExtResource("14_eveut")]
-position = Vector2(270, 60)
-snake_max_hp = 20
 
 [node name="DialogueBlock" type="Area2D" parent="Entities"]
 position = Vector2(1305, 325)
@@ -527,8 +539,30 @@ dialogue_file = "res://resources/Dialogues/DialogueBlock_Stage1_1.json"
 position = Vector2(14, 21.5)
 shape = SubResource("RectangleShape2D_22r6i")
 
+[node name="DialogueBlock3" type="Area2D" parent="Entities"]
+position = Vector2(43, 5)
+collision_mask = 2
+script = ExtResource("10_asn4q")
+dialogue_file = "res://resources/Dialogues/DialogueBlock_Stage1_0.json"
+
+[node name="Sprite2D" type="Sprite2D" parent="Entities/DialogueBlock3"]
+position = Vector2(0, 25)
+scale = Vector2(3, 1)
+texture = SubResource("AtlasTexture_22r6i")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="Entities/DialogueBlock3"]
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Entities/DialogueBlock3/StaticBody2D"]
+position = Vector2(0, 25.5)
+shape = SubResource("RectangleShape2D_qsy5d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Entities/DialogueBlock3"]
+position = Vector2(13.5, 22.75)
+shape = SubResource("RectangleShape2D_22r6i")
+
 [node name="MerchantNPC" parent="Entities" instance=ExtResource("15_vqt1q")]
-position = Vector2(157, 13)
+position = Vector2(2633, 925)
 collision_mask = 2
 
 [node name="ElevatorBlock" type="Area2D" parent="Entities"]
@@ -551,8 +585,114 @@ collision_mask = 2
 position = Vector2(0, -0.5)
 shape = SubResource("RectangleShape2D_udna4")
 
-[node name="SavePoint" parent="Entities" instance=ExtResource("9_ae7cf")]
-position = Vector2(177, 444)
+[node name="Slime1" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(377, 58)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Slime2" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(468, 58)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Slime3" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(264, 57)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Slime4" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(128, 281)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Slime5" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(302, 410)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Slime6" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(478, 522)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Slime7" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(451, 602)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Slime8" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(483, 874)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Slime9" parent="Entities" instance=ExtResource("13_lg3tr")]
+position = Vector2(273, 874)
+slime_move_speed = 60.0
+jump_horizontal_force = 120.0
+
+[node name="Esnake" parent="Entities" instance=ExtResource("14_eveut")]
+position = Vector2(2302, 891)
+snake_max_hp = 20
+
+[node name="Esnake2" parent="Entities" instance=ExtResource("14_eveut")]
+position = Vector2(2188, 892)
+snake_max_hp = 20
+
+[node name="Esnake3" parent="Entities" instance=ExtResource("14_eveut")]
+position = Vector2(2457, 908)
+snake_max_hp = 20
+
+[node name="EMushroom" parent="Entities" instance=ExtResource("18_qsy5d")]
+position = Vector2(197, 1044)
+drop_gold_amount = 20
+
+[node name="EMushroom2" parent="Entities" instance=ExtResource("18_qsy5d")]
+position = Vector2(295, 1044)
+drop_gold_amount = 20
+
+[node name="EMushroom3" parent="Entities" instance=ExtResource("18_qsy5d")]
+position = Vector2(727, 1010)
+drop_gold_amount = 20
+
+[node name="EMushroom4" parent="Entities" instance=ExtResource("18_qsy5d")]
+position = Vector2(752, 612)
+drop_gold_amount = 20
+
+[node name="EMushroom5" parent="Entities" instance=ExtResource("18_qsy5d")]
+position = Vector2(949, 643)
+drop_gold_amount = 20
+
+[node name="EMushroom6" parent="Entities" instance=ExtResource("18_qsy5d")]
+position = Vector2(874, 322)
+drop_gold_amount = 20
+
+[node name="EMushroom7" parent="Entities" instance=ExtResource("18_qsy5d")]
+position = Vector2(1102, 322)
+drop_gold_amount = 20
+
+[node name="EMushroom8" parent="Entities" instance=ExtResource("18_qsy5d")]
+position = Vector2(1648, 1044)
+drop_gold_amount = 20
+
+[node name="Esnake4" parent="Entities" instance=ExtResource("14_eveut")]
+position = Vector2(1827, 1051)
+snake_max_hp = 20
+
+[node name="Esnake5" parent="Entities" instance=ExtResource("14_eveut")]
+position = Vector2(2977, 939)
+snake_max_hp = 20
+
+[node name="Esnake6" parent="Entities" instance=ExtResource("14_eveut")]
+position = Vector2(2775, 937)
+snake_max_hp = 20
+
+[node name="Esnake7" parent="Entities" instance=ExtResource("14_eveut")]
+position = Vector2(2650, 664)
+snake_max_hp = 20
+
+[node name="Esnake8" parent="Entities" instance=ExtResource("14_eveut")]
+position = Vector2(2922, 567)
+snake_max_hp = 20
 
 [node name="Boss" type="Node" parent="."]
 
@@ -587,6 +727,23 @@ position = Vector2(-5, 2)
 
 [node name="TP3" type="Marker2D" parent="Boss/BossTeleportPoints"]
 position = Vector2(198, 71)
+
+[node name="SavePoint" type="Node" parent="."]
+
+[node name="SavePoint" parent="SavePoint" instance=ExtResource("9_ae7cf")]
+position = Vector2(120, 127)
+
+[node name="SavePoint2" parent="SavePoint" instance=ExtResource("9_ae7cf")]
+position = Vector2(969, 412)
+
+[node name="SavePoint3" parent="SavePoint" instance=ExtResource("9_ae7cf")]
+position = Vector2(1990, 1049)
+
+[node name="SavePoint4" parent="SavePoint" instance=ExtResource("9_ae7cf")]
+position = Vector2(3042, 604)
+
+[node name="SavePoint5" parent="SavePoint" instance=ExtResource("9_ae7cf")]
+position = Vector2(4785, 492)
 
 [connection signal="body_entered" from="Entities/MerchantNPC" to="." method="_on_merchant_npc_body_entered"]
 

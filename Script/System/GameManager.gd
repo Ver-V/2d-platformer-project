@@ -83,7 +83,7 @@ var last_scene_path: String = ""
 var merchant_stocks: Dictionary = {
 	"Stage1": [
 		{"id": "health_potion", "stock": 3},
-		# {"id": "iron_sword", "stock": 1}
+		{"id": "Parry_increase_potion", "stock": 1}
 	],
 	"Stage2": [
 		{"id": "health_potion", "stock": 5},
@@ -129,18 +129,16 @@ func add_defeated_boss(id: String) -> void:
 func add_gold(amount: int) -> void:
 	gold += amount
 	emit_signal("gold_changed", gold)
-	print("현재 골드: ", gold)
+	print("Now gold: ", gold)
 
 # --- [함수 2] 스탯 변경 (추가됨) ---
 # Player가 아닌 GM이 직접 계산을 담당합니다.
 
 func add_player_damage(amount: int) -> void:
 	player_damage += amount
-	print("GM: 공격력이 %d로 변경됨" % player_damage)
 
 func add_parry_ratio(amount: float) -> void:
 	player_parry_damage_multifac += amount
-	print("GM: 패링 배율이 %.1f로 변경됨" % player_parry_damage_multifac)
 
 # --- [함수 3] 체크포인트 저장 ---
 func save_checkpoint(pos: Vector2) -> void:
@@ -149,7 +147,6 @@ func save_checkpoint(pos: Vector2) -> void:
 	var current_scene = get_tree().current_scene
 	if current_scene:
 		last_scene_path = current_scene.scene_file_path
-	print("저장 완료! 위치:", pos, " / 씬:", last_scene_path)
 
 func add_item(item: ItemData) -> bool:
 	# 빈 칸 찾기
@@ -157,17 +154,14 @@ func add_item(item: ItemData) -> bool:
 		if inventory[i] == null:
 			inventory[i] = item # 리소스 파일 자체를 저장!
 			return true 
-
-	print("인벤토리가 가득 찼습니다.")
+			
 	return false
 	
 # --- [함수 4] 플레이어 사망 시 부활 처리 ---
 func respawn_player() -> void:
 	if is_respawning:
-		print("⚠️ 이미 리스폰 진행 중입니다. 요청을 무시합니다.")
 		return
-	
-	print("🔄 리스폰 시작...")
+		
 	is_respawning = true
 	
 	# 로드 시도
@@ -180,11 +174,8 @@ func respawn_player() -> void:
 	Engine.time_scale = 1.0
 	
 	if load_result and has_checkpoint and last_scene_path != "":
-		print("✅ 체크포인트 씬으로 이동: ", last_scene_path)
-		# [수정] 함수 이름과 인자가 정확한지 확인하며 호출
 		call_deferred("_change_scene_safe", last_scene_path)
 	else:
-		print("⚠️ 저장 데이터 없음/실패 -> 현재 씬 재시작")
 		player_current_hp = player_max_hp
 		# [중요] 씬 변경 실패 시에도 플래그는 풀어줘야 다음 시도가 가능함
 		is_respawning = false
@@ -295,7 +286,8 @@ func apply_hitstop(time_scale: float, duration: float):
 
 var item_database: Dictionary = {
 	"health_potion": "res://resources/items/health_potion.tres",
-	"health_flask": "res://resources/items/health_flask.tres"
+	"health_flask": "res://resources/items/health_flask.tres",
+	"Parry_increase_potion": "res://resources/items/Parry_increase_potion.tres"
 }
 
 func get_item_by_id(item_id: String) -> ItemData:

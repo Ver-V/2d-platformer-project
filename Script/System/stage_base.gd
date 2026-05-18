@@ -3,6 +3,7 @@ class_name BaseStage
 
 var is_waiting_respawn: bool = false
 
+@export var stage_title: String = "" # [추가] 스테이지 이름 (예: Bunny's Forest)
 @export var player_scene: PackedScene
 @export var room_size: Vector2 = Vector2(640.0, 360.0)
 @export var grid_size: Vector2i = Vector2i(12, 3)
@@ -39,6 +40,9 @@ func _ready() -> void:
 	_cleanup_already_dead_enemies()
 	
 	spawn_player()
+
+	if stage_title != "":
+		_show_stage_title()
 
 	if player != null:
 		if not player.death_started.is_connected(_on_player_died):
@@ -105,6 +109,17 @@ func spawn_player() -> void:
 			print("[Spawn] 경고: SpawnPoint가 없습니다! (0,0)에 배치됩니다.")
 		
 	player = p
+
+func _show_stage_title() -> void:
+	# Autoload에 StageTitleUI가 등록되어 있다고 가정하거나 
+	# 혹은 직접 찾아서 실행합니다.
+	if has_node("/root/StageTitleUI"):
+		get_node("/root/StageTitleUI").play_title(stage_title)
+	else:
+		# Autoload가 아니더라도 씬에 수동으로 올렸을 경우를 대비
+		var title_node = get_tree().root.find_child("StageTitleUI", true, false)
+		if title_node and title_node.has_method("play_title"):
+			title_node.play_title(stage_title)
 
 func _input(event:InputEvent) -> void:
 	if is_waiting_respawn and event.is_action_pressed("rest"):

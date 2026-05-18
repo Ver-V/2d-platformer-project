@@ -1,0 +1,16 @@
+[
+	{
+		"speaker": "right", 
+		"left_image": "",
+		"right_image": "HeroBunny_idle",
+		"name": "Pink Bunny",
+		"text": "Huh... What is that altar over by the spring?"
+	},
+	{
+		"speaker": "right", 
+		"left_image": "",
+		"right_image": "HeroBunny_surprise",
+		"name": "Pink Bunny",
+		"text": "It looks so mystical, like something straight out of a fairy tale... Let's get a closer look."
+	}
+]

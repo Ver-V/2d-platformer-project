@@ -24,6 +24,8 @@ SceneTransition="*res://Scenes/Stage/SceneTransition.tscn"
 CustomCursor="*res://Scenes/System/CustomCursor.tscn"
 DialogueManager="*res://Scenes/System/DialogueUI.tscn"
 ShopUI="*res://Scenes/System/ShopUI.tscn"
+TutorialPopup="*res://Scenes/System/Popup.tscn"
+StageTitleUI="*res://Scenes/System/StageTitleUI.tscn"
 
 [display]
 

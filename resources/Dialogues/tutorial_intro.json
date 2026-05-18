@@ -1,0 +1,54 @@
+[
+	{
+	  "name": "Narrator",
+	  "text": "Once upon a time, rabbits lived together in the deep woods."
+	  },
+	{
+	  "name": "Narrator",
+	  "text": "None of them ever wondered where they had come from, or why they had come to live there."
+	},
+	{
+	  "name": "Narrator",
+	  "text": "Then one day, a rabbit began to have doubts."
+	},
+	{
+	  "speaker": "left",
+	  "left_image": "HeroBunny_idle",
+	  "name": "Pink Bunny",
+	  "text": "Why doesn't our king allow us to go outside the forest? I've heard there are so many exciting things and so many other species out there."
+	},
+	{
+	  "name": "Narrator",
+	  "text": "Whenever that rabbit brought up these doubts to the elders, no one would give a straight answer."
+	},
+	{
+	  "name": "Narrator",
+	  "text": "Not even the rabbit’s own older sister, who guarded the path leading outside."
+	},
+	{
+	  "name": "Narrator",
+	  "text": "The rabbit tried to sneak out multiple times, only to get scolded by the older sister every single time."
+	},
+	{
+	  "name": "Narrator",
+	  "text": "Eventually, the rabbit put those doubts aside and strove to become a great warrior instead."
+	},
+	{
+	  "name": "Narrator",
+	  "text": "The rabbit reasoned that since they only turned it back saying the outside world was dangerous, they would surely let it go once it grew strong enough."
+	},
+	{
+	  "name": "Narrator",
+	  "text": "But when the rabbit tried to venture out yet again, it was defeated in a duel against the older sister."
+	},
+	{
+	  "name": "Narrator",
+	  "text": "Overwhelmed with frustration, the rabbit trained so fiercely that it ended up slipping and tumbling down into the deep, dark woods."
+	},
+	{
+	  "speaker": "left",
+	  "left_image": "HeroBunny_idle",
+	  "name": "Pink Bunny",
+	  "text": "Ouch... Where am I? I've never seen this place before. Did I fall too deep?"
+	}
+]
