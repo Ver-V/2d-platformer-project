@@ -15,6 +15,7 @@ enum ItemType { GENERIC, CONSUMABLE, EQUIPMENT }
 @export_group("Consumable Setting")
 @export var heal_amount: int = 0  # 포션 아니면 그냥 0으로 두면 됨
 @export var damage_amount: int = 0
+@export var parry_multifactor: float = 0.0
 
 @export_group("Equipment Setting")
 @export var attack_damage: int = 0 # 무기 아니면 0으로 두면 됨
@@ -40,6 +41,8 @@ func _use_consumable(player) -> void:
 		HUD.show_hud_temporarily()
 	if damage_amount > 0:
 		player.update_damage(damage_amount)
+	if parry_multifactor > 0:
+		player.update_parry_ratio(parry_multifactor)
 
 # 장비일 때 실행될 로직 (나중에 구현)
 func _use_equipment(player) -> void:

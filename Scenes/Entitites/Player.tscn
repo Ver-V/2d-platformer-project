@@ -1,4 +1,4 @@
-[gd_scene load_steps=54 format=3 uid="uid://qfh6su8aeoy7"]
+[gd_scene load_steps=61 format=3 uid="uid://qfh6su8aeoy7"]
 
 [ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/System/player.gd" id="1_kpjcp"]
 [ext_resource type="PackedScene" uid="uid://b1tnix67gbct2" path="res://Scenes/System/InventoryUI.tscn" id="2_0kmp4"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://bge6xe1qdcgsv" path="res://Assets/sprites/knight/DEATH.png" id="6_ji083"]
 [ext_resource type="Script" uid="uid://b00spr31wmhci" path="res://Script/System/sword_hitbox.gd" id="6_yu0nx"]
 [ext_resource type="Script" uid="uid://dleqtylnlbedr" path="res://Script/System/hazard_sensor.gd" id="7_im3yb"]
+[ext_resource type="Script" uid="uid://c82fbbhmso0k0" path="res://Script/SFXplayer.gd" id="10_3at2a"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_yu0nx"]
 atlas = ExtResource("2_3wgd0")
@@ -298,6 +299,53 @@ animations = [{
 "speed": 8.0
 }]
 
+[sub_resource type="Animation" id="Animation_6roe8"]
+resource_name = "aTTACK"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"update": 1,
+"values": []
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../SFXPlayer")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"values": []
+}
+
+[sub_resource type="Animation" id="Animation_et6w4"]
+resource_name = "Jump"
+
+[sub_resource type="Animation" id="Animation_hqcmm"]
+resource_name = "Run"
+
+[sub_resource type="Animation" id="Animation_8j8hq"]
+resource_name = "Stand"
+
+[sub_resource type="Animation" id="Animation_0xmaf"]
+resource_name = "died"
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_nk3jl"]
+_data = {
+&"Attack": SubResource("Animation_6roe8"),
+&"Jump": SubResource("Animation_et6w4"),
+&"Run": SubResource("Animation_hqcmm"),
+&"Stand": SubResource("Animation_8j8hq"),
+&"died": SubResource("Animation_0xmaf")
+}
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_73fnb"]
 size = Vector2(9, 20.225)
 
@@ -331,8 +379,15 @@ visible = false
 position = Vector2(-1.4000014, -21.3)
 scale = Vector2(0.7, 0.7)
 sprite_frames = SubResource("SpriteFrames_xlvrw")
-animation = &"died"
+animation = &"Attack"
 speed_scale = 0.7
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+root_node = NodePath("../PlayerAni")
+libraries = {
+&"": SubResource("AnimationLibrary_nk3jl")
+}
+autoplay = "Attack"
 
 [node name="PlayerCol" type="CollisionShape2D" parent="."]
 position = Vector2(-1.5, -10.1125)
@@ -381,5 +436,8 @@ shape = SubResource("CircleShape2D_825xp")
 position = Vector2(5, -12)
 shape = SubResource("RectangleShape2D_ji083")
 disabled = true
+
+[node name="SFXPlayer" type="AudioStreamPlayer2D" parent="."]
+script = ExtResource("10_3at2a")
 
 [connection signal="area_entered" from="MagnetArea" to="." method="_on_magnet_area_area_entered"]

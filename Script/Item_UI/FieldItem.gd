@@ -10,6 +10,8 @@ extends Area2D
 		if Engine.is_editor_hint():
 			_update_texture()
 
+@export_multiline var collection_tutorial: String = "" # [추가] 획득 시 띄울 튜토리얼 텍스트
+
 # [추가] 둥둥 떠다니는 설정
 var time_passed: float = 0.0
 var float_speed: float = 5.0
@@ -68,5 +70,10 @@ func _on_body_entered(body: Node):
 					body.show_status("full")
 		# 획득 성공 시 처리
 		if collected_success:
+			# [추가] 튜토리얼 텍스트가 설정되어 있다면 팝업 띄우기
+			if collection_tutorial != "":
+				if has_node("/root/TutorialPopup"):
+					get_node("/root/TutorialPopup").display(collection_tutorial)
+			
 			GameManager.add_collected_item(id)
 			queue_free()

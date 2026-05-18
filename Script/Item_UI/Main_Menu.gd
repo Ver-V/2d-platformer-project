@@ -28,18 +28,16 @@ func _ready() -> void:
 	$VBoxContainer/BtnExit.pressed.connect(_on_exit_pressed)
 
 func _on_new_game_pressed() -> void:
-	GameManager.reset_data()
-	get_tree().change_scene_to_file(GameManager.get_stage_path(1))
+	get_tree().change_scene_to_file("res://Scenes/Stage/Stage_tutorial.tscn")
 
 func _on_continue_button_pressed() -> void: 
 	if GameManager.load_game():
 		var path = GameManager.last_scene_path
 		if path == "" or not ResourceLoader.exists(path):
-			path = GameManager.get_stage_path(1)
+			path = "res://Scenes/Stage/Stage_tutorial.tscn"
 		get_tree().change_scene_to_file(path)
 	else:
-		GameManager.reset_data()
-		get_tree().change_scene_to_file(GameManager.get_stage_path(1))
+		get_tree().change_scene_to_file("res://Scenes/Stage/Stage_tutorial.tscn")
 
 func _on_load_game_pressed() -> void:
 	_on_continue_button_pressed()

@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://bn8eekqaj0ek7"]
+
+[ext_resource type="Script" uid="uid://dudow3qev33ph" path="res://Script/System/fall_transition_trigger.gd" id="1_sk6ak"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4q4d5"]
+size = Vector2(598, 130)
+
+[node name="FallTransitionTrigger" type="Area2D"]
+collision_mask = 2
+script = ExtResource("1_sk6ak")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_4q4d5")

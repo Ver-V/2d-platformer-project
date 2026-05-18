@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://dg2upwr6rcslo"]
+
+[node name="StageTitleUi" type="CanvasLayer"]
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Label" type="Label" parent="Control"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 13.0
+horizontal_alignment = 1
+vertical_alignment = 1

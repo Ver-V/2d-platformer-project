@@ -94,7 +94,8 @@
 	  "name": "Pink Bunny",
 	  "text": "I think the 4th floor is the floor I'm currently on.",
 	  "left_image": "HeroBunny_surprise",
-	  "speaker": "left"
+	  "speaker": "left",
+	  "next" : "start"
 	}
   ],
   "ignore": [

@@ -126,7 +126,7 @@ func _create_item_slots():
 		
 		var label = Label.new()
 		# [핵심] 텍스트에 남은 수량(stock)을 함께 표시합니다!
-		var stock_text = "품절" if stock <= 0 else str(stock) + "개 남음"
+		var stock_text = "Sold out" if stock <= 0 else str(stock) + " remain"
 		label.text = item_resource.name + " [" + str(item_resource.price) + "G] - " + stock_text
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		hbox.add_child(label)
@@ -163,7 +163,7 @@ func _update_selection_ui():
 	if item_resource:
 		name_label.text = item_resource.name
 		desc_label.text = item_resource.description
-		price_label.text = "보유 골드: " + str(GameManager.gold) + " G\n\n가격: " + str(item_resource.price) + " G"
+		price_label.text = "My Gold: " + str(GameManager.gold) + " G\n\nPrice: " + str(item_resource.price) + " G"
 
 # --- 6. 구매 확인창 로직 ---
 func open_confirm_panel():
@@ -175,9 +175,9 @@ func open_confirm_panel():
 	
 	# [핵심 방어막] 이미 품절이라면 아예 못 사게 막기!
 	if item_data["stock"] <= 0:
-		confirm_msg.text = "[ " + item_resource.name + " ]\n\n이미 품절된 상품입니다!\n\n(ESC 키: 닫기)"
+		confirm_msg.text = "[ " + item_resource.name + " ]\n\nOut of stock.\n\n(ESC : Exit)"
 	else:
-		confirm_msg.text = "[ " + item_resource.name + " ]\n" + str(item_resource.price) + "G 에 구매하시겠습니까?\n\n(Enter 키: 구매 확정 / ESC: 취소)"
+		confirm_msg.text = "[ " + item_resource.name + " ]\n" + str(item_resource.price) + "Gold to purchase this item?\n\n(Enter : purchase / ESC: Cancel)"
 	
 	confirm_panel.show()
 
@@ -215,6 +215,6 @@ func buy_item():
 			_update_selection_ui()
 			
 		else:
-			confirm_msg.text = "인벤토리가 가득 찼습니다!\n\n(ESC: 취소)"
+			confirm_msg.text = "Inventory is full.\n\n(ESC: Cancel)"
 	else:
-		confirm_msg.text = "골드가 부족합니다!\n\n(ESC: 취소)"
+		confirm_msg.text = "Not enough Gold!\n\n(ESC: Cancel)"

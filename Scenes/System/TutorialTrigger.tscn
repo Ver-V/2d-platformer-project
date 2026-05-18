@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://de2qtj3om1hjl"]
+
+[ext_resource type="Script" uid="uid://dq3kwvoybg67h" path="res://Script/System/tutorial_trigger.gd" id="1_8ne82"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_r5b53"]
+size = Vector2(67, 138)
+
+[node name="TutorialTrigger" type="Area2D"]
+collision_mask = 2
+script = ExtResource("1_8ne82")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(1.5, -38)
+shape = SubResource("RectangleShape2D_r5b53")
