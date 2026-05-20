@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bmrbi5cq5i5mc" path="res://Script/Item_UI/coin.gd" id="1_hmcmo"]
 [ext_resource type="Texture2D" uid="uid://daalq8aifdmk0" path="res://Assets/sprites/coin.png" id="1_x4vcc"]
 [ext_resource type="Texture2D" uid="uid://dar5pbuolwvdu" path="res://Assets/silvercoin.png" id="3_4utx8"]
+[ext_resource type="AudioStream" uid="uid://baivbe6v8f15g" path="res://Assets/sounds/coin.wav" id="4_sfx"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hmcmo"]
 atlas = ExtResource("1_x4vcc")

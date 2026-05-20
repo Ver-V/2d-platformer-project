@@ -31,15 +31,18 @@ func _ready() -> void:
 func _setup_outline_material() -> void:
 	var node = get_blink_node()
 	if node and outline_shader:
-		# 이미 마테리얼이 있으면 유지, 없으면 새로 생성
-		if node.material == null:
-			var mat = ShaderMaterial.new()
-			mat.shader = outline_shader
-			# 기본값 설정
-			mat.set_shader_parameter("outline_color", Color(1, 1, 1, 1)) # 흰색 외곽선
-			mat.set_shader_parameter("outline_width", 1.0)
-			mat.set_shader_parameter("is_active", false)
-			node.material = mat
+		# 이미 올바른 쉐이더 마테리얼이 설정되어 있는지 확인
+		if node.material is ShaderMaterial and node.material.shader == outline_shader:
+			return # 이미 설정되어 있다면 재사용
+			
+		var mat = ShaderMaterial.new()
+		mat.shader = outline_shader
+		# 기본값 설정
+		mat.set_shader_parameter("outline_color", Color(1, 1, 1, 1)) # 흰색 외곽선
+		mat.set_shader_parameter("outline_width", 1.0)
+		mat.set_shader_parameter("is_active", false)
+		mat.set_shader_parameter("flash_modifier", 0.0) # 텔레포트 초기값
+		node.material = mat
 
 # --- 상태 확인 및 조작 ---
 func is_invulnerable() -> bool:

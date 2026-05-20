@@ -31,8 +31,23 @@ signal interact_msg_hidden()          # [추가] 상호작용 텍스트 숨기�
 # 리스폰 중복 방지 플래그
 var is_respawning: bool = false
 
+# --- [추가] 전역 SFX 플레이어 (UI 전용) ---
+var _ui_sfx_player: AudioStreamPlayer
+const SND_UI_CLICK = preload("res://Assets/sounds/UIC.wav")
+
 func _ready() -> void:
 	load_settings()
+	_setup_ui_sfx()
+
+func _setup_ui_sfx() -> void:
+	_ui_sfx_player = AudioStreamPlayer.new()
+	add_child(_ui_sfx_player)
+	_ui_sfx_player.bus = &"SFX"
+
+func play_ui_click() -> void:
+	if _ui_sfx_player and SND_UI_CLICK:
+		_ui_sfx_player.stream = SND_UI_CLICK
+		_ui_sfx_player.play()
 
 # --- 설정(옵션) 관리 ---
 func save_settings() -> void:

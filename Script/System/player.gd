@@ -13,6 +13,8 @@ var current_state: State = State.IDLE
 @onready var collision_stand: CollisionShape2D = $PlayerCol
 # [추가] 새로 만든 죽었을 때용 충돌체
 @onready var collision_died: CollisionShape2D = $Collisiondied
+@onready var sfx_player: AudioStreamPlayer2D = $SFXPlayer
+@onready var anim_player: AnimationPlayer = $AnimationPlayer
 
 @export_group("Movement")
 @export var movespeed: float = 120.0
@@ -135,7 +137,7 @@ func change_state(new_state: State) -> void:
 		State.ATTACK:
 			is_attacking = true
 			is_parry_success = false 
-			sprite.play("Attack")
+			anim_player.play("Attack")
 			sword_shape.disabled = false
 			_cooldown_left = attack_cooldown
 			
@@ -148,10 +150,8 @@ func change_state(new_state: State) -> void:
 			is_guarding = true
 			guard_timer = 0.0
 			velocity.x = 0
-			if sprite.sprite_frames.has_animation("Guard"):
-				sprite.play("Guard")
-			else:
-				sprite.play("Stand")
+			sfx_player.play_guard()
+			anim_player.play("guard")
 		State.DEAD:
 			# 사망 처리 로직
 			collision_stand.set_deferred("disabled", true)
@@ -159,7 +159,7 @@ func change_state(new_state: State) -> void:
 			velocity.x = 0 
 			reset_combat_state()
 			set_process_input(false)
-			sprite.play("died")
+			anim_player.play("died")
 			HUD.show_death_screen()
 			
 			if is_attacking:
@@ -244,6 +244,7 @@ func _on_sword_area_entered(area: Area2D) -> void:
 
 		if p.attempt_parry(global_position, extra):
 			is_parry_success = true
+			sfx_player.play_parry() # [추가] 패링 소리
 			
 			var stage = get_tree().current_scene
 			if stage and stage.has_method("apply_camera_shake"):
@@ -314,6 +315,13 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 				# 퍼펙트 가드: 데미지 무효
 				show_popup("Perfect Guard!", Color.CYAN)
 				GameManager.apply_hitstop(0.15, 0.1)
+				sfx_player.play_perfect_guard() # [추가] 퍼펙트 가드 소리
+				
+				# 카메라 흔들림 추가
+				var stage = get_tree().current_scene
+				if stage and stage.has_method("apply_camera_shake"):
+					stage.apply_camera_shake(3.0)
+				
 				# [추가] 다음 공격 데미지 보너스 부여
 				has_perfect_guard_bonus = true
 				# 무적 시간 살짝 부여 (연속 공격 방지)
@@ -426,8 +434,16 @@ func _physics_process(delta: float) -> void:
 
 	# 착지 이펙트 로직
 	if is_on_floor() and not _was_on_floor:
-		spawn_dust(Vector2(0, 0))
-		apply_squash(1.2, 0.8) # 착지 시 납작하게
+		# 낙하 속도에 비례한 강도 계산 (최소 0.5 ~ 최대 2.0)
+		var impact_intensity = 1.0
+		if max_fall_speed > 0:
+			impact_intensity = remap(abs(velocity.y), 0, max_fall_speed, 0.5, 2.0)
+		
+		impact_intensity = clamp(impact_intensity, 0.5, 2.0)
+		
+		spawn_dust(Vector2(0, 0), impact_intensity)
+		apply_squash(1.0 + (0.3 * impact_intensity), 1.0 - (0.3 * impact_intensity)) # 속도에 따라 더 납작하게
+		
 	_was_on_floor = is_on_floor()
 
 func _process_movement(delta: float) -> void:
@@ -458,6 +474,7 @@ func _process_movement(delta: float) -> void:
 		velocity.y = jumpforce
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
+		sfx_player.play_jump() # [추가] 점프 소리
 		spawn_dust(Vector2(0, 0))
 		apply_squash(0.8, 1.2) # 점프 시 길쭉하게
 		change_state(State.JUMP)
@@ -522,7 +539,7 @@ func _process_guard(delta: float) -> void:
 	move_with_knockback(delta)
 
 # [추가] 먼지 파티클 소환 함수
-func spawn_dust(offset: Vector2 = Vector2.ZERO) -> void:
+func spawn_dust(offset: Vector2 = Vector2.ZERO, scale_mult: float = 1.0) -> void:
 	if dust_particles_scene:
 		var dust = dust_particles_scene.instantiate()
 		var target_parent = get_parent()
@@ -532,6 +549,7 @@ func spawn_dust(offset: Vector2 = Vector2.ZERO) -> void:
 		if target_parent:
 			target_parent.add_child(dust)
 			dust.global_position = global_position + offset
+			dust.scale *= scale_mult # 강도에 따라 크기 조절
 			dust.emitting = true
 			# 수명이 다하면 자동으로 삭제되도록 타이머 연결
 			await get_tree().create_timer(dust.lifetime).timeout
@@ -583,13 +601,13 @@ func _update_animation(dir_input: float) -> void:
 		State.DEAD:
 			pass # Dead 애니메이션은 change_state에서 play() 됨
 		State.JUMP:
-			if sprite.sprite_frames.has_animation("Jump"): sprite.play("Jump")
+			anim_player.play("Jump")
 		State.FALL:
-			if sprite.sprite_frames.has_animation("Jump"): sprite.play("Jump") # 추후 Fall 애니메이션 분리 가능
+			anim_player.play("Jump") # 추후 Fall 애니메이션 분리 가능
 		State.RUN:
-			if dir_input != 0: sprite.play("Run")
+			if dir_input != 0: anim_player.play("Run")
 		State.IDLE:
-			sprite.play("Stand")
+			anim_player.play("Stand")
 		
 func show_status(action_type: String) -> void:
 	var msg: String = ""
@@ -626,4 +644,6 @@ func _on_magnet_area_area_entered(area):
 	# 닿은 녀석(area)이 'attract_to'라는 함수를 가지고 있나?
 	if area.has_method("attract_to"):
 		# "나(self)한테 빨려와라!" 명령
+		area.attract_to(self)
+	# "나(self)한테 빨려와라!" 명령
 		area.attract_to(self)
