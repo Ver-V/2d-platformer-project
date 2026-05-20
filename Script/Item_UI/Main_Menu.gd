@@ -21,6 +21,11 @@ func _ready() -> void:
 		btn_load.modulate = Color(1, 1, 1, 0.5) # 반투명하게 처리 (시각적 효과)
 
 	# 2. 버튼 기능 연결 (에디터 시그널 대신 코드로 연결하면 관리하기 편함)
+	for button in $VBoxContainer.get_children():
+		if button is Button:
+			if not button.pressed.is_connected(GameManager.play_ui_click):
+				button.pressed.connect(GameManager.play_ui_click)
+
 	$VBoxContainer/BtnNewGame.pressed.connect(_on_new_game_pressed)
 	$VBoxContainer/BtnLoadGame.pressed.connect(_on_load_game_pressed)
 	$VBoxContainer/BtnOptions.pressed.connect(_on_options_pressed)

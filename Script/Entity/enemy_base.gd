@@ -35,6 +35,7 @@ signal died(enemy: EnemyBase)
 @onready var detect_area: Area2D = $DetectArea
 @onready var sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
 @onready var floor_ray: RayCast2D = get_node_or_null("FloorRay")
+@onready var hit_sound: AudioStreamPlayer2D = $HitSound
 
 var contact_damage: int = 0
 var move_speed: float = 0.0
@@ -109,7 +110,11 @@ func _on_death() -> void:
 
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
 	if not _active: return false
-	return super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
+	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
+	if took_damage and hit_sound:
+		hit_sound.pitch_scale = randf_range(0.9, 1.1)
+		hit_sound.play()
+	return took_damage
 
 # --- Logic ---
 func _process(delta: float) -> void:

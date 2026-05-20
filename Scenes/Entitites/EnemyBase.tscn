@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://b0ioi1n7pmn7f"]
+[gd_scene load_steps=4 format=3 uid="uid://b0ioi1n7pmn7f"]
 
 [ext_resource type="Script" uid="uid://cf214x0wnk8fl" path="res://Script/Entity/enemy_base.gd" id="1_ltrxv"]
 [ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="2_v56nw"]
+[ext_resource type="AudioStream" uid="uid://be50v5fuvn8u2" path="res://Assets/sounds/EH.wav" id="3_sfx"]
 
 [node name="EnemyBase" type="CharacterBody2D"]
 collision_layer = 4
@@ -37,3 +38,7 @@ collision_mask = 2
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 visibility_layer = 2
+
+[node name="HitSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3_sfx")
+bus = &"SFX"

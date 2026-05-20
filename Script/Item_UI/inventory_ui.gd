@@ -23,7 +23,9 @@ func _ready():
 			slot.slot_clicked.connect(_on_slot_clicked.bind(i))
 	
 	# [새로 추가] 팝업 버튼 시그널 연결 및 숨기기
+	btn_use.pressed.connect(GameManager.play_ui_click)
 	btn_use.pressed.connect(_on_use_pressed)
+	btn_close.pressed.connect(GameManager.play_ui_click)
 	btn_close.pressed.connect(_on_close_pressed)
 	action_menu.hide()
 	

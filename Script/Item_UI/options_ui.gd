@@ -53,6 +53,12 @@ func _ready():
 	_connect_signals()
 	visibility_changed.connect(_on_visibility_changed)
 	
+	# 모든 버튼 및 옵션 버튼에 클릭 소리 연결
+	for btn in find_children("*", "BaseButton", true):
+		btn.pressed.connect(GameManager.play_ui_click)
+	for opt in find_children("*", "OptionButton", true):
+		opt.item_selected.connect(func(_idx): GameManager.play_ui_click())
+	
 	bus_index_master = AudioServer.get_bus_index("Master")
 	bus_index_bgm = AudioServer.get_bus_index("BGM")
 	bus_index_sfx = AudioServer.get_bus_index("SFX")

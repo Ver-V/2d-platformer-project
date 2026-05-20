@@ -145,6 +145,7 @@ func _on_slot_mouse_entered(index: int):
 func _on_slot_gui_input(event: InputEvent, index: int):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if not is_confirming:
+			GameManager.play_ui_click() # [추가] 클릭 소리
 			selected_index = index
 			_update_selection_ui()
 			open_confirm_panel()

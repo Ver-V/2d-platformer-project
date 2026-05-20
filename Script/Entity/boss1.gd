@@ -10,7 +10,10 @@ var is_attacking: bool = false
 var rng = RandomNumberGenerator.new()
 
 @onready var shooter: ShooterComponent = $ShooterComponent
+@onready var action_sfx: AudioStreamPlayer2D = $ActionSFX
 
+const SND_EXPLOSION = preload("res://Assets/sounds/explosion.wav")
+const SND_POWER_UP = preload("res://Assets/sounds/power_up.wav")
 const Fire_projectile = preload("res://Scenes/Projectile/projectilefire.tscn")
 func _ready() -> void:
 	super._ready()
@@ -67,6 +70,10 @@ func _execute_teleport_sequence() -> void:
 	is_attacking = true
 	print("[Boss Debug] 텔레포트 시퀀스 시작 (마커 개수: ", teleport_markers.size(), ")")
 	
+	if action_sfx:
+		action_sfx.stream = SND_POWER_UP
+		action_sfx.play()
+
 	if boss_sprite and boss_sprite.material:
 		var tween = create_tween()
 		tween.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 1.0, 0.15)
@@ -100,6 +107,11 @@ func _attack_state(_delta:float) -> void:
 		return
 	
 	is_attacking = true
+	
+	if action_sfx:
+		action_sfx.stream = SND_EXPLOSION
+		action_sfx.play()
+
 	var pattern = rng.randi_range(0, 3) # 보스 전용 RNG 사용
 	print("[Boss Debug] 공격 패턴 실행: ", pattern)
 		
@@ -200,6 +212,7 @@ func _attack_pattern_4() -> void:
 				idx1 += 1
 	
 	await get_tree().create_timer(0.6).timeout
+	if not is_instance_valid(self): return
 	
 	for p2 in p2_list:
 		if is_instance_valid(p2):
@@ -216,6 +229,13 @@ func _attack_pattern_4() -> void:
 					var p = shooter.shoot_dir(self, dir, pos2) as Projectile
 					if p != null:
 						p.set_parryable_mode(idx2 == parry_idx2, shooter.parry_cue_color)
+					idx2 += 1
+					
+			
+	
+	
+	
+cue_color)
 					idx2 += 1
 					
 			

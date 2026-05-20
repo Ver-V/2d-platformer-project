@@ -128,12 +128,21 @@ func _update_color():
 		
 func _on_body_entered(body):
 	if body.is_in_group("player"):
+		# 1. 중복 획득 방지를 위해 충돌체와 시각 요소 즉시 비활성화
+		collision.set_deferred("disabled", true)
+		sprite.visible = false
+		
+		# 2. 골드 업데이트
 		GameManager.update_gold(gold_amount)
 		
-		# [핵심 수정] 필드 코인이라면 장부에 기록!
+		# 3. 필드 기록
 		if is_field_coin and id != "":
 			GameManager.add_collected_item(id)
 			
-		# 효과음 재생 (AudioManager 코드 주석 해제하시면 됨)
-		# AudioManager.play_sfx("coin_pickup") 
+		# 4. 효과음 재생 및 완료 대기
+		if has_node("SFX"):
+			$SFX.play()
+			await $SFX.finished
+			
+		if not is_instance_valid(self): return
 		queue_free()

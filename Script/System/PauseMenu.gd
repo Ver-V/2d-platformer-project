@@ -10,6 +10,11 @@ func _ready():
 	options_ui.visible = false
 	is_open = false # 초기화
 	options_ui.close_requested.connect(_on_options_closed)
+	
+	# 모든 버튼에 클릭 소리 연결
+	for btn in menu_container.find_children("*", "Button", true):
+		if not btn.pressed.is_connected(GameManager.play_ui_click):
+			btn.pressed.connect(GameManager.play_ui_click)
 		
 func _on_options_closed():
 	colorR.visible = true

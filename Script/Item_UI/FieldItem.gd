@@ -68,12 +68,24 @@ func _on_body_entered(body: Node):
 			else:
 				if body.has_method("show_status"):
 					body.show_status("full")
+		
 		# 획득 성공 시 처리
 		if collected_success:
+			# 즉시 비활성화 (중복 습득 방지)
+			$CollisionShape2D.set_deferred("disabled", true)
+			$Sprite2D.visible = false
+			
 			# [추가] 튜토리얼 텍스트가 설정되어 있다면 팝업 띄우기
 			if collection_tutorial != "":
 				if has_node("/root/TutorialPopup"):
 					get_node("/root/TutorialPopup").display(collection_tutorial)
 			
 			GameManager.add_collected_item(id)
+			
+			# 효과음 재생
+			if has_node("SFX"):
+				$SFX.play()
+				await $SFX.finished
+				
+			if not is_instance_valid(self): return
 			queue_free()
