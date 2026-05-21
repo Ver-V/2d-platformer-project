@@ -16,7 +16,7 @@ var is_waiting_respawn: bool = false
 @export var clear_projectiles_outside_current_room: bool = true
 
 @onready var spawn_point: Marker2D = $SpawnPoint as Marker2D
-@onready var Entities: Node = $Entities as Node
+@onready var Entities: Node = get_node_or_null("Entities")
 @onready var cam: Camera2D = $Camera2D as Camera2D
 
 var player: Player = null
@@ -94,7 +94,10 @@ func spawn_player() -> void:
 		push_error("Player scene root must be Player.")
 		return
 
-	Entities.add_child(p)
+	if Entities:
+		Entities.add_child(p)
+	else:
+		add_child(p)
 	
 	# [핵심] 1. 체크포인트가 있고 & 2. 그 체크포인트가 이 맵에서 찍힌 거라면?
 	if GameManager.has_checkpoint and GameManager.last_scene_path == scene_file_path:

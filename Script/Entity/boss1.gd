@@ -230,15 +230,7 @@ func _attack_pattern_4() -> void:
 					if p != null:
 						p.set_parryable_mode(idx2 == parry_idx2, shooter.parry_cue_color)
 					idx2 += 1
-					
-			
-	
-	
-	
-cue_color)
-					idx2 += 1
-					
-			
+				
 	
 	
 	

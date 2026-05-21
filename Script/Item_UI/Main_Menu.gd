@@ -1,7 +1,7 @@
 extends Control
 
 # [설정] 새 게임 시작 시 이동할 첫 스테이지 경로 (반드시 수정하세요!)
-const FIRST_LEVEL_PATH = "res://Scenes/Stage/Stage_01.tscn"
+const FIRST_LEVEL_PATH = "res://Scenes/Stage/Stage_tutorial.tscn"
 
 # [노드 참조] 씬 트리의 이름과 일치해야 합니다.
 @onready var btn_load: Button = $VBoxContainer/BtnLoadGame
@@ -16,7 +16,7 @@ func _ready() -> void:
 	options_ui.close_requested.connect(_on_options_closed)
 	
 	# 1. 저장된 파일이 없으면 'Load Game' 버튼 비활성화 (클릭 불가)
-	if not FileAccess.file_exists(GameManager.SAVE_PATH):
+	if not FileAccess.file_exists(SaveManager.SAVE_PATH):
 		btn_load.disabled = true
 		btn_load.modulate = Color(1, 1, 1, 0.5) # 반투명하게 처리 (시각적 효과)
 

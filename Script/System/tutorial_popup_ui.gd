@@ -2,7 +2,7 @@ extends CanvasLayer
 
 @onready var panel: PanelContainer = $Control/PanelContainer
 @onready var label: Label = $Control/PanelContainer/MarginContainer/Label
-@onready var anim: AnimationPlayer = $AnimationPlayer
+@onready var anim: AnimationPlayer = get_node_or_null("AnimationPlayer")
 
 var is_active: bool = false
 
@@ -21,7 +21,7 @@ func display(text: String, pause: bool = true) -> void:
 		get_tree().paused = true
 	
 	# 애니메이션 실행 (팝업 연출)
-	if anim.has_animation("show"):
+	if anim and anim.has_animation("show"):
 		anim.play("show")
 	else:
 		panel.scale = Vector2.ONE
@@ -39,7 +39,7 @@ func hide_popup() -> void:
 	if get_tree().paused:
 		get_tree().paused = false
 	
-	if anim.has_animation("hide"):
+	if anim and anim.has_animation("hide"):
 		anim.play("hide")
 		await anim.animation_finished
 	
