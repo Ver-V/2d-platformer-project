@@ -135,14 +135,9 @@ slime_move_speed = 50.0
 slime_knockback_res = 0.0
 turn_on_wall = true
 turn_on_ledge = true
-floor_ray_x = 14.0
-floor_ray_y = 24.0
 jump_impulse = -200.0
 jump_cooldown = 2.5
-jump_only_when_player_near = true
-jump_chase_speed = 90.0
-jump_chase_time = 0.12
-attack_distance = 15.0
+jump_horizontal_force = 120.0
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 position = Vector2(-1.0000005, -2.9999998)

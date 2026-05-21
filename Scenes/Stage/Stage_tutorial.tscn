@@ -5,9 +5,9 @@
 [ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="2_cjvf8"]
 [ext_resource type="Texture2D" uid="uid://cneqp6xfnb1wq" path="res://Assets/backgroundreal.png" id="2_falq3"]
 [ext_resource type="Script" uid="uid://cnklf8macledf" path="res://Script/System/room_grid.gd" id="3_sur6t"]
-[ext_resource type="AudioStream" uid="uid://bjb33qep6eamb" path="res://resources/Music/wild-road.mp3" id="4_qt11q"]
 [ext_resource type="Texture2D" uid="uid://cltaftyns351a" path="res://Assets/sprites/tileset.png" id="5_sur6t"]
 [ext_resource type="Texture2D" uid="uid://cgpum4v6rh8hm" path="res://Assets/sprites/world_tileset.png" id="6_qt11q"]
+[ext_resource type="AudioStream" uid="uid://5n8t2e87fyy8" path="res://resources/Music/The_maze_of_aqua.mp3" id="6_uh6ra"]
 [ext_resource type="PackedScene" uid="uid://bd1fcbofw2ll8" path="res://Scenes/Entitites/slime_1.tscn" id="8_fvirs"]
 [ext_resource type="PackedScene" uid="uid://d888233uuktt" path="res://Scenes/Entitites/ShooterComponent.tscn" id="9_o1nv7"]
 [ext_resource type="PackedScene" uid="uid://bn8eekqaj0ek7" path="res://Scenes/System/FallTransitionTrigger.tscn" id="9_uh6ra"]
@@ -307,7 +307,7 @@ process_mode = 3
 script = ExtResource("3_sur6t")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("4_qt11q")
+stream = ExtResource("6_uh6ra")
 volume_db = -15.0
 autoplay = true
 bus = &"BGM"
@@ -320,7 +320,16 @@ tile_set = SubResource("TileSet_fvirs")
 position = Vector2(4170, 1386)
 target_scene_path = "uid://dfx7ligqjd22g"
 
-[node name="Slime1" parent="." instance=ExtResource("8_fvirs")]
+[node name="FieldItem" parent="." instance=ExtResource("13_eaowt")]
+position = Vector2(3529, 960)
+id = "health_flask"
+item_resource = ExtResource("14_o7v4y")
+collection_tutorial = "You have obtained the Flask of Blessed Health. Resting at a save point will replenish its charges, allowing for semi-permanent use.
+Press [Q] to use."
+
+[node name="Entities" type="Node" parent="."]
+
+[node name="Slime1" parent="Entities" instance=ExtResource("8_fvirs")]
 position = Vector2(1215, 1062)
 slime_max_hp = 15
 slime_contact_damage = 0
@@ -330,7 +339,7 @@ jump_cooldown = 5000.0
 jump_horizontal_force = 0.0
 drop_gold_amount = 0
 
-[node name="Slime2" parent="." instance=ExtResource("8_fvirs")]
+[node name="Slime2" parent="Entities" instance=ExtResource("8_fvirs")]
 position = Vector2(1875, 1060)
 slime_max_hp = 15
 slime_contact_damage = 0
@@ -340,15 +349,15 @@ jump_cooldown = 5000.0
 jump_horizontal_force = 0.0
 drop_gold_amount = 0
 
-[node name="ShooterComponent" parent="Slime2" instance=ExtResource("9_o1nv7")]
+[node name="ShooterComponent" parent="Entities/Slime2" instance=ExtResource("9_o1nv7")]
 projectile_scene = ExtResource("10_cjvf8")
 projectile_damage = 0
 parry_interval = 1000
 auto_shoot = true
-fire_rate = 5.0
-attack_range = 500.0
+fire_rate = 1.0
+attack_range = 5000.0
 
-[node name="Slime3" parent="." instance=ExtResource("8_fvirs")]
+[node name="Slime3" parent="Entities" instance=ExtResource("8_fvirs")]
 position = Vector2(2512, 1060)
 slime_max_hp = 15
 slime_contact_damage = 0
@@ -358,72 +367,64 @@ jump_cooldown = 5000.0
 jump_horizontal_force = 0.0
 drop_gold_amount = 0
 
-[node name="ShooterComponent" parent="Slime3" instance=ExtResource("9_o1nv7")]
+[node name="ShooterComponent" parent="Entities/Slime3" instance=ExtResource("9_o1nv7")]
 projectile_scene = ExtResource("10_cjvf8")
 projectile_damage = 0
 parry_interval = 1
 auto_shoot = true
-fire_rate = 5.0
-attack_range = 500.0
+fire_rate = 0.5
+attack_range = 5000.0
 
-[node name="Slime4" parent="." instance=ExtResource("8_fvirs")]
+[node name="Slime4" parent="Entities" instance=ExtResource("8_fvirs")]
 position = Vector2(3029, 1059)
 slime_contact_damage = 0
 jump_cooldown = 1.0
-jump_horizontal_force = 120.0
 
-[node name="TutorialTrigger" parent="." instance=ExtResource("11_o1nv7")]
+[node name="TutorialTrigger" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(72, 1059)
 tutorial_text = "Welcome to the game. 
 Press the 'Z' key to jump.
 You can adjust your jump height depending on how long you hold the button."
 
-[node name="TutorialTrigger2" parent="." instance=ExtResource("11_o1nv7")]
+[node name="TutorialTrigger2" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(689, 901)
 tutorial_text = "Look, there's an enemy over there! Let's attack and take them down by pressing the 'X' key."
 
-[node name="TutorialTrigger3" parent="." instance=ExtResource("11_o1nv7")]
+[node name="TutorialTrigger3" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(1320, 1018)
 tutorial_text = "Hold [Shift] to block projectiles and reduce incoming damage. If you guard with perfect timing, the damage will be negated and your next attack will be empowered."
 
-[node name="TutorialTrigger4" parent="." instance=ExtResource("11_o1nv7")]
+[node name="TutorialTrigger4" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(1961, 1042)
 tutorial_text = "Bullets of specific colors can be parried by pressing [X] with perfect timing. A parried bullet will always hit the opponent, dealing heavy counter damage."
 
-[node name="TutorialTrigger5" parent="." instance=ExtResource("11_o1nv7")]
+[node name="TutorialTrigger5" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(2600, 1045)
 tutorial_text = "Defeating enemies will cause them to drop Gold, which can be used in shops or during specific events. Saving it up will surely bring you good fortune. Or, you might just find it scattered across the field."
 
-[node name="TutorialTrigger6" parent="." instance=ExtResource("11_o1nv7")]
+[node name="TutorialTrigger6" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(3873, 1045)
 tutorial_text = "Press [I] to see your inventory and your status.
 Well then, let's dive into the real adventure! Enjoy your journey."
 
-[node name="DialogueBlock" type="Area2D" parent="."]
+[node name="DialogueBlock" type="Area2D" parent="Entities"]
 position = Vector2(3211, 1055)
 collision_mask = 2
 script = ExtResource("13_o7v4y")
 dialogue_file = "res://resources/Dialogues/DialogueBlock_Stage1_0.json"
 
-[node name="Sprite2D" type="Sprite2D" parent="DialogueBlock"]
+[node name="Sprite2D" type="Sprite2D" parent="Entities/DialogueBlock"]
 position = Vector2(0, 25)
 scale = Vector2(3, 1)
 texture = SubResource("AtlasTexture_uh6ra")
 
-[node name="StaticBody2D" type="StaticBody2D" parent="DialogueBlock"]
+[node name="StaticBody2D" type="StaticBody2D" parent="Entities/DialogueBlock"]
 collision_mask = 2
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DialogueBlock/StaticBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Entities/DialogueBlock/StaticBody2D"]
 position = Vector2(0, 25.5)
 shape = SubResource("RectangleShape2D_fpkk4")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DialogueBlock"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Entities/DialogueBlock"]
 position = Vector2(13.5, 22.75)
 shape = SubResource("RectangleShape2D_tb5o8")
-
-[node name="FieldItem" parent="." instance=ExtResource("13_eaowt")]
-position = Vector2(3529, 960)
-id = "health_flask"
-item_resource = ExtResource("14_o7v4y")
-collection_tutorial = "You have obtained the Flask of Blessed Health. Resting at a save point will replenish its charges, allowing for semi-permanent use.
-Press [Q] to use."

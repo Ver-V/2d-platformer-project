@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://dhrvx7atxmnv5" path="res://Script/System/DialogueManager.gd" id="1_8lcs3"]
 
 [node name="DialogueUI" type="CanvasLayer"]
-layer = 300
+layer = 1100
 scale = Vector2(2, 2)
 transform = Transform2D(2, 0, 0, 2, 0, 0)
 script = ExtResource("1_8lcs3")
