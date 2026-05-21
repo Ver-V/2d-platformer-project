@@ -178,11 +178,11 @@ func _on_death() -> void:
 	# 보스 처치 기록 및 저장은 stage.gd의 _on_enemy_died에서 통합 처리됨
 	super._on_death() 
 	
-	GameManager.add_gold(drop_gold_amount)
+	GameManager.update_gold(drop_gold_amount)
 	# GameManager.save_game() <- stage.gd에서 이미 수행하므로 중복 방지를 위해 주석 처리
 
 	print("보스 처치 완료 및 데이터 저장됨. 획득 골드: ", drop_gold_amount)
 
-# [추가] 보스는 코인을 뿌리지 않고 바로 GameManager.add_gold로 지급하므로 부모의 spawn_gold를 덮어씁니다.
+# [추가] 보스는 코인을 뿌리지 않고 바로 GameManager.update_gold로 지급하므로 부모의 spawn_gold를 덮어씁니다.
 func spawn_gold() -> void:
 	pass
