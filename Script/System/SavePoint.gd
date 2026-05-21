@@ -62,8 +62,7 @@ func action_rest() -> void:
 	if players.size() > 0:
 		var p = players[0]
 		p.hp = p.max_hp
-		GameManager.player_current_hp = p.max_hp
-		GameManager.hp_changed.emit(p.hp, p.max_hp)
+		GameManager.update_hp(p.max_hp)
 		
 		# [추가됨] 플라스크 횟수 충전
 		if GameManager.get("flask_current_charges") != null:

@@ -6,7 +6,6 @@ const SND_GUARD = preload("res://Assets/sounds/PG.wav")
 const SND_JUMP = preload("res://Assets/sounds/PJ.wav")
 const SND_PARRY = preload("res://Assets/sounds/PP.wav")
 const SND_PERFECT_GUARD = preload("res://Assets/sounds/PPG.wav")
-const SND_UI_CLICK = preload("res://Assets/sounds/UIC.wav")
 
 # 발소리 배열 (1~5)
 const SND_WALK = [
@@ -35,11 +34,6 @@ func play_parry():
 
 func play_perfect_guard():
 	_play_sfx(SND_PERFECT_GUARD)
-
-func play_ui_click():
-	# UI 클릭은 위치에 상관없이 들리게 하려면 2D가 아닌 일반 Player가 좋지만, 
-	# 일단 현재 구조를 유지하며 재생합니다.
-	_play_sfx(SND_UI_CLICK, 1.0) # UI는 피치 고정
 
 func play_walk():
 	# 1~5 순차 재생 후 반복

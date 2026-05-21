@@ -141,10 +141,7 @@ func add_defeated_boss(id: String) -> void:
 		defeated_bosses[id] = true
 
 # --- [함수 1] 돈 추가 ---
-func add_gold(amount: int) -> void:
-	gold += amount
-	emit_signal("gold_changed", gold)
-	print("Now gold: ", gold)
+# (update_gold 함수로 통합됨)
 
 # --- [함수 2] 스탯 변경 (추가됨) ---
 # Player가 아닌 GM이 직접 계산을 담당합니다.

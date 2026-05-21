@@ -122,7 +122,7 @@ func _show_stage_title() -> void:
 			title_node.play_title(stage_title)
 
 func _input(event:InputEvent) -> void:
-	if is_waiting_respawn and event.is_action_pressed("rest"):
+	if is_waiting_respawn and event.is_action_pressed("rest") and not GameManager.is_menu_open:
 		is_waiting_respawn = false
 		HUD.hide_death_screen()
 		restart_stage()

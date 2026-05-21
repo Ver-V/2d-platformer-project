@@ -176,7 +176,7 @@ func change_state(new_state: State) -> void:
 
 func update_gold(amount: int) -> void:
 	# 이미 GM에 구현된 함수가 있으므로 그대로 사용
-	GameManager.add_gold(amount)
+	GameManager.update_gold(amount)
 	HUD.show_hud_temporarily() 
 
 func update_damage(amount: int) -> void:
@@ -348,14 +348,15 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 		GameManager.apply_hitstop(0.25, 0.2)
 		
 		# [수정 1] 죽었을 때 확인
-		if hp <= 0:
-			change_state(State.DEAD)
-		elif current_state == State.ATTACK or current_state == State.GUARD:
+		if current_state == State.ATTACK or current_state == State.GUARD:
 			# 데미지를 입으면 액션 취소
 			change_state(State.IDLE if is_on_floor() else State.FALL)
 	
 	return took_damage
-	
+
+func _on_death() -> void:
+	change_state(State.DEAD)
+
 func apply_gravity(delta: float) -> void:
 	if is_on_floor(): return
 	
@@ -644,6 +645,4 @@ func _on_magnet_area_area_entered(area):
 	# 닿은 녀석(area)이 'attract_to'라는 함수를 가지고 있나?
 	if area.has_method("attract_to"):
 		# "나(self)한테 빨려와라!" 명령
-		area.attract_to(self)
-	# "나(self)한테 빨려와라!" 명령
 		area.attract_to(self)
