@@ -11,15 +11,10 @@ class_name Slime
 
 @export var turn_on_wall: bool = true
 @export var turn_on_ledge: bool = true
-
-@export var jump_impulse: float = -320.0     # 점프 힘 (조금 더 강화)
-@export var jump_cooldown: float = 2.0      # 점프 주기
-@export var jump_horizontal_force: float = 120.0 # 점프 시 앞으로 나가는 힘
+@export var detect_radius: float = 50.0      # 인식 범위 반지름
 
 var dir: int = -1
-var _jump_timer: float = 0.0
-var _is_jumping: bool = false
-var _squash_tween: Tween
+var _base_scale: Vector2 = Vector2.ONE
 
 func _ready() -> void:
 	max_hp_base = slime_max_hp
@@ -28,15 +23,20 @@ func _ready() -> void:
 	knockback_resist = slime_knockback_res
 	super._ready()
 	
+	# 인식 범위 설정
+	if detect_area:
+		var shape = detect_area.get_node("CollisionShape2D")
+		if shape and shape.shape is CircleShape2D:
+			shape.shape = shape.shape.duplicate()
+			shape.shape.radius = detect_radius
+	
 	if sprite:
+		_base_scale = sprite.scale
 		sprite.play("idle")
-
-func apply_squash(x: float, y: float) -> void:
-	if _squash_tween:
-		_squash_tween.kill()
-	_squash_tween = create_tween()
-	sprite.scale = Vector2(x, y)
-	_squash_tween.tween_property(sprite, "scale", Vector2(1, 1), 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		
+	if turn_on_ledge and is_ledge_ahead(dir):
+		dir = -dir
+		if sprite: sprite.flip_h = dir > 0
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -49,9 +49,6 @@ func _process(delta: float) -> void:
 				sprite.play("died")
 		return
 
-	if _jump_timer > 0.0:
-		_jump_timer -= delta
-
 func _physics_process(delta: float) -> void:
 	if not _active or hp <= 0:
 		return
@@ -62,47 +59,43 @@ func _physics_process(delta: float) -> void:
 		velocity.y = max_fall_speed
 
 	if is_on_floor():
-		# 바닥에선 천천히 이동하거나 대기
-		velocity.x = move_toward(velocity.x, 0, 500 * delta)
+		# 1. 방향 결정 (추격 또는 순찰)
+		if target != null:
+			var dx = target.global_position.x - global_position.x
+			dir = 1 if dx >= 0 else -1
 		
-		if _is_jumping:
-			_is_jumping = false
-			apply_squash(1.3, 0.7) # 착지 효과
-			if sprite: sprite.play("idle")
+		# 2. 이동 방해 요소 체크 (방 경계 및 낭떠러지) - 공통 적용
+		var is_blocked = false
+		if room_rect.size != Vector2.ZERO:
+			# 방 경계 도달 여부
+			if (global_position.x < room_rect.position.x + 12 and dir < 0) or \
+			   (global_position.x > room_rect.end.x - 12 and dir > 0):
+				is_blocked = true
 		
-		# 점프 로직
-		if _jump_timer <= 0.0:
-			_perform_jump()
+		# 낭떠러지 감지
+		if turn_on_ledge and is_ledge_ahead(dir):
+			is_blocked = true
+
+		# 3. 실제 속도 계산
+		if is_blocked:
+			velocity.x = 0 # 즉시 정지
+			if target == null: 
+				dir = -dir # 순찰 중이면 방향 전환
+		else:
+			# 추격 중엔 조금 더 빠르게, 정찰 중엔 원래 속도로
+			var speed_mult = 1.3 if target != null else 1.0
+			velocity.x = move_toward(velocity.x, dir * (slime_move_speed * speed_mult), 800 * delta)
+			
+		if sprite: sprite.play("idle")
 	else:
-		# 공중에선 점프 방향 유지 (이미 velocity.x에 설정됨)
-		pass
+		# 공중 상태: 수평 속도 감쇄 (관성 방지)
+		velocity.x = move_toward(velocity.x, 0, 300 * delta)
 
 	super._physics_process(delta)
 	
-	# 벽에 부딪히면 방향 전환
-	if is_on_wall():
+	# 이동 후 벽 충돌 감지
+	if is_on_floor() and is_on_wall():
 		dir = -dir
-		velocity.x = -velocity.x * 0.5 # 튕겨나가는 느낌
-
+	
 	if sprite:
 		sprite.flip_h = dir > 0
-
-func _perform_jump() -> void:
-	_jump_timer = jump_cooldown
-	_is_jumping = true
-	
-	# 타겟(플레이어)이 있으면 그 방향으로 점프
-	if target != null:
-		var dx = target.global_position.x - global_position.x
-		dir = 1 if dx >= 0 else -1
-	
-	# 점프 예비 동작 및 점프
-	apply_squash(0.7, 1.3) # 점프 준비 효과
-	velocity.y = jump_impulse
-	velocity.x = dir * jump_horizontal_force
-	
-	if sprite:
-		if sprite.sprite_frames.has_animation("jump"):
-			sprite.play("jump")
-		else:
-			sprite.play("idle")

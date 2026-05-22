@@ -12,7 +12,6 @@ signal close_requested
 
 @onready var slider_sens: HSlider = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/SliderSens"
 @onready var lbl_sens_value: Label = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/Mouse Sensitivity"
-@onready var btn_gore: CheckButton = $"OptionsUI/Panel/TabContainer/Control and game/BtnGore"
 @onready var slider_shake: HSlider = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/SliderShake"
 @onready var lbl_shake_value: Label = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/ShakeValue"
 
@@ -23,7 +22,6 @@ var bus_index_sfx: int
 
 # 1. 해상도 목록 (자주 쓰는 것들)
 const RESOLUTIONS: Dictionary = {
-	"640 x 360": Vector2i(640,360),
 	"1280 x 720": Vector2i(1280, 720),
 	"1920 x 1080": Vector2i(1920, 1080),
 	"2560 x 1440": Vector2i(2560, 1440),
@@ -65,6 +63,7 @@ func _ready():
 	
 	_init_audio_sliders()
 	_init_game_settings()
+	_init_graphics_ui() # 그래픽 UI 초기화 추가
 	
 	slider_shake.value_changed.connect(_on_shake_changed)
 	
@@ -72,6 +71,39 @@ func _ready():
 	slider_master.value_changed.connect(_on_master_volume_changed)
 	slider_bgm.value_changed.connect(_on_bgm_volume_changed)
 	slider_sfx.value_changed.connect(_on_sfx_volume_changed)
+
+func _init_graphics_ui():
+	# 1. 화면 모드 초기값 설정
+	var current_mode = DisplayServer.window_get_mode()
+	var is_borderless = DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS)
+	
+	if current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
+		btn_mode.selected = 1
+	elif is_borderless:
+		btn_mode.selected = 2
+	else:
+		btn_mode.selected = 0
+		
+	# 2. 해상도 초기값 설정
+	var current_res = DisplayServer.window_get_size()
+	var res_found = false
+	for i in range(btn_res.item_count):
+		var res_name = btn_res.get_item_text(i)
+		if RESOLUTIONS.has(res_name) and RESOLUTIONS[res_name] == current_res:
+			btn_res.selected = i
+			res_found = true
+			break
+	if not res_found:
+		# 목록에 없는 해상도면 가장 가까운 것이나 기본값 표시 (여기서는 선택 해제 또는 기본값)
+		pass
+
+	# 3. FPS 초기값 설정
+	var current_fps = Engine.max_fps
+	for i in range(btn_fps.item_count):
+		var fps_name = btn_fps.get_item_text(i)
+		if FPS_LIMITS.has(fps_name) and FPS_LIMITS[fps_name] == current_fps:
+			btn_fps.selected = i
+			break
 	
 	
 func _add_items_to_ui():
@@ -97,34 +129,39 @@ func _connect_signals():
 
 func _on_mode_selected(index: int):
 	match index:
-		0: # 창 모드
+		0: # Windowed
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
-		1: # 전체 화면
+		1: # Fullscreen
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
-		2: # 테두리 없는 창 모드
+		2: # Borderless Window
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+			# 테두리 없는 창의 경우 현재 모니터 크기로 자동 맞춤
+			var screen_id = DisplayServer.window_get_current_screen()
+			var screen_size = DisplayServer.screen_get_size(screen_id)
+			DisplayServer.window_set_size(screen_size)
+			DisplayServer.window_set_position(DisplayServer.screen_get_position(screen_id))
 	
 	GameManager.save_settings()
-	print("화면 모드 변경됨: ", index)
+	print("Display mode changed: ", index)
 
 func _on_resolution_selected(index: int):
 	var key = btn_res.get_item_text(index)
 	var target_size = RESOLUTIONS[key]
 
 	var current_mode = DisplayServer.window_get_mode()
+	var is_borderless = DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS)
 	
-	if current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN or current_mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
-		print("전체 화면 상태라 해상도 크기를 변경하지 않습니다. (모니터 크기 유지)")
+	if current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN or current_mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN or is_borderless:
+		print("Fullscreen or Borderless: Resolution change ignored or handled by OS/Scaling.")
 		return
 
 	DisplayServer.window_set_size(target_size)
 	_center_window()
 	
 	GameManager.save_settings()
-	print("해상도 변경됨: ", target_size)
+	print("Resolution changed: ", target_size)
 
 func _on_fps_selected(index: int):
 	var key = btn_fps.get_item_text(index)
@@ -133,14 +170,16 @@ func _on_fps_selected(index: int):
 	# 엔진의 최대 FPS 설정
 	Engine.max_fps = limit
 	GameManager.save_settings()
-	print("FPS 제한 변경됨: ", limit)
+	print("FPS limit changed: ", limit)
 
-# 창을 모니터 정중앙으로 옮기는 헬퍼 함수
+# 창을 현재 모니터 정중앙으로 옮기는 헬퍼 함수 (다중 모니터 대응)
 func _center_window():
 	var screen_id = DisplayServer.window_get_current_screen()
-	var screen_size = DisplayServer.screen_get_size(screen_id)
+	var screen_rect = DisplayServer.screen_get_usable_rect(screen_id)
 	var window_size = DisplayServer.window_get_size()
-	var center_pos = (screen_size - window_size) / 2
+	
+	# screen_rect.position을 더해줘야 해당 모니터의 시작 위치를 기준으로 계산됨
+	var center_pos = screen_rect.position + (screen_rect.size - window_size) / 2
 	DisplayServer.window_set_position(center_pos)
 
 # (옵션) 닫기 버튼용

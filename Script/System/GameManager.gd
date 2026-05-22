@@ -9,6 +9,8 @@ var player_damage: int = 10
 var player_parry_damage_multifac: float = 1.5
 var defeated_bosses: Dictionary = {} # 영구 사망 보스 목록
 var talked_bosses: Dictionary = {}   # [추가] 보스 대화 완료 목록
+var triggered_dialogues: Array = []  # [추가] 이미 실행된 대화 블록 ID 목록
+var npc_talk_counts: Dictionary = {} # [추가] NPC별 대화 횟수 저장 (세이브용)
 var defeated_mobs: Array = []
 var pending_status: String = ""
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
@@ -58,6 +60,7 @@ func save_settings() -> void:
 		"mouse_sens": mouse_sensitivity,
 		"screen_shake": screenshake_intensity,
 		"window_mode": DisplayServer.window_get_mode(),
+		"borderless": DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS),
 		"resolution_x": DisplayServer.window_get_size().x,
 		"resolution_y": DisplayServer.window_get_size().y,
 		"fps_limit": Engine.max_fps
@@ -83,12 +86,35 @@ func load_settings() -> void:
 func _apply_graphics_settings(data: Dictionary) -> void:
 	Engine.max_fps = data.get("fps_limit", 60)
 	var mode = data.get("window_mode", DisplayServer.WINDOW_MODE_WINDOWED)
+	var is_borderless = data.get("borderless", false)
+	
 	DisplayServer.window_set_mode(mode)
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, is_borderless)
 	
 	if mode == DisplayServer.WINDOW_MODE_WINDOWED:
-		var res_x = data.get("resolution_x", 640)
-		var res_y = data.get("resolution_y", 360)
-		DisplayServer.window_set_size(Vector2i(res_x, res_y))
+		if is_borderless:
+			# 테두리 없는 창의 경우 현재 모니터 크기로 맞춤
+			var screen_id = DisplayServer.window_get_current_screen()
+			var screen_size = DisplayServer.screen_get_size(screen_id)
+			DisplayServer.window_set_size(screen_size)
+			DisplayServer.window_set_position(DisplayServer.screen_get_position(screen_id))
+		else:
+			var res_x = data.get("resolution_x", 1280)
+			var res_y = data.get("resolution_y", 720)
+			
+			# 시작 해상도가 너무 작으면 (예: 이전 버그로 저장된 640x360 등) 1280x720으로 강제 고정
+			if res_x < 1280 or res_y < 720:
+				res_x = 1280
+				res_y = 720
+				
+			DisplayServer.window_set_size(Vector2i(res_x, res_y))
+			
+			# 화면 중앙 정렬 (다중 모니터 대응)
+			var screen_id = DisplayServer.window_get_current_screen()
+			var screen_rect = DisplayServer.screen_get_usable_rect(screen_id)
+			var window_size = DisplayServer.window_get_size()
+			var center_pos = screen_rect.position + (screen_rect.size - window_size) / 2
+			DisplayServer.window_set_position(center_pos)
 
 # --- 2. 체크포인트(세이브) 데이터 ---
 var has_checkpoint: bool = false
@@ -171,27 +197,31 @@ func add_item(item: ItemData) -> bool:
 	
 # --- [함수 4] 플레이어 사망 시 부활 처리 ---
 func respawn_player() -> void:
-	if is_respawning:
-		return
-		
+	# 안전장치: 이미 리스폰 중이더라도 너무 오래 걸리면 강제 초기화 (혹은 무조건 실행)
 	is_respawning = true
 	
-	# 로드 시도
+	# [1] 임시 부활 (사망 상태 해제)
+	player_current_hp = player_max_hp
+	
+	# [2] 저장된 데이터 불러오기
 	var load_result = load_game()
 	
-	# [추가] 부활 시 일반 몹 사망 기록 초기화 (모든 몹 다시 생성)
+	# [3] 몹 사망 기록 초기화 (휴식 효과)
 	reset_mobs()
 	
 	get_tree().paused = false 
 	Engine.time_scale = 1.0
 	
-	if load_result and has_checkpoint and last_scene_path != "":
+	# [4] 씬 전환 시도
+	if load_result and has_checkpoint and last_scene_path != "" and ResourceLoader.exists(last_scene_path):
+		print("[Respawn] 세이브 로드 성공. 체크포인트로 이동: ", last_scene_path)
 		call_deferred("_change_scene_safe", last_scene_path)
 	else:
+		# 세이브가 없거나 경로가 잘못된 경우: 1스테이지 강제 이동
 		player_current_hp = player_max_hp
-		# [중요] 씬 변경 실패 시에도 플래그는 풀어줘야 다음 시도가 가능함
-		is_respawning = false
-		call_deferred("_reload_scene_safe")
+		var stage1_path = get_stage_path(1)
+		print("[Respawn] 세이브 없음/오류. 1스테이지로 시작: ", stage1_path)
+		call_deferred("_change_scene_safe", stage1_path)
 		
 
 func ui_opened() -> void:
@@ -235,6 +265,8 @@ func get_data_for_save() -> Dictionary:
 		"parrydamage": player_parry_damage_multifac,
 		"defeated_bosses": defeated_bosses,
 		"talked_bosses": talked_bosses,
+		"triggered_dialogues": triggered_dialogues,
+		"npc_talk_counts": npc_talk_counts,
 		"defeated_mobs": defeated_mobs,
 		"has_checkpoint": has_checkpoint,
 		"scene_path": last_scene_path,
@@ -258,6 +290,8 @@ func load_data_from_save(data: Dictionary) -> void:
 	defeated_mobs = data.get("defeated_mobs", [])
 	defeated_bosses = data.get("defeated_bosses", {})
 	talked_bosses = data.get("talked_bosses", {})
+	triggered_dialogues = data.get("triggered_dialogues", [])
+	npc_talk_counts = data.get("npc_talk_counts", {})
 	has_checkpoint = data.get("has_checkpoint", false)
 	
 	var loaded_path = data.get("scene_path", "")
@@ -320,6 +354,8 @@ func reset_data() -> void:
 	has_checkpoint = false
 	defeated_bosses = {}
 	talked_bosses = {} # [추가]
+	triggered_dialogues = []
+	npc_talk_counts = {}
 	defeated_mobs = []
 	inventory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 	active_ui_count = 0
@@ -329,6 +365,12 @@ func reset_data() -> void:
 # Player 스크립트에서 직접 변수를 바꾸는 대신, 이 함수를 쓰도록 할 겁니다.
 func update_hp(new_hp: int) -> void:
 	player_current_hp = new_hp
+	
+	# [추가] 실제 씬에 있는 플레이어 노드의 HP도 같이 갱신해줘야 함 (동기화)
+	var p = get_tree().get_first_node_in_group("player")
+	if p:
+		p.hp = new_hp
+		
 	# 체력이 변했음을 UI에게 알림
 	hp_changed.emit(player_current_hp, player_max_hp)
 	

@@ -63,6 +63,7 @@ func _ready():
 	scroll_container.size = Vector2(380, 260)
 	scroll_container.position = Vector2(10, 10) # 패널 내부 여백
 	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_container.follow_focus = true # [추가] 포커스된 버튼을 따라 자동으로 스크롤됨
 	choice_bg.add_child(scroll_container)
 	
 	choice_container = VBoxContainer.new()

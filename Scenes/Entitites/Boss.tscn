@@ -6,6 +6,9 @@
 [node name="Boss" instance=ExtResource("1_6i41e")]
 script = ExtResource("2_kqjum")
 dialogue_file = ""
+outro_dialogue_file = ""
+boss_door_group = "boss_doors"
 coin_scene = null
 
 [node name="BGMPlayer" type="AudioStreamPlayer" parent="." index="8"]
+bus = &"BGM"

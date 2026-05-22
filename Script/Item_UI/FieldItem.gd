@@ -1,7 +1,7 @@
 @tool
 extends Area2D
 
-# 1. 수동 ID 및 돈/아이템 설정
+# 수동 ID 및 돈/아이템 설정
 @export var id: String = "" 
 @export var gold_amount: int = 0 
 @export var item_resource: ItemData:
@@ -10,9 +10,9 @@ extends Area2D
 		if Engine.is_editor_hint():
 			_update_texture()
 
-@export_multiline var collection_tutorial: String = "" # [추가] 획득 시 띄울 튜토리얼 텍스트
+@export_multiline var collection_tutorial: String = "" # 획득 시 띄울 튜토리얼 텍스트
 
-# [추가] 둥둥 떠다니는 설정
+# 둥둥 떠다니는 설정
 var time_passed: float = 0.0
 var float_speed: float = 5.0
 var float_range: float = 5.0
@@ -21,10 +21,10 @@ func _ready():
 	_update_texture()
 	
 	if not Engine.is_editor_hint():
-		# 1. 랜덤한 시간으로 시작 (아이템마다 서로 다르게 꿀렁거림)
+		#  랜덤한 시간으로 시작 
 		time_passed = randf_range(0.0, 10.0)
 		
-		# 2. ID 자동 생성 및 중복 확인
+		#  ID 자동 생성 및 중복 확인
 		if id == "":
 			var current_scene = get_tree().current_scene
 			if current_scene:
@@ -37,10 +37,9 @@ func _ready():
 			return
 
 func _process(delta):
-	# 에디터에서는 움직이지 않게 함 (정신 사나움 방지)
 	if Engine.is_editor_hint(): return
 	
-	# [핵심] 끊기지 않는 무한 둥둥 효과
+	# 끊기지 않는 무한 둥둥 효과
 	if has_node("Sprite2D"):
 		time_passed = wrapf(time_passed + delta, 0.0, PI * 2.0)
 		$Sprite2D.position.y = sin(time_passed * float_speed) * float_range
@@ -49,7 +48,7 @@ func _update_texture():
 	if has_node("Sprite2D"):
 		if item_resource != null:
 			$Sprite2D.texture = item_resource.icon
-		# (옵션) 코인일 경우, 에디터에 설정된 이미지가 있다면 건드리지 않음
+		# 코인일 경우, 에디터에 설정된 이미지가 있다면 건드리지 않음
 
 func _on_body_entered(body: Node):
 	if body.is_in_group("player"):
@@ -71,11 +70,11 @@ func _on_body_entered(body: Node):
 		
 		# 획득 성공 시 처리
 		if collected_success:
-			# 즉시 비활성화 (중복 습득 방지)
+			# 즉시 비활성화
 			$CollisionShape2D.set_deferred("disabled", true)
 			$Sprite2D.visible = false
 			
-			# [추가] 튜토리얼 텍스트가 설정되어 있다면 팝업 띄우기
+			# 튜토리얼 텍스트가 설정되어 있다면 팝업 띄우기
 			if collection_tutorial != "":
 				if has_node("/root/TutorialPopup"):
 					get_node("/root/TutorialPopup").display(collection_tutorial)

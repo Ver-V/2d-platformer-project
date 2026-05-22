@@ -2,19 +2,18 @@
 extends Node2D
 class_name ShooterComponent
 
-# [설정] 발사체 및 패링 규칙
+# 발사체 및 패링 규칙
 @export var projectile_scene: PackedScene
 @export var projectile_damage: int = 10      # 투사체 기본 데미지 추가
 @export var parry_interval: int = 3          # 몇 발마다 패링 가능한가?
 @export var parry_cue_color: Color = Color(1, 0.6, 1)
 
-# [추가] 자동 발사 설정
+# 자동 발사 설정
 @export_group("Auto Shoot Settings")
 @export var auto_shoot: bool = false      # 켜면 스스로 쏨
 @export var fire_rate: float = 2.0        # 발사 간격 (초)
 @export var attack_range: float = 250.0   # 사거리
 
-# [내부 변수]
 var _shot_count: int = 0
 var _timer: float = 0.0
 
@@ -30,7 +29,7 @@ func _physics_process(delta: float) -> void:
 	if not parent or not ("target" in parent) or parent.target == null:
 		return
 	
-	# 부모가 활성화 상태(EnemyBase)이고 살아있는지 확인
+	# 부모가 활성화 상태고 살아있는지 확인
 	if "_active" in parent and not parent._active: return
 	if "hp" in parent and parent.hp <= 0: return
 
@@ -38,11 +37,11 @@ func _physics_process(delta: float) -> void:
 	if _timer <= 0.0:
 		var dist = global_position.distance_to(parent.target.global_position)
 		if dist <= attack_range:
-			# 스스로 쏨 (부모, 타겟, 현재 내 위치)
+			# 스스로 쏨
 			shoot(parent, parent.target, global_position)
 			_timer = fire_rate
 
-# 외부에서 수동으로 부를 수도 있는 함수들 (기본 기능 유지)
+# 외부에서 수동으로 부를 수도 있는 함수들
 func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> Node2D:
 	if projectile_scene == null or target_node == null:
 		return null

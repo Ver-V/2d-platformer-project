@@ -18,6 +18,9 @@ func _process(_delta: float) -> void:
 		queue_redraw()
 
 func _draw() -> void:
+	if not Engine.is_editor_hint():
+		return
+		
 	var total_w: float = float(rooms.x) * room_size.x
 	var total_h: float = float(rooms.y) * room_size.y
 

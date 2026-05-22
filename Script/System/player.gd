@@ -9,12 +9,14 @@ var current_state: State = State.IDLE
 @onready var sword_shape: CollisionShape2D = $AttackPivot/SwordArea/CollisionShape2D
 @onready var attack_pivot: Marker2D = $AttackPivot
 @onready var status_label: Label = $StatusLabel
-# 기존 서 있는 충돌체 (이름이 다를 수 있으니 확인하세요!)
+# 기존 서 있는 충돌체
 @onready var collision_stand: CollisionShape2D = $PlayerCol
 # [추가] 새로 만든 죽었을 때용 충돌체
 @onready var collision_died: CollisionShape2D = $Collisiondied
 @onready var sfx_player: AudioStreamPlayer2D = $SFXPlayer
 @onready var anim_player: AnimationPlayer = $AnimationPlayer
+@onready var guard_area: Area2D = $AttackPivot/GuardArea
+@onready var guard_shape: CollisionShape2D = $AttackPivot/GuardArea/CollisionShape2D
 
 @export_group("Movement")
 @export var movespeed: float = 120.0
@@ -60,7 +62,7 @@ var guard_cooldown_timer: float = 0.0
 
 const GUARD_DURATION: float = 0.5          # 가드 지속 시간
 const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
-const GUARD_COOLDOWN_TIME: float = 3.0      # 가드 재사용 대기 시간
+const GUARD_COOLDOWN_TIME: float = 1.5      # 가드 재사용 대기 시간
 
 var has_perfect_guard_bonus: bool = false # [추가] 퍼펙트 가드 시 다음 공격 보너스 플래그
 
@@ -88,17 +90,15 @@ func _ready() -> void:
 	attack_damage = GameManager.player_damage
 	player_parry_damage_multifac = GameManager.player_parry_damage_multifac
 
-	# ----------------------------------------------------------------
-	# [3] 초기 세팅 (애니메이션, 시그널 등)
-	# ----------------------------------------------------------------
-	if sprite != null:
-		sprite.play("Stand")
-	
 	if sword_area != null:
 		sword_area.area_entered.connect(_on_sword_area_entered)
 		if not sword_area.body_entered.is_connected(_on_sword_body_entered):
 			sword_area.body_entered.connect(_on_sword_body_entered)
 		sword_shape.disabled = true
+	
+	if guard_area != null:
+		guard_area.area_entered.connect(_on_guard_area_entered)
+		guard_shape.disabled = true
 	
 	# UI 갱신 신호 보내기 (현재 상태를 UI에 반영)
 	GameManager.update_hp(hp)
@@ -128,6 +128,7 @@ func change_state(new_state: State) -> void:
 			sword_shape.set_deferred("disabled", true)
 		State.GUARD:
 			is_guarding = false
+			guard_shape.set_deferred("disabled", true)
 			guard_cooldown_timer = GUARD_COOLDOWN_TIME
 
 	current_state = new_state
@@ -137,12 +138,13 @@ func change_state(new_state: State) -> void:
 		State.ATTACK:
 			is_attacking = true
 			is_parry_success = false 
+			print("Playing Attack Animation...")
 			anim_player.play("Attack")
 			sword_shape.disabled = false
 			_cooldown_left = attack_cooldown
 			
-			# 공격 종료 타이머 (기존 애니메이션 종료 시그널 대신 코루틴 사용)
-			get_tree().create_timer(0.25).timeout.connect(func():
+			# 공격 종료 타이머
+			get_tree().create_timer(0.3).timeout.connect(func():
 				if current_state == State.ATTACK:
 					change_state(State.IDLE if is_on_floor() else State.FALL)
 			)
@@ -152,8 +154,10 @@ func change_state(new_state: State) -> void:
 			velocity.x = 0
 			sfx_player.play_guard()
 			anim_player.play("guard")
+			guard_shape.set_deferred("disabled", false)
 		State.DEAD:
 			# 사망 처리 로직
+			death_started.emit()
 			collision_stand.set_deferred("disabled", true)
 			collision_died.set_deferred("disabled", false)
 			velocity.x = 0 
@@ -235,16 +239,17 @@ func _on_sword_area_entered(area: Area2D) -> void:
 	if area is Projectile:
 		var p: Projectile = area as Projectile
 
-		# 퍼펙트 가드 보너스가 있으면 +10 전달
-		var extra = 0
-		if has_perfect_guard_bonus:
-			extra = 10
-			has_perfect_guard_bonus = false
-			show_popup("Counter Parry!", Color.CYAN)
+		# 퍼펙트 가드 보너스가 있으면 +10 전달 (성공 시에만 소모하도록 아래에서 처리)
+		var extra = 10 if has_perfect_guard_bonus else 0
 
 		if p.attempt_parry(global_position, extra):
 			is_parry_success = true
 			sfx_player.play_parry() # [추가] 패링 소리
+			
+			# 패링 성공 시에만 보너스 소모 및 팝업 출력
+			if has_perfect_guard_bonus:
+				has_perfect_guard_bonus = false
+				show_popup("Counter Parry!", Color.CYAN)
 			
 			var stage = get_tree().current_scene
 			if stage and stage.has_method("apply_camera_shake"):
@@ -269,17 +274,19 @@ func _on_sword_body_entered(body: Node) -> void:
 
 		if body.has_method("apply_damage"):
 			# 데미지 계산 (보너스 확인)
-			var final_damage = attack_damage
-			if has_perfect_guard_bonus:
-				final_damage += 10
-				has_perfect_guard_bonus = false
-				show_popup("Counter Hit!", Color.ORANGE)
+			var extra = 10 if has_perfect_guard_bonus else 0
+			var final_damage = attack_damage + extra
 
 			# 넉백 방향 계산 (플레이어 -> 적)
 			var knock_dir = (body.global_position - global_position).normalized()
 			var knock_force = Vector2(knock_dir.x * 400, -200)
-			body.apply_damage(int(final_damage), knock_force)
-			GameManager.apply_hitstop(0.25, 0.1)
+			
+			if body.apply_damage(int(final_damage), knock_force):
+				# 실제로 데미지가 들어갔을 때만 보너스 소모
+				if has_perfect_guard_bonus:
+					has_perfect_guard_bonus = false
+					show_popup("Counter Hit!", Color.ORANGE)
+				GameManager.apply_hitstop(0.25, 0.1)
 			
 			var stage = get_tree().current_scene
 			if stage and stage.has_method("apply_camera_shake"):
@@ -287,24 +294,51 @@ func _on_sword_body_entered(body: Node) -> void:
 			
 		elif body.has_method("take_damage"):
 			# take_damage를 쓰는 적들을 위한 처리
-			var final_damage = attack_damage
-			if has_perfect_guard_bonus:
-				final_damage += 10
-				has_perfect_guard_bonus = false
-				show_popup("Counter Hit!", Color.ORANGE)
+			var extra = 10 if has_perfect_guard_bonus else 0
+			var final_damage = attack_damage + extra
 
 			body.take_damage(final_damage, global_position)
+			
+			# take_damage는 성공 여부 리턴이 없으므로 일단 소모
+			if has_perfect_guard_bonus:
+				has_perfect_guard_bonus = false
+				show_popup("Counter Hit!", Color.ORANGE)
+				
 			GameManager.apply_hitstop(0.25, 0.1)
 			
-			var stage = get_tree().current_scene
-			if stage and stage.has_method("apply_camera_shake"):
-				stage.apply_camera_shake(2.0)
+func _on_guard_area_entered(area: Area2D) -> void:
+	if not is_guarding: return
+
+	# 닿은 것이 투사체인지 확인
+	if area is Projectile:
+		var p: Projectile = area as Projectile
+
+		# 1. 퍼펙트 가드 타이밍 체크
+		if guard_timer <= PERFECT_GUARD_WINDOW:
+			# 퍼펙트 가드 보너스 부여
+			has_perfect_guard_bonus = true
+			
+			show_popup("Perfect Guard!", Color.CYAN)
+			sfx_player.play_perfect_guard()
+			GameManager.apply_hitstop(0.15, 0.1)
+
+			# 무적 시간 부여 및 투사체 제거
+			start_invuln(0.2)
+			p.queue_free()
+
+		# 2. 일반 가드 (타이밍은 놓쳤지만 가드 중일 때)
+		else:
+			# [수정] 단순히 제거하는 게 아니라 플레이어에게 5의 피해를 입힙니다.
+			var p_vel = p.velocity
+			p.queue_free()
+			# apply_damage를 호출하되 5 데미지로 처리되도록 전달 (is_projectile = true)
+			apply_damage(10, p_vel.normalized() * 100.0, false, 0.1, true)
 			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
 	# --- [추가] 가드 데미지 처리 ---
+	# 투사체(is_projectile)일 때만 가드 판정 실행. 몸빵 데미지는 이 if문을 무시함.
 	if is_guarding and amount > 0 and not is_invulnerable() and is_projectile:
-		# 독 데미지 등 방향성이 없는 공격(넉백 X)은 가드 불가
-		# 정면에서 오는 공격(넉백 방향과 플레이어 방향이 반대)만 가드 가능
+		# 정면에서 오는 공격만 가드 가능
 		var can_guard = false
 		if knockback.x != 0:
 			if (knockback.x * attack_pivot.scale.x) < 0:
@@ -315,34 +349,27 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 				# 퍼펙트 가드: 데미지 무효
 				show_popup("Perfect Guard!", Color.CYAN)
 				GameManager.apply_hitstop(0.15, 0.1)
-				sfx_player.play_perfect_guard() # [추가] 퍼펙트 가드 소리
+				sfx_player.play_perfect_guard()
 				
-				# 카메라 흔들림 추가
 				var stage = get_tree().current_scene
 				if stage and stage.has_method("apply_camera_shake"):
 					stage.apply_camera_shake(3.0)
 				
-				# [추가] 다음 공격 데미지 보너스 부여
 				has_perfect_guard_bonus = true
-				# 무적 시간 살짝 부여 (연속 공격 방지)
 				start_invuln(0.2)
 				return false
 			else:
-				# 일반 가드: 데미지 -5 경감
-				var reduced_amount = max(0, amount - 5)
-				amount = int(reduced_amount)
-				if amount <= 0:
-					show_popup("Blocked!", Color.GRAY)
-					start_invuln(0.2)
-					return false
-				else:
-					show_popup("Guard", Color.GRAY)
+				# [수정] 일반 가드: 피해량이 5가 되도록 고정 (칩 데미지)
+				amount = 5
+				show_popup("Guard", Color.GRAY)
+				sfx_player.play_guard() # 가드 사운드 재생
 
 	# [체크 1] super(부모)를 호출해서 실제 체력을 깎고 결과를 받아야 함!
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
 	
 	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
+		sfx_player.play_hurt() # [추가] 피격 소리 재생
 		GameManager.update_hp(hp)
 		HUD.show_hud_temporarily()
 		GameManager.apply_hitstop(0.25, 0.2)
@@ -375,6 +402,13 @@ func apply_gravity(delta: float) -> void:
 		velocity.y = max_fall_speed
 
 func _physics_process(delta: float) -> void:
+	# ----------------------------------------------------------------
+	# [추가] 보너스 효과 쉐이더 연동 (빛나는 오라)
+	# ----------------------------------------------------------------
+	if sprite and sprite.material is ShaderMaterial:
+		sprite.material.set_shader_parameter("glow_active", has_perfect_guard_bonus)
+		sprite.material.set_shader_parameter("glow_intensity", 2.0 if has_perfect_guard_bonus else 0.0)
+
 	if get_tree().paused:
 		return
 		
@@ -443,7 +477,7 @@ func _physics_process(delta: float) -> void:
 		impact_intensity = clamp(impact_intensity, 0.5, 2.0)
 		
 		spawn_dust(Vector2(0, 0), impact_intensity)
-		apply_squash(1.0 + (0.3 * impact_intensity), 1.0 - (0.3 * impact_intensity)) # 속도에 따라 더 납작하게
+		apply_squash(1.0 + (0.3 * impact_intensity), 1.0 - (0.3 * impact_intensity)) # 원래 값으로 복구
 		
 	_was_on_floor = is_on_floor()
 
@@ -504,7 +538,7 @@ func _process_attack(delta: float) -> void:
 	
 	var dir_input := Input.get_axis("left", "right")
 
-	# 인터럽트 1: 점프 (즉시 캔슬 후 점프)
+	# 인터럽트: 점프 (즉시 캔슬 후 점프)
 	if Input.is_action_just_pressed("jump"):
 		_jump_buffer_timer = jump_buffer_time
 
@@ -517,15 +551,19 @@ func _process_attack(delta: float) -> void:
 		change_state(State.JUMP)
 		return
 		
-	# 인터럽트 2: 방향 전환 (뒤로 돌면 즉시 캔슬)
-	var facing_dir = attack_pivot.scale.x 
-	if dir_input != 0 and dir_input != facing_dir:
-		change_state(State.RUN if is_on_floor() else State.FALL)
-		return
-
-	# 공격 중 마찰력 적용 (미끄러짐)
+	# [수정] 공격 중에도 이동 및 방향 전환 허용 (조작감 향상)
+	var target_speed = dir_input * movespeed
 	if is_on_floor():
-		velocity.x = move_toward(velocity.x, 0, friction * delta)
+		if dir_input != 0:
+			velocity.x = move_toward(velocity.x, target_speed, acceleration * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0, friction * delta)
+	else:
+		velocity.x = target_speed
+
+	if dir_input != 0:
+		sprite.flip_h = dir_input < 0
+		attack_pivot.scale.x = 1 if dir_input > 0 else -1
 
 	move_with_knockback(delta)
 

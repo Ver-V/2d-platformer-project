@@ -13,7 +13,9 @@ id = "Parry_increase_potion"
 name = "Purple potion"
 icon = SubResource("AtlasTexture_3n0ct")
 price = 750
-description = "A vial containing a mystical purple liquid. It looks as though it might grant the ability to parry attacks more effectively."
+description = "A vial containing a mystical purple liquid. 
+It looks as though it might grant the ability 
+to parry attacks more effectively."
 type = 1
 parry_multifactor = 0.1
 metadata/_custom_type_script = "uid://djy4vfexvhruh"

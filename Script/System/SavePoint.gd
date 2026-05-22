@@ -2,6 +2,7 @@
 extends Area2D
 
 @onready var sprite = $AnimatedSprite2D 
+@onready var sfx_player = $AudioStreamPlayer2D
 
 var can_save: bool = true   # 쿨타임
 var player_in_range: bool = false 
@@ -45,6 +46,9 @@ func action_save_only() -> void:
 		# 머리 위 텍스트 (저장 타입)
 		if p.has_method("show_status"):
 			p.show_status("save")
+	
+	if sfx_player:
+		sfx_player.play()
 
 	_perform_save_file()
 
@@ -76,9 +80,11 @@ func action_rest() -> void:
 	# 3. 저장 (깨끗해진 몹 기록 + 풀피 상태로 저장됨)
 	_perform_save_file()
 	
+	if sfx_player:
+		sfx_player.play()
+		
 	GameManager.pending_status = "rest"
 	# 4. [핵심] 씬 재시작 (Reload)
-	# -> GameManager의 리스트가 비워졌으니, 재시작하면 몹들이 _ready() 통과해서 살아남!
 	SceneTransition.start_transition(func(): get_tree().reload_current_scene())
 
 # --- 공통 내부 함수들 ---

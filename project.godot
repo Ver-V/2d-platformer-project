@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="2D platformer Project"
-run/main_scene="uid://dfx7ligqjd22g"
+run/main_scene="uid://c4s2twvist738"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -35,7 +35,8 @@ window/size/borderless=true
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="viewport"
-window/stretch/scale_mode="integer"
+window/stretch/aspect="keep"
+window/stretch/scale_mode="fractional"
 
 [global]
 
@@ -48,8 +49,8 @@ boss_doors=""
 
 [gui]
 
-theme/custom="uid://btbbx15aae3w"
-theme/custom_font="uid://btbbx15aae3w"
+theme/custom="res://resources/Main_Font.tres"
+theme/custom_font="res://resources/Main_Font.tres"
 
 [input]
 

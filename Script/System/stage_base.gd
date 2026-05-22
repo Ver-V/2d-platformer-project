@@ -38,6 +38,7 @@ func _ready() -> void:
 	
 	# [순서 중요] 적 등록 후 -> 이미 죽은 보스/잡몹 제거 -> 그 다음 플레이어 소환
 	_cleanup_already_dead_enemies()
+	_cleanup_triggered_dialogues() # [추가] 이미 실행된 대화 블록 제거
 	
 	spawn_player()
 
@@ -65,7 +66,6 @@ func _process(delta: float) -> void:
 			current_shake_strength = 0.0
 
 		# 3. 흔들림 오프셋 계산 (랜덤 위치)
-		# GameManager의 설정값(screenshake_intensity)을 곱해서 옵션 적용!
 		var shake_offset = Vector2(
 			randf_range(-current_shake_strength, current_shake_strength),
 			randf_range(-current_shake_strength, current_shake_strength)
@@ -136,6 +136,22 @@ func _on_player_died() -> void:
 func restart_stage() -> void:
 	GameManager.respawn_player()
 
+# [추가] 이미 실행된 대화 블록 제거 함수
+func _cleanup_triggered_dialogues() -> void:
+	var blocks = get_tree().get_nodes_in_group("dialogue_blocks")
+	# 만약 그룹이 안 잡혀있을 걸 대비해 수동으로도 찾음
+	if blocks.is_empty():
+		blocks = find_children("*", "DialogueBlock", true, false)
+		
+	for b in blocks:
+		var db = b as DialogueBlock
+		if db == null: continue
+		
+		# 대화 블록은 씬 경로 기반으로 ID를 생성하거나 
+		# 에디터에서 수동으로 넣은 ID를 씁니다.
+		if GameManager.triggered_dialogues.has(db.get_persist_id()):
+			db.queue_free()
+
 # [수정] 이미 죽은 적들(보스 + 로컬 잡몹) 제거 함수
 func _cleanup_already_dead_enemies() -> void:
 	for n in _cached_enemies:
@@ -170,8 +186,18 @@ func _on_enemy_died(e: EnemyBase) -> void:
 		GameManager.save_game()
 		print("보스 처치됨 (영구 저장): ", id)
 	
-func apply_room_rules(r: Vector2i) -> void:
+func apply_room_rules(current_player_room: Vector2i) -> void:
 	_cached_enemies = _cached_enemies.filter(func(n) : return is_instance_valid(n))
+	
+	# [개선] 카메라가 보고 있는 영역(화면)에 들어오는 모든 방의 적을 활성화합니다.
+	# 1280x720 해상도에서는 640x360 방이 여러 개 보일 수 있기 때문입니다.
+	
+	var view_rect = Rect2()
+	if cam:
+		# [수정] 1280x720 하드코딩 대신, 현재 실제 뷰포트 크기를 가져와 줌 배율을 적용합니다.
+		var viewport_size = get_viewport_rect().size
+		var half_size = (viewport_size / cam.zoom) / 2.0
+		view_rect = Rect2(cam.global_position - half_size, half_size * 2.0)
 	
 	for n in _cached_enemies:
 		if not is_instance_valid(n): continue
@@ -179,14 +205,18 @@ func apply_room_rules(r: Vector2i) -> void:
 		if e == null: continue
 
 		var eroom: Vector2i = room_from_pos(e.home_position)
-
-		if eroom == r:
-			if reset_enemies_on_room_enter:
-				e.reset_to_home(true)
+		
+		# 적의 집 위치가 현재 화면(view_rect) 안에 있거나, 
+		# 플레이어와 같은 방에 있다면 활성화
+		var is_visible_in_cam = view_rect.has_point(e.global_position) if cam else false
+		
+		if eroom == current_player_room or is_visible_in_cam:
 			e.set_active(true)
 		else:
 			if deactivate_enemies_outside_room:
-				e.reset_to_home(false)
+				# 화면 밖으로 나가면 리셋 및 비활성화
+				if e._active: # 활성 상태였다가 꺼질 때만 리셋
+					e.reset_to_home(false)
 				e.set_active(false)
 
 # --- 유틸리티 및 기타 로직 (기존 그대로) ---

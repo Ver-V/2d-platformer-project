@@ -21,38 +21,44 @@ func _physics_process(delta: float) -> void:
 		# 타일맵인지 확인
 		if body is TileMapLayer or body is TileMap:
 			
-			# [안전장치] 'damage' 데이터 층이 없는 타일맵은 무시 (게임 튕김 방지)
+			# [안전장치] 'damage' 데이터 층이 없는 타일맵은 무시
 			if body.tile_set.get_custom_data_layer_by_name("damage") == -1:
 				continue 
 			
-			# [핵심 수정] 검사 지점(Offset)을 캐릭터 발바닥 너비만큼 넓게 잡아야 합니다!
-			# 캐릭터 폭이 보통 10~16픽셀이라면, 좌우로 6~8픽셀 정도 벌려줘야 끝에 걸쳐도 인식합니다.
-			var check_offsets = [
-				Vector2.ZERO,      # 1. 정중앙
-				Vector2(0, 8),     # 2. 발바닥 바로 아래 (가장 중요)
-				Vector2(-7, 8),    # 3. 왼쪽 발끝 (넓힘!)
-				Vector2(7, 8),     # 4. 오른쪽 발끝 (넓힘!)
-				Vector2(0, -8)     # 5. 머리 위 (점프하다 박았을 때)
+			# [핵심 수정] 개별 센서의 위치와 영역을 존중하도록 로직 변경
+			# CollisionShape2D의 영역 내부에 있는 타일들만 정밀하게 체크합니다.
+			
+			# 1. 현재 센서 노드의 CollisionShape을 가져옴
+			var shape_node = get_child(0) as CollisionShape2D
+			if not shape_node: continue
+			
+			# 2. 쉐이프의 영역(Rect)을 계산
+			var shape_rect = shape_node.shape.get_rect()
+			var global_rect = Rect2(shape_node.global_position + shape_rect.position, shape_rect.size)
+			
+			# 3. 해당 영역 안의 포인트 몇 군데를 샘플링하여 타일 검사
+			# (머리 센서든 발 센서든 상관없이 자기 영역 안만 감시함)
+			var samples = [
+				global_rect.position + global_rect.size * 0.5, # 중앙
+				global_rect.position, # 좌상단
+				global_rect.position + Vector2(global_rect.size.x, 0), # 우상단
+				global_rect.position + Vector2(0, global_rect.size.y), # 좌하단
+				global_rect.position + global_rect.size # 우하단
 			]
 			
-			for offset in check_offsets:
-				# 내 위치(global_position) + 오프셋을 -> 타일맵 기준 좌표로 변환
-				var check_pos = body.to_local(global_position + offset)
-				var cell = body.local_to_map(check_pos)
+			for pos in samples:
+				var local_pos = body.to_local(pos)
+				var cell = body.local_to_map(local_pos)
+				var data
+				if body is TileMapLayer:
+					data = body.get_cell_tile_data(cell)
+				elif body is TileMap:
+					data = body.get_cell_tile_data(0, cell)
 				
-				# 해당 칸의 데이터 가져오기
-				var data = body.get_cell_tile_data(cell)
-				
-				if data:
-					var dmg = data.get_custom_data("damage")
-					
-					# 데미지가 있는 타일(가시 등)이라면?
-					if dmg > 0:
-						# 부모(Player)에게 데미지 전달
-						_hurt_parent(dmg)
-						_damage_timer = damage_invuln_time
-						# 이번 프레임은 이미 아프니까 더 계산하지 않고 종료
-						return 
+				if data and data.get_custom_data("damage") > 0:
+					_hurt_parent(data.get_custom_data("damage"))
+					_damage_timer = damage_invuln_time
+					return 
 
 # 부모(플레이어)에게 데미지 주는 함수
 func _hurt_parent(amount: int) -> void:
