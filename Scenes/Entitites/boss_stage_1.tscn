@@ -392,6 +392,7 @@ shape = SubResource("CircleShape2D_sxivi")
 [node name="BGMPlayer" parent="." index="8"]
 stream = ExtResource("6_hy2bf")
 volume_db = -15.127
+parameters/looping = true
 
 [node name="ActionSFX" type="AudioStreamPlayer2D" parent="." index="9"]
 bus = &"SFX"

@@ -6,3 +6,9 @@ https://rottingpixels.itch.io/platformer-dungeon-tileset < asset
 https://dreammixgames.itch.io/keyboard-keys-for-ui < keyboard UI asset
 https://byandrox.itch.io/crimson-fantasy-gui < gui asset
 https://edermunizz.itch.io/free-pixel-art-forest < background aseet
+
+bgm : 
+YouFulca - wild road
+site : Dova-Syndrome
+shimetone - Jigging 
+Kamaboko Sachiko - The maze of aqua
