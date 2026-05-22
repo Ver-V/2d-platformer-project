@@ -468,6 +468,7 @@ stream = ExtResource("16_vrmrq")
 volume_db = -15.0
 autoplay = true
 bus = &"BGM"
+parameters/looping = true
 
 [node name="Item" type="Node" parent="."]
 
