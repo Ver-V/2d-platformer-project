@@ -4,8 +4,13 @@ extends Area2D
 # [1] 장소 구분용 변수
 @export var location_name: String = "Stage1"
 @onready var sprite = $AnimatedSprite2D
-# [2] 말 건 횟수 기억하기
-var talk_count: int = 0
+# [2] 말 건 횟수 기억하기 (GameManager와 연동)
+var talk_count: int:
+	get:
+		return GameManager.npc_talk_counts.get(location_name, 0)
+	set(value):
+		GameManager.npc_talk_counts[location_name] = value
+
 var player_in_range = false
 
 func _ready() -> void:

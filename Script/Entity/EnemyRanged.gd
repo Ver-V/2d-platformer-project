@@ -2,14 +2,14 @@
 extends EnemyBase
 class_name EnemyRanged
 
-# [설정] 사거리와 쿨타임만 남김 (총알 관련 설정은 Component로 이사감)
+# 사거리와 쿨타임만 남김
 @export_group("Ranged Behavior")
 @export var shoot_interval: float = 2.0
 @export var shoot_range: float = 250.0
 @export var shoot_offset: Vector2 = Vector2(0, -10) # 발사 위치 보정
 @export var gravity: float = 980.0
 
-# [중요] 씬에서 ShooterComponent 노드를 자식으로 추가하고 연결해야 함!
+# 씬에서 ShooterComponent 노드를 자식으로 추가하고 연결해야 함!
 # 이름을 "ShooterComponent"로 짓거나, 인스펙터에서 할당하세요.
 @export var shooter_component: ShooterComponent
 
@@ -74,7 +74,6 @@ func _process(delta: float) -> void:
 # [다이어트 된 발사 함수]
 func shoot_projectile() -> void:
 	if shooter_component == null:
-		print("경고: ShooterComponent가 없습니다!")
 		return
 		
 	# Muzzle 마커가 있으면 그 위치를 사용, 없으면 offset 사용

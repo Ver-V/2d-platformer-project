@@ -327,7 +327,7 @@ size = Vector2(20, 19)
 [sub_resource type="CircleShape2D" id="CircleShape2D_2ieqh"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
-radius = 73.0
+radius = 58.00862
 
 [node name="EMushroom" instance=ExtResource("1_fkyq0")]
 script = ExtResource("2_ge0j4")
@@ -342,12 +342,12 @@ turn_on_ledge = true
 floor_ray_x = 14.0
 floor_ray_y = 24.0
 attack_distance = 20.0
-coin_scene = null
+drop_gold_amount = 20
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 scale = Vector2(1.2, 1.2)
 sprite_frames = SubResource("SpriteFrames_l6i1k")
-animation = &"dead"
+animation = &"idle"
 
 [node name="CollisionShape2D" parent="." index="1"]
 position = Vector2(0, 9.5)

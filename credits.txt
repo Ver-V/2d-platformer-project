@@ -3,3 +3,6 @@ https://heltonyan.itch.io/pixelcombat < sfx asset / pixel game
 https://elvgames.itch.io/free-inventory-asset-pack < UI asset 
 https://shikashipx.itch.io/shikashis-fantasy-icons-pack < Icon asset 
 https://rottingpixels.itch.io/platformer-dungeon-tileset < asset
+https://dreammixgames.itch.io/keyboard-keys-for-ui < keyboard UI asset
+https://byandrox.itch.io/crimson-fantasy-gui < gui asset
+https://edermunizz.itch.io/free-pixel-art-forest < background aseet

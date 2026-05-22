@@ -1,4 +1,4 @@
-[gd_scene load_steps=43 format=3 uid="uid://qfh6su8aeoy7"]
+[gd_scene load_steps=44 format=3 uid="uid://qfh6su8aeoy7"]
 
 [ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/System/player.gd" id="1_kpjcp"]
 [ext_resource type="PackedScene" uid="uid://b1tnix67gbct2" path="res://Scenes/System/InventoryUI.tscn" id="2_0kmp4"]
@@ -188,66 +188,12 @@ animations = [{
 }]
 
 [sub_resource type="Animation" id="Animation_6roe8"]
-resource_name = "aTTACK"
-length = 0.5
+resource_name = "Attack"
+length = 0.3
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("../PlayerAni:animation")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(-0.033333335, 0),
-"transitions": PackedFloat32Array(1, 1),
-"update": 1,
-"values": [&"Attack", &"Attack"]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("../PlayerAni:frame")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.13333334, 0.3, 0.46666667),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
-"update": 1,
-"values": [0, 1, 2, 3]
-}
-
-[sub_resource type="Animation" id="Animation_et6w4"]
-resource_name = "Jump"
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("../PlayerAni:animation")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [&"Jump"]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("../PlayerAni:frame")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.19999999, 0.96666664),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 1,
-"values": [0, 1, 2]
-}
-
-[sub_resource type="Animation" id="Animation_pn1rp"]
-length = 0.001
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("../PlayerAni:animation")
+tracks/0/path = NodePath("PlayerAni:animation")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -259,23 +205,107 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("../PlayerAni:frame")
+tracks/1/path = NodePath("PlayerAni:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.06666667, 0.13333334, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3]
+}
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("SFXPlayer")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0.13333334),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"play_attack"
+}]
+}
+
+[sub_resource type="Animation" id="Animation_et6w4"]
+resource_name = "Jump"
+length = 0.7
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("PlayerAni:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"Jump"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("PlayerAni:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.06666667, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0, 1, 2]
+}
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("SFXPlayer")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0.1),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"play_jump"
+}]
+}
+
+[sub_resource type="Animation" id="Animation_pn1rp"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("PlayerAni:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [3]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("PlayerAni:animation")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [3]
+"values": [&"Run"]
 }
 
 [sub_resource type="Animation" id="Animation_hqcmm"]
 resource_name = "Run"
+length = 0.52
 loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("../PlayerAni:animation")
+tracks/0/path = NodePath("PlayerAni:animation")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -287,23 +317,41 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("../PlayerAni:frame")
+tracks/1/path = NodePath("PlayerAni:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.26666668, 0.5, 0.76666665),
+"times": PackedFloat32Array(0, 0.2, 0.36666667, 0.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 1,
 "values": [0, 1, 2, 3]
 }
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("SFXPlayer")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [],
+"method": &"play_walk"
+}, {
+"args": [],
+"method": &"play_walk"
+}]
+}
 
 [sub_resource type="Animation" id="Animation_8j8hq"]
 resource_name = "Stand"
+length = 0.55
 loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("../PlayerAni:animation")
+tracks/0/path = NodePath("PlayerAni:animation")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -315,11 +363,11 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("../PlayerAni:frame")
+tracks/1/path = NodePath("PlayerAni:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.25, 0.5, 0.75),
+"times": PackedFloat32Array(0, 0.16666667, 0.33333334, 0.53333336),
 "transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 1,
 "values": [0, 1, 2, 3]
@@ -331,7 +379,7 @@ length = 1.5
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("../PlayerAni:animation")
+tracks/0/path = NodePath("PlayerAni:animation")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -343,34 +391,23 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("../PlayerAni:frame")
+tracks/1/path = NodePath("PlayerAni:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.75, 1.4666667),
+"times": PackedFloat32Array(0, 0.5, 1.1),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [0, 1, 2]
 }
-tracks/2/type = "method"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("../SFXPlayer")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(),
-"transitions": PackedFloat32Array(),
-"values": []
-}
 
 [sub_resource type="Animation" id="Animation_suexr"]
 resource_name = "guard"
-length = 0.5
+length = 0.3
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("../PlayerAni:animation")
+tracks/0/path = NodePath("PlayerAni:animation")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -382,11 +419,11 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("../PlayerAni:frame")
+tracks/1/path = NodePath("PlayerAni:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.23333333, 0.46666667),
+"times": PackedFloat32Array(0, 0.099999994, 0.23333333),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [0, 1, 2]
@@ -394,13 +431,16 @@ tracks/1/keys = {
 tracks/2/type = "method"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("../SFXPlayer")
+tracks/2/path = NodePath("SFXPlayer")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
-"times": PackedFloat32Array(),
-"transitions": PackedFloat32Array(),
-"values": []
+"times": PackedFloat32Array(0.26666668),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"play_guard"
+}]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_nk3jl"]
@@ -415,13 +455,16 @@ _data = {
 }
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_73fnb"]
-size = Vector2(12, 20.225)
+size = Vector2(10, 20.225)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3wgd0"]
-size = Vector2(16.299986, 26.550129)
+size = Vector2(18.111095, 26.550129)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_guard"]
+size = Vector2(18, 24.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_im3yb"]
-size = Vector2(12, 2.75)
+size = Vector2(10, 3.375)
 
 [sub_resource type="LabelSettings" id="LabelSettings_t26db"]
 outline_size = 4
@@ -447,14 +490,12 @@ visible = false
 position = Vector2(-1.000001, -10.5)
 scale = Vector2(1.1875, 1.28125)
 sprite_frames = SubResource("SpriteFrames_jtq2j")
-animation = &"Stand"
+animation = &"Run"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-root_node = NodePath("")
 libraries = {
 &"": SubResource("AnimationLibrary_nk3jl")
 }
-autoplay = "Attack"
 
 [node name="PlayerCol" type="CollisionShape2D" parent="."]
 position = Vector2(-1, -10.1125)
@@ -470,9 +511,19 @@ collision_mask = 76
 script = ExtResource("6_yu0nx")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackPivot/SwordArea"]
-position = Vector2(13, -2.124999)
+position = Vector2(11.000001, -2.124999)
 scale = Vector2(1.1042954, 0.8945343)
 shape = SubResource("RectangleShape2D_3wgd0")
+
+[node name="GuardArea" type="Area2D" parent="AttackPivot"]
+position = Vector2(1.4000015, 4.300001)
+collision_layer = 0
+collision_mask = 64
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackPivot/GuardArea"]
+position = Vector2(11, -2.75)
+shape = SubResource("RectangleShape2D_guard")
+disabled = true
 
 [node name="HazardSensor" type="Area2D" parent="."]
 collision_layer = 0
@@ -480,6 +531,14 @@ script = ExtResource("7_im3yb")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HazardSensor"]
 position = Vector2(-1, -1)
+shape = SubResource("RectangleShape2D_im3yb")
+
+[node name="HazardSensor2" type="Area2D" parent="."]
+collision_layer = 0
+script = ExtResource("7_im3yb")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HazardSensor2"]
+position = Vector2(-1, -20.3125)
 shape = SubResource("RectangleShape2D_im3yb")
 
 [node name="StatusLabel" type="Label" parent="."]
@@ -506,6 +565,7 @@ shape = SubResource("RectangleShape2D_ji083")
 disabled = true
 
 [node name="SFXPlayer" type="AudioStreamPlayer2D" parent="."]
+bus = &"SFX"
 script = ExtResource("10_3at2a")
 
 [connection signal="area_entered" from="MagnetArea" to="." method="_on_magnet_area_area_entered"]

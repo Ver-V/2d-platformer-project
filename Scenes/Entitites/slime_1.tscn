@@ -123,21 +123,19 @@ size = Vector2(12, 14)
 size = Vector2(14, 13)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_b7awu"]
-radius = 56.008926
+radius = 39.0
 
 [node name="Slime1" instance=ExtResource("1_d5xvo")]
 script = ExtResource("2_cbd27")
 gravity = 980.0
-max_fall_speed = 280.0
+max_fall_speed = 100.0
 slime_max_hp = 30
 slime_contact_damage = 10
-slime_move_speed = 50.0
-slime_knockback_res = 0.0
+slime_move_speed = 40.0
+slime_knockback_res = -30.0
 turn_on_wall = true
 turn_on_ledge = true
-jump_impulse = -200.0
-jump_cooldown = 2.5
-jump_horizontal_force = 120.0
+detect_radius = 50.0
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 position = Vector2(-1.0000005, -2.9999998)

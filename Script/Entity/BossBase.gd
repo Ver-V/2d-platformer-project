@@ -8,7 +8,7 @@ var current_state = State.INTRO
 @export_file("*.json") var outro_dialogue_file: String = ""
 @export var bgm_player : AudioStreamPlayer
 @export var boss_sprite : AnimatedSprite2D
-@export var boss_door_group: String = "boss_doors" # [추가] 보스 방 문들이 속한 그룹 이름
+@export var boss_door_group: String = "boss_doors" # 보스 방 문들이 속한 그룹 이름
 
 
 var boss_started: bool = false # 인트로/전투 시작 여부 확인용
@@ -21,10 +21,9 @@ func _ready() -> void:
 		add_to_group("bosses")
 	
 	var id = get_persist_id()
-	print("[Boss Debug] _ready 실행됨. ID: ", id)
 	
 	if id != "" and GameManager.defeated_bosses.get(id, false):
-		print("[Boss Debug] !!! 보스 삭제됨: 이미 처치한 보스 목록에 존재합니다. ID: ", id)
+
 		queue_free()
 		return
 
@@ -73,7 +72,7 @@ func set_active(active: bool) -> void:
 	elif not active and was_active:
 		# 보스 방에서 나갔을 때 음악 정지
 		_stop_boss_music()
-		# [추가] 방을 나갔을 때 문을 열어줌 (보통 보스전 중엔 못 나가게 하므로 필요 없을 수 있음)
+		# 방을 나갔을 때 문을 열어줌
 		_set_boss_doors(false)
 
 # --- 음악 관리 함수 ---
@@ -96,21 +95,17 @@ func _stop_boss_music():
 		stage_bgm.play()
 
 func _start_intro() -> void:
-	print("[Boss Debug] _start_intro 시작됨")
 	current_state = State.INTRO
 	velocity = Vector2.ZERO
 	if dialogue_file != "":
-		print("[Boss Debug] 대화 시작 시도: ", dialogue_file)
 		DialogueManager.start_dialogue(dialogue_file)
 		
 		await DialogueManager.dialogue_finished
-		print("[Boss Debug] 대화 종료됨")
 		
 		var id = get_persist_id()
 		if id != "":
 			GameManager.talked_bosses[id] = true
 			GameManager.save_game()
-			print("[Boss Debug] 대화 완료 기록 및 저장됨")
 			
 	_start_combat()
 
@@ -153,7 +148,6 @@ func _dead_state(_delta:float) -> void:
 
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
-	print("Boss HP: ", hp, "/", max_hp, " (Damaged by: ", amount, ")")
 	
 	if took_damage and hp > 0 and boss_sprite != null:
 		boss_sprite.play("gethit")
@@ -161,10 +155,9 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	return took_damage
 
 func _on_death() -> void:
-	print("Boss _on_death called!")
 	current_state = State.DEAD
 	
-	# [추가] 보스가 죽는 순간 플레이어를 무적으로 만듦 (연출 도중 사망 방지)
+	# 보스가 죽는 순간 플레이어를 무적으로 만듦
 	if is_instance_valid(target) and target.has_method("start_invuln"):
 		target.start_invuln(10.0) # 넉넉하게 10초 무적 부여
 	
@@ -179,10 +172,7 @@ func _on_death() -> void:
 	super._on_death() 
 	
 	GameManager.update_gold(drop_gold_amount)
-	# GameManager.save_game() <- stage.gd에서 이미 수행하므로 중복 방지를 위해 주석 처리
 
-	print("보스 처치 완료 및 데이터 저장됨. 획득 골드: ", drop_gold_amount)
-
-# [추가] 보스는 코인을 뿌리지 않고 바로 GameManager.update_gold로 지급하므로 부모의 spawn_gold를 덮어씁니다.
+# 보스는 코인을 뿌리지 않고 바로 GameManager.update_gold로 지급하므로 부모의 spawn_gold를 덮어씁니다.
 func spawn_gold() -> void:
 	pass

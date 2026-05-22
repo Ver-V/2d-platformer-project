@@ -41,20 +41,37 @@ var contact_damage: int = 0
 var move_speed: float = 0.0
 var _touching: Dictionary = {}
 
-# [시스템 필수] 원래 내 집 위치 (방 이동 후 돌아올 곳)
+# 원래 내 집 위치 (방 이동 후 돌아올 곳)
 var home_position: Vector2 = Vector2.ZERO 
+var room_rect: Rect2 = Rect2() # 내가 속한 방의 영역
 var _active: bool = true
 var target: Node2D = null
 
 func _ready() -> void:
 	add_to_group("enemies")
 	
+	# 레이캐스트 설정 강제화 (낭떠러지 감지용)
+	if floor_ray:
+		floor_ray.enabled = true
+		floor_ray.position.y = 5 # 슬라임 발쪽으로 중심 이동
+		floor_ray.target_position = Vector2(0, 30) # 충분한 길이로 설정하여 바닥을 확실히 감지
+		floor_ray.collision_mask = 1 # World 레이어 감지
+		floor_ray.force_raycast_update() # 시작하자마자 바닥 상태 갱신
+		
 	if GameManager.defeated_mobs.has(persist_id):
 		queue_free()
 		return
 		
 	# 태어난 위치를 집으로 기억
 	home_position = global_position
+	
+	# [추가] 내가 속한 방의 경계 계산
+	var stage = get_tree().current_scene
+	if stage and stage.has_method("room_from_pos") and stage.has_method("room_center"):
+		var r_coord = stage.room_from_pos(home_position)
+		var r_center = stage.room_center(r_coord)
+		var r_size = stage.room_size
+		room_rect = Rect2(r_center - r_size / 2.0, r_size)
 	
 	max_hp = max_hp_base
 	hp = max_hp
@@ -82,7 +99,7 @@ func get_knockback_cooldown() -> float: return knockback_cooldown
 func get_blink_node() -> CanvasItem: return sprite
 
 func _on_death() -> void:
-	# [시스템 필수] 죽음 신호를 보내야 Stage가 장부에 기록
+	# 죽음 신호를 보내야 Stage가 장부에 기록
 	died.emit(self)
 	spawn_gold()
 	
@@ -90,7 +107,7 @@ func _on_death() -> void:
 	if hitbox: hitbox.set_deferred("monitoring", false)
 	if hurtbox: hurtbox.set_deferred("monitoring", false)
 	
-	# [수정] 충돌체 자체를 끄지 않고 레이어를 변경하여 바닥에 서 있게 함
+	# 충돌체 자체를 끄지 않고 레이어를 변경하여 바닥에 서 있게 함
 	# 1번 레이어(World)만 남기고 나머지는 끔으로써 플레이어와는 겹쳐짐
 	collision_layer = 0
 	collision_mask = 1 # World 레이어하고만 충돌 유지
@@ -104,6 +121,13 @@ func _on_death() -> void:
 		anim_sprite.play("dead")
 		if not anim_sprite.sprite_frames.get_animation_loop("dead"):
 			await anim_sprite.animation_finished
+
+	# [추가] 쉐이더 디졸브 효과 (서서히 증발)
+	if sprite and sprite.material is ShaderMaterial:
+		var tween = create_tween()
+		# 2초간 유지하다가 마지막 3초 동안 서서히 증발
+		tween.tween_interval(2.0)
+		tween.tween_property(sprite.material, "shader_parameter/dissolve_value", 1.1, 3.0)
 
 	await get_tree().create_timer(5.0).timeout
 	queue_free()
@@ -146,6 +170,17 @@ func _physics_process(delta: float) -> void:
 		velocity += get_gravity() * delta
 		
 	move_with_knockback(delta)
+	
+	# [추가] 방 경계 밖으로 절대 나가지 못하게 강제로 위치 고정 (Hard Clamp)
+	if room_rect.size != Vector2.ZERO:
+		var margin = 8.0 # 경계에서 약간의 여유
+		var old_x = global_position.x
+		global_position.x = clamp(global_position.x, room_rect.position.x + margin, room_rect.end.x - margin)
+		
+		# [수정] 억지로 위치가 조정되었다면 (경계에 막혔다면) 방향을 틀어준다
+		if global_position.x != old_x:
+			if "dir" in self:
+				set("dir", -get("dir"))
 
 func spawn_gold():
 	# 코인 씬이 연결되어 있고, 드랍 금액이 0보다 클 때만 생성
@@ -183,12 +218,12 @@ func spawn_gold():
 func create_one_coin(amount: int):
 	var coin = coin_scene.instantiate()
 	
-	# 1. 위치 설정 (중요!)
-	# position은 몬스터 발밑(Pivot)입니다.
+	# 위치 설정
+	# position은 몬스터 발밑
 	var random_offset = Vector2(randf_range(-20, 20), randf_range(-20, 0))
 	coin.global_position = global_position + random_offset
 	
-	# 2. 씬 전환 중 null 에러 방지
+	# 씬 전환 중 null 에러 방지
 	var scene = get_tree().current_scene
 	if is_instance_valid(scene):
 		scene.call_deferred("add_child", coin)
@@ -234,15 +269,15 @@ func _on_detect_exited(body: Node) -> void:
 # [시스템 연동용 필수 함수] - Stage 스크립트가 이 함수들을 호출합니다.
 # -------------------------------------------------------------------------
 
-# 1. ID 가져오기 (Stage가 자동 할당한 ID를 반환)
+# ID 가져오기
 func get_persist_id() -> StringName:
 	return persist_id if persist_id != &"" else StringName(str(get_path()))
 
-# 2. 방 활성화/비활성화 (플레이어가 방에 들어오거나 나갈 때 호출됨)
+# 방 활성화/비활성화
 func set_active(active: bool) -> void:
 	_active = active
 	
-	# 비활성화되면 물리 연산, 프로세스, 충돌체 등을 꺼서 리소스 절약
+	# 비활성화되면 물리 연산, 프로세스, 충돌체꺼서 리소스 절약
 	if disable_when_inactive:
 		set_physics_process(active)
 		set_process(active)
@@ -252,17 +287,50 @@ func set_active(active: bool) -> void:
 		if hitbox: hitbox.set_deferred("monitoring", active)
 		if body_shape: body_shape.set_deferred("disabled", not active)
 		
-	# (선택) 비활성화되면 타겟을 잃어버리게 할지? -> 보통 유지하는 게 낫지만 상황따라 해제
+	# 비활성화되면 타겟을 잃어버리게 할지?
 	if not active:
 		_touching.clear()
 
-# 3. 홈으로 리셋 (플레이어가 다른 방으로 도망갔다가 다시 왔을 때 호출됨)
+# 3. 홈으로 리셋
 func reset_to_home(reset_hp: bool = true) -> void:
 	global_position = home_position # 원래 위치로 이동
 	velocity = Vector2.ZERO         # 속도 멈춤
 	reset_combat_state()            # 넉백/무적 초기화
 	
-	target = null # [중요] 추격하던 타겟 잊어버리기 (안 그러면 리셋되자마자 벽보고 달림)
+	target = null # 추격하던 타겟 잊어버리기
 	
 	if reset_hp: 
 		hp = max_hp
+
+# 진행 방향에 낭떠러지가 있는지 확인하는 공용 함수
+func is_ledge_ahead(move_dir: int, offset: float = 12.0) -> bool:
+	if not floor_ray: return false
+	
+	# 레이캐스트 위치를 진행 방향 앞으로 살짝 옮김
+	floor_ray.position.x = move_dir * offset
+	floor_ray.force_raycast_update() # 즉시 갱신
+	
+	# 충돌하고 있지 않다면 낭떠러지임
+	if not floor_ray.is_colliding():
+		return true
+		
+	# 부딪힌 바닥이 가시밭(Hazard)인지 검사
+	var collider = floor_ray.get_collider()
+	if collider is TileMapLayer or collider is TileMap:
+		# 해당 타일맵에 damage 레이어가 있는지 확인
+		if collider.tile_set and collider.tile_set.get_custom_data_layer_by_name("damage") != -1:
+			var hit_point = floor_ray.get_collision_point()
+			# 충돌 지점에서 살짝 아래로 내려야 정확한 타일 칸을 구함
+			var local_pos = collider.to_local(hit_point + Vector2(0, 5))
+			var cell = collider.local_to_map(local_pos)
+			var data
+			if collider is TileMapLayer:
+				data = collider.get_cell_tile_data(cell)
+			elif collider is TileMap:
+				data = collider.get_cell_tile_data(0, cell)
+			
+			# 타일에 데미지 데이터가 있다면 낭떠러지로 취급!
+			if data and data.get_custom_data("damage") > 0:
+				return true
+				
+	return false

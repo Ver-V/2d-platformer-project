@@ -32,7 +32,7 @@ func _ready() -> void:
 	
 	if sprite:
 		sprite.play("idle")
-		# [추가] 애니메이션이 끝나면 공격 상태를 해제하는 시그널 연결
+		# 애니메이션이 끝나면 공격 상태를 해제
 		if not sprite.animation_finished.is_connected(_on_animation_finished):
 			sprite.animation_finished.connect(_on_animation_finished)
 	
@@ -41,7 +41,7 @@ func _ready() -> void:
 		default_hitbox_pos = hitbox_shape.position
 		default_hitbox_extents = hitbox_shape.shape.extents
 
-# [추가] 애니메이션 종료 시 상태 리셋
+# 애니메이션 종료 시 상태 리셋
 func _on_animation_finished() -> void:
 	if sprite and sprite.animation == "attack":
 		is_attacking = false
@@ -57,13 +57,13 @@ func _process(delta: float) -> void:
 		return
 
 	if target != null:
-		# [수정] 이미 공격 중이라면 상태 유지 (판정 감시)
+		# 이미 공격 중이라면 상태 유지
 		if is_attacking:
 			if sprite and sprite.animation == "attack":
 				_set_attack_hitbox(sprite.frame == 3)
 			return
 
-		# 플레이어 방향 바라보기 (추격 준비)
+		# 플레이어 방향 바라보기
 		dir = 1 if target.global_position.x > global_position.x else -1
 		var dx = abs(global_position.x - target.global_position.x)
 		var dy = abs(global_position.y - target.global_position.y)
@@ -74,7 +74,7 @@ func _process(delta: float) -> void:
 			if sprite:
 				sprite.play("attack")
 		else:
-			# 사거리 밖: 추격 애니메이션 재생 (이때 velocity.x가 물리 프로세스에서 작동함)
+			# 추격 애니메이션 재생
 			if sprite and sprite.animation != "idle" and sprite.animation != "died":
 				if sprite.sprite_frames.has_animation("Run"): # 혹은 Walk
 					sprite.play("Run")
@@ -93,9 +93,9 @@ func _set_attack_hitbox(active: bool) -> void:
 
 	var shape = hitbox_shape.shape as RectangleShape2D
 	if active:
-		# 공격 시 히트박스의 가로 길이를 늘림 (원하는 수치로 조정 가능)
+		# 공격 시 히트박스의 가로 길이를 늘림
 		shape.extents = Vector2(default_hitbox_extents.x + 4.0, default_hitbox_extents.y)
-		# 바라보는 방향(dir)으로 늘어난 만큼 중심점을 이동 (dir: 1 오른쪽, -1 왼쪽)
+		# 바라보는 방향으로 늘어난 만큼 중심점을 이동
 		hitbox_shape.position.x = default_hitbox_pos.x + (dir * 4.0) 
 	else:
 		shape.extents = default_hitbox_extents

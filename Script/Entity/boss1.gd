@@ -15,12 +15,12 @@ var rng = RandomNumberGenerator.new()
 const SND_EXPLOSION = preload("res://Assets/sounds/explosion.wav")
 const SND_POWER_UP = preload("res://Assets/sounds/power_up.wav")
 const Fire_projectile = preload("res://Scenes/Projectile/projectilefire.tscn")
+
 func _ready() -> void:
 	super._ready()
-	rng.randomize() # 보스 전용 랜덤 시드 초기화
+	rng.randomize() # 보스 랜덤 시드 초기화
 	call_deferred("_setup_teleports_points")
-	
-	# ShooterComponent를 직접 찾거나 자식에서 검색
+
 	if not shooter:
 		shooter = get_node_or_null("ShooterComponent")
 	if not shooter:
@@ -30,9 +30,8 @@ func _setup_teleports_points() -> void:
 	var points_node = get_tree().get_first_node_in_group("teleport_points_stage1")
 	if points_node:
 		teleport_markers = points_node.get_children()
-		print("[Boss Debug] 텔레포트 마커 로드 완료: ", teleport_markers.size(), "개")
 	else:
-		print("[Boss Debug] 오류: 'teleport_points_stage1' 그룹 노드를 찾을 수 없습니다!")
+		pass
 
 func _idle_state(_delta: float) -> void:
 	# 타겟 재포착
@@ -45,7 +44,6 @@ func _idle_state(_delta: float) -> void:
 	current_state1 = CombatState.TELEPORT
 
 func _combat_state(delta:float) -> void:
-	# 타겟 재포착 (텔레포트 후 대비)
 	if target == null:
 		var players = get_tree().get_nodes_in_group("player")
 		if players.size() > 0:
@@ -62,13 +60,11 @@ func _teleport_state(delta:float) -> void:
 	
 	teleport_timer += delta
 	if teleport_timer >= 3.0:
-		print("[Boss Debug] 3초 대기 완료 -> 텔레포트 실행")
 		teleport_timer = 0.0
 		_execute_teleport_sequence()
 
 func _execute_teleport_sequence() -> void:
 	is_attacking = true
-	print("[Boss Debug] 텔레포트 시퀀스 시작 (마커 개수: ", teleport_markers.size(), ")")
 	
 	if action_sfx:
 		action_sfx.stream = SND_POWER_UP
@@ -87,18 +83,16 @@ func _execute_teleport_sequence() -> void:
 	
 	if candidate_markers.size() > 0:
 		var random_marker = candidate_markers.pick_random()
-		print("[Boss Debug] 텔레포트 이동 대상: ", random_marker.name, " 위치: ", random_marker.global_position)
 		global_position = random_marker.global_position
 		velocity = Vector2.ZERO
 	else:
-		print("[Boss Debug] 경고: 텔레포트할 유효한 마커를 찾지 못했습니다!")
+		pass
 	
 	if boss_sprite and boss_sprite.material:
 		var tween2 = create_tween()
 		tween2.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 0.0, 0.15)
 		await get_tree().create_timer(0.2).timeout
-		
-	print("[Boss Debug] 텔레포트 완료 -> 공격 상태로 전환")
+
 	is_attacking = false
 	current_state1 = CombatState.ATTACK
 				
@@ -113,7 +107,6 @@ func _attack_state(_delta:float) -> void:
 		action_sfx.play()
 
 	var pattern = rng.randi_range(0, 3) # 보스 전용 RNG 사용
-	print("[Boss Debug] 공격 패턴 실행: ", pattern)
 		
 	if boss_sprite:
 		boss_sprite.play("attack")
@@ -130,8 +123,7 @@ func _attack_state(_delta:float) -> void:
 	
 	if boss_sprite and boss_sprite.animation == "attack":
 		boss_sprite.play("idle")
-		
-	print("[Boss Debug] 공격 완료 -> 다시 텔레포트 대기")
+
 	is_attacking = false
 	current_state1 = CombatState.TELEPORT
 

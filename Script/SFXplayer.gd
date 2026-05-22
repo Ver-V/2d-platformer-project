@@ -6,6 +6,7 @@ const SND_GUARD = preload("res://Assets/sounds/PG.wav")
 const SND_JUMP = preload("res://Assets/sounds/PJ.wav")
 const SND_PARRY = preload("res://Assets/sounds/PP.wav")
 const SND_PERFECT_GUARD = preload("res://Assets/sounds/PPG.wav")
+const SND_HURT = preload("res://Assets/sounds/hurt.mp3")
 
 # 발소리 배열 (1~5)
 const SND_WALK = [
@@ -34,6 +35,9 @@ func play_parry():
 
 func play_perfect_guard():
 	_play_sfx(SND_PERFECT_GUARD)
+
+func play_hurt():
+	_play_sfx(SND_HURT)
 
 func play_walk():
 	# 1~5 순차 재생 후 반복

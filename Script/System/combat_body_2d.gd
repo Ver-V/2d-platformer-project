@@ -84,7 +84,7 @@ func apply_knockback_vec(kb: Vector2, ignore_cooldown: bool = false, cooldown: f
 
 	_knockback_left = _effective_knockback_cooldown(cooldown)
 
-	if reset_y:
+	if reset_y and is_on_floor():
 		velocity.y = 0.0
 
 	var resist: float = clamp(get_knockback_resist(), 0.0, 1.0)
@@ -107,6 +107,10 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	if hp <= 0: return false
 	if is_invulnerable(): return false
 
+	# [핵심 수정] 데미지 계산 및 사망 처리(hp <= 0) 전에 효과를 먼저 실행
+	# 이렇게 해야 플레이어가 적을 죽이는 순간에도 피격 효과(스파크, 번쩍임)가 보입니다.
+	_play_hit_effects()
+
 	hp -= amount
 	if hp <= 0:
 		hp = 0
@@ -114,12 +118,8 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 		_on_death()
 		return true
 
-	# [핵심 수정] 여기에 받아온 시간을 넣어줍니다.
-	# -1.0이면 원래대로 기본값을 쓰고, 값이 들어왔으면(예: 2.0) 그 시간을 씁니다.
+	# 무적 시간 적용
 	start_invuln(or_invuln_time)
-	
-	# [추가] 피격 효과 발동
-	_play_hit_effects()
 	
 	if knockback != Vector2.ZERO:
 		apply_knockback_vec(knockback, ignore_cd, -1.0, true)
@@ -128,7 +128,7 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 
 # [추가] 피격 시 시각 효과 처리
 func _play_hit_effects() -> void:
-	# 1. 파티클 소환
+	# 1. 파티클 소환 (스파크)
 	if hit_spark_scene:
 		var spark = hit_spark_scene.instantiate()
 		var target_parent = get_parent()
@@ -138,17 +138,19 @@ func _play_hit_effects() -> void:
 		if target_parent:
 			target_parent.add_child(spark)
 			spark.global_position = global_position
+			spark.z_index = 100 # 다른 오브젝트보다 앞에 보이도록 설정
 			spark.emitting = true
 			get_tree().create_timer(spark.lifetime).timeout.connect(func(): if is_instance_valid(spark): spark.queue_free())
 
-	# 2. 쉐이더 외곽선 효과 (스프라이트에 outline.gdshader가 있어야 함)
+	# 2. 쉐이더 플래시 효과 (하얗게 번쩍임)
 	var node = get_blink_node()
 	if node and node.material is ShaderMaterial:
-		node.material.set_shader_parameter("is_active", true)
-		# 짧은 시간 후 외곽선 끄기
-		get_tree().create_timer(0.15).timeout.connect(func():
+		# 단순히 외곽선(is_active)만 켜는 게 아니라, 몸 전체를 하얗게(flash_modifier) 만듭니다.
+		node.material.set_shader_parameter("flash_modifier", 1.0)
+		# 아주 짧은 시간(0.1초) 후 원래대로 복구
+		get_tree().create_timer(0.1).timeout.connect(func():
 			if is_instance_valid(node) and node.material is ShaderMaterial:
-				node.material.set_shader_parameter("is_active", false)
+				node.material.set_shader_parameter("flash_modifier", 0.0)
 		)
 
 # --- 물리 프로세스 (넉백 감소) ---

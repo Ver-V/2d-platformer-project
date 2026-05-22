@@ -143,4 +143,4 @@ func _physics_process(delta: float) -> void:
 			velocity.x = 0.0
 	
 	if sprite:
-		sprite.flip_h = dir > 0
+		sprite.flip_h = dir < 0
