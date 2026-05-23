@@ -8,7 +8,9 @@ https://byandrox.itch.io/crimson-fantasy-gui < gui asset
 https://edermunizz.itch.io/free-pixel-art-forest < background aseet
 
 bgm : 
+
 YouFulca - wild road
+
 site : Dova-Syndrome
 shimetone - Jigging 
 Kamaboko Sachiko - The maze of aqua
