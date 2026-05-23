@@ -21,8 +21,7 @@ func _ready():
 		var slot = slots[i]
 		if not slot.slot_clicked.is_connected(_on_slot_clicked):
 			slot.slot_clicked.connect(_on_slot_clicked.bind(i))
-	
-	# [새로 추가] 팝업 버튼 시그널 연결 및 숨기기
+
 	btn_use.pressed.connect(GameManager.play_ui_click)
 	btn_use.pressed.connect(_on_use_pressed)
 	btn_close.pressed.connect(GameManager.play_ui_click)
@@ -38,6 +37,10 @@ func _input(event):
 			close()
 		else:
 			open()
+	elif event.is_action_pressed("ui_cancel"):
+		if is_open:
+			close()
+			get_viewport().set_input_as_handled()
 
 func open():
 	visible = true

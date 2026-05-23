@@ -13,7 +13,7 @@ dest_files=["res://.godot/imported/wild-road.mp3-290141055b36f89f77a265539786be7
 [params]
 
 loop=true
-loop_offset=0
-bpm=0
+loop_offset=0.0
+bpm=0.0
 beat_count=0
 bar_beats=4
