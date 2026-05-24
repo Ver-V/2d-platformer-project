@@ -7,6 +7,7 @@ const FIRST_LEVEL_PATH = "res://Scenes/Stage/Stage_tutorial.tscn"
 @onready var btn_load: Button = $VBoxContainer/BtnLoadGame
 @onready var credits_panel: Panel = $CreditsPanel
 @onready var options_ui: CanvasLayer = $OptionsUI
+@onready var new_game_dialog: ConfirmationDialog = $NewGameConfirmDialog
 
 func _ready() -> void:
 	CustomCursor.show_cursor()
@@ -14,6 +15,7 @@ func _ready() -> void:
 
 	# 옵션 창이 보낸 신호를 연결
 	options_ui.close_requested.connect(_on_options_closed)
+	new_game_dialog.confirmed.connect(_on_new_game_confirmed)
 	
 	# 1. 저장된 파일이 없으면 'Load Game' 버튼 비활성화 (클릭 불가)
 	if not FileAccess.file_exists(SaveManager.SAVE_PATH):
@@ -33,6 +35,17 @@ func _ready() -> void:
 	$VBoxContainer/BtnExit.pressed.connect(_on_exit_pressed)
 
 func _on_new_game_pressed() -> void:
+	if FileAccess.file_exists(SaveManager.SAVE_PATH):
+		new_game_dialog.popup_centered()
+	else:
+		_start_new_game()
+
+func _on_new_game_confirmed() -> void:
+	SaveManager.delete_save()
+	_start_new_game()
+
+func _start_new_game() -> void:
+	GameManager.reset_data()
 	get_tree().change_scene_to_file("res://Scenes/Stage/Stage_tutorial.tscn")
 
 func _on_continue_button_pressed() -> void: 
