@@ -346,20 +346,49 @@ func get_item_by_id(item_id: String) -> ItemData:
 	return null
 	
 func reset_data() -> void:
+	print("[GameManager] Resetting all game data for New Game...")
 	gold = 0
 	player_current_hp = 100
 	player_max_hp = 100
 	player_damage = 10
 	player_parry_damage_multifac = 1.5
 	has_checkpoint = false
-	defeated_bosses = {}
-	talked_bosses = {} # [추가]
-	triggered_dialogues = []
-	npc_talk_counts = {}
-	defeated_mobs = []
-	inventory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
+	last_checkpoint_pos = Vector2.ZERO
+	last_scene_path = ""
+	
+	defeated_bosses.clear()
+	talked_bosses.clear()
+	triggered_dialogues.clear()
+	npc_talk_counts.clear()
+	defeated_mobs.clear()
+	collected_items.clear()
+	visited_rooms.clear()
+	
+	inventory.fill(null)
+	
+	flask_max_charges = 1
+	flask_current_charges = 1
+	
+	# 상점 재고 초기화
+	merchant_stocks = {
+		"Stage1": [
+			{"id": "health_potion", "stock": 3},
+			{"id": "Parry_increase_potion", "stock": 1}
+		],
+		"Stage2": [
+			{"id": "health_potion", "stock": 5},
+		]
+	}
+	
 	active_ui_count = 0
 	is_menu_open = false
+	is_respawning = false
+	pending_status = ""
+	
+	# UI 업데이트 신호 발송
+	gold_changed.emit(gold)
+	hp_changed.emit(player_current_hp, player_max_hp)
+	flask_changed.emit()
 
 # --- [함수 수정] 플레이어 체력 갱신 ---
 # Player 스크립트에서 직접 변수를 바꾸는 대신, 이 함수를 쓰도록 할 겁니다.

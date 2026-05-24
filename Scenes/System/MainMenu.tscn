@@ -99,3 +99,10 @@ offset_bottom = 40.0
 
 [node name="OptionsUI" parent="." instance=ExtResource("5_h3qbv")]
 visible = false
+
+[node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="."]
+title = "Warning!"
+size = Vector2i(680, 200)
+ok_button_text = "Yes"
+dialog_text = "Saved data already exists. Are you sure you want to start a new game?"
+cancel_button_text = "No"
