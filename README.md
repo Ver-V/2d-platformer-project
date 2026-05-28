@@ -12,7 +12,7 @@
 * Engine & Language : Godot(GDScript)
 * Design Pattern / Architecture: FSM, Component Based Design, Singleton, OCP 준수.
 * Version Control : Git / Github desktop
-* Role : 1인 개발 (기획, 메인 프로그래밍, 일정 관리, AI 아트, 수제 도트, 일정 관리등)
+* Role : 1인 개발 (기획, 메인 프로그래밍, 리소스 구축 및 마일스톤 일정 관리)
 
 **4. 클래스 및 컴포넌트 아키텍처 다이어그램**
 <div align="center">
