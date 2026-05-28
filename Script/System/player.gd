@@ -328,17 +328,15 @@ func _on_guard_area_entered(area: Area2D) -> void:
 
 		# 2. 일반 가드 (타이밍은 놓쳤지만 가드 중일 때)
 		else:
-			# [수정] 단순히 제거하는 게 아니라 플레이어에게 5의 피해를 입힙니다.
+			# 단순히 제거하는 게 아니라 플레이어에게 데미지를 시도합니다.
+			# (apply_damage 내부에서 5 이하인 경우 무효화됨)
 			var p_vel = p.velocity
 			p.queue_free()
-			# apply_damage를 호출하되 5 데미지로 처리되도록 전달 (is_projectile = true)
-			apply_damage(10, p_vel.normalized() * 100.0, false, 0.1, true)
+			# apply_damage를 호출하되 10 데미지를 전달 (가드 시 5로 감쇄되고, 5 이하면 무시됨)
+			apply_damage(10, p_vel.normalized() * 100.0, false, 0.2, true)
 			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
-	# --- [추가] 가드 데미지 처리 ---
-	# 투사체(is_projectile)일 때만 가드 판정 실행. 몸빵 데미지는 이 if문을 무시함.
 	if is_guarding and amount > 0 and not is_invulnerable() and is_projectile:
-		# 정면에서 오는 공격만 가드 가능
 		var can_guard = false
 		if knockback.x != 0:
 			if (knockback.x * attack_pivot.scale.x) < 0:
@@ -346,7 +344,6 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 				
 		if can_guard:
 			if guard_timer <= PERFECT_GUARD_WINDOW:
-				# 퍼펙트 가드: 데미지 무효
 				show_popup("Perfect Guard!", Color.CYAN)
 				GameManager.apply_hitstop(0.15, 0.1)
 				sfx_player.play_perfect_guard()
@@ -359,24 +356,22 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 				start_invuln(0.2)
 				return false
 			else:
-				# [수정] 일반 가드: 피해량이 5가 되도록 고정 (칩 데미지)
 				amount = 5
 				show_popup("Guard", Color.GRAY)
-				sfx_player.play_guard() # 가드 사운드 재생
+				sfx_player.play_guard()
 
-	# [체크 1] super(부모)를 호출해서 실제 체력을 깎고 결과를 받아야 함!
+	if is_guarding and amount <= 5:
+		return false
+
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
 	
-	# [체크 2] 데미지를 입었을 때만 상태를 초기화
 	if took_damage:
-		sfx_player.play_hurt() # [추가] 피격 소리 재생
+		sfx_player.play_hurt()
 		GameManager.update_hp(hp)
 		HUD.show_hud_temporarily()
 		GameManager.apply_hitstop(0.25, 0.2)
 		
-		# [수정 1] 죽었을 때 확인
 		if current_state == State.ATTACK or current_state == State.GUARD:
-			# 데미지를 입으면 액션 취소
 			change_state(State.IDLE if is_on_floor() else State.FALL)
 	
 	return took_damage
@@ -403,7 +398,7 @@ func apply_gravity(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	# ----------------------------------------------------------------
-	# [추가] 보너스 효과 쉐이더 연동 (빛나는 오라)
+	# 보너스 효과 쉐이더 연동 (빛나는 오라)
 	# ----------------------------------------------------------------
 	if sprite and sprite.material is ShaderMaterial:
 		sprite.material.set_shader_parameter("glow_active", has_perfect_guard_bonus)
@@ -551,7 +546,7 @@ func _process_attack(delta: float) -> void:
 		change_state(State.JUMP)
 		return
 		
-	# [수정] 공격 중에도 이동 및 방향 전환 허용 (조작감 향상)
+	# 공격 중에도 이동 및 방향 전환 허용 (조작감 향상)
 	var target_speed = dir_input * movespeed
 	if is_on_floor():
 		if dir_input != 0:
@@ -577,7 +572,7 @@ func _process_guard(delta: float) -> void:
 		
 	move_with_knockback(delta)
 
-# [추가] 먼지 파티클 소환 함수
+# 먼지 파티클 소환 함수
 func spawn_dust(offset: Vector2 = Vector2.ZERO, scale_mult: float = 1.0) -> void:
 	if dust_particles_scene:
 		var dust = dust_particles_scene.instantiate()
@@ -594,7 +589,7 @@ func spawn_dust(offset: Vector2 = Vector2.ZERO, scale_mult: float = 1.0) -> void
 			await get_tree().create_timer(dust.lifetime).timeout
 			dust.queue_free()
 	
-# [추가] 시각적 찰진 효과 (Squash and Stretch)
+# 시각적 찰진 효과 (Squash and Stretch)
 func apply_squash(x: float, y: float) -> void:
 	if _squash_tween:
 		_squash_tween.kill()
@@ -605,7 +600,7 @@ func apply_squash(x: float, y: float) -> void:
 	# 복구할 때도 원래 스케일(_base_sprite_scale)로 복구
 	_squash_tween.tween_property(sprite, "scale", _base_sprite_scale, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-# [추가] 모서리 보정 
+#모서리 보정 
 func _handle_corner_correction() -> void:
 	if velocity.y >= 0: return # 상승 중일 때만 작동
 	
