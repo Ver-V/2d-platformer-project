@@ -11,7 +11,6 @@ var current_state: State = State.IDLE
 @onready var status_label: Label = $StatusLabel
 # 기존 서 있는 충돌체
 @onready var collision_stand: CollisionShape2D = $PlayerCol
-# [추가] 새로 만든 죽었을 때용 충돌체
 @onready var collision_died: CollisionShape2D = $Collisiondied
 @onready var sfx_player: AudioStreamPlayer2D = $SFXPlayer
 @onready var anim_player: AnimationPlayer = $AnimationPlayer
@@ -36,8 +35,8 @@ var current_state: State = State.IDLE
 # 내부 타이머
 var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
-var _was_on_floor: bool = false # [추가] 착지 감지용
-var _menu_exit_cooldown: float = 0.0 # [추가] 메뉴 종료 직후 입력 무시용
+var _was_on_floor: bool = false
+var _menu_exit_cooldown: float = 0.0
 @export_group("Visuals")
 @export var dust_particles_scene: PackedScene = preload("res://Scenes/System/DustParticles.tscn")
 
@@ -51,11 +50,10 @@ var _menu_exit_cooldown: float = 0.0 # [추가] 메뉴 종료 직후 입력 무�
 @export var player_parry_damage_multifac: float = 1.5
 var _cooldown_left: float = 0.0
 var is_parry_success: bool = false
-var status_tween: Tween # [추가됨] 팝업 애니메이션 겹침 방지용
-var _squash_tween: Tween # [추가] 시각적 효과용 트윈
-var _base_sprite_scale: Vector2 # [추가] 원래 스케일 저장용
+var status_tween: Tween
+var _squash_tween: Tween
+var _base_sprite_scale: Vector2
 
-# --- 가드 관련 변수 (Active Guard) ---
 var is_guarding: bool = false
 var guard_timer: float = 0.0
 var guard_cooldown_timer: float = 0.0
@@ -64,7 +62,7 @@ const GUARD_DURATION: float = 0.5          # 가드 지속 시간
 const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
 const GUARD_COOLDOWN_TIME: float = 1.5      # 가드 재사용 대기 시간
 
-var has_perfect_guard_bonus: bool = false # [추가] 퍼펙트 가드 시 다음 공격 보너스 플래그
+var has_perfect_guard_bonus: bool = false
 
 signal died
 signal death_started
@@ -75,16 +73,10 @@ func _ready() -> void:
 	if sprite:
 		_base_sprite_scale = sprite.scale
 	
-	# ----------------------------------------------------------------
-	# [1] 위치 동기화 (체크포인트)
-	# ----------------------------------------------------------------
 	var current_scene = get_tree().current_scene
 	if current_scene and GameManager.has_checkpoint and GameManager.last_scene_path == current_scene.scene_file_path:
 		global_position = GameManager.last_checkpoint_pos
 	
-	# ----------------------------------------------------------------
-	# [2] 스탯 동기화 (무조건 GameManager 값 가져오기)
-	# ----------------------------------------------------------------
 	hp = GameManager.player_current_hp
 	max_hp = GameManager.player_max_hp
 	attack_damage = GameManager.player_damage
@@ -117,7 +109,6 @@ func _ready() -> void:
 	change_state(State.IDLE)
 	move_and_slide()
 
-# --- FSM 상태 전환 함수 ---
 func change_state(new_state: State) -> void:
 	if current_state == new_state: return
 	
@@ -174,10 +165,6 @@ func change_state(new_state: State) -> void:
 				died.emit()
 			)
 
-# -------------------------------------------------------
-# [수정] 데이터는 GM에게 요청하고, Player는 시각 처리만 함
-# -------------------------------------------------------
-
 func update_gold(amount: int) -> void:
 	# 이미 GM에 구현된 함수가 있으므로 그대로 사용
 	GameManager.update_gold(amount)
@@ -203,7 +190,6 @@ func update_parry_ratio(amount: float) -> void:
 	if amount > 0:
 		show_popup("Parry Power Up!", Color.CYAN)
 		
-# --- CombatBody2D Overrides ---
 func get_invuln_time() -> float: return invuln_time
 func get_blink_interval() -> float: return blink_interval
 func get_knockback_decay() -> float: return knockback_decay
@@ -213,7 +199,6 @@ func get_blink_node() -> CanvasItem: return sprite
 func show_popup(text: String, color: Color = Color.YELLOW) -> void:
 	if status_label == null: return
 
-	# [추가됨] 이전 트윈이 실행 중이면 취소하여 겹침 방지
 	if status_tween:
 		status_tween.kill()
 
@@ -244,7 +229,7 @@ func _on_sword_area_entered(area: Area2D) -> void:
 
 		if p.attempt_parry(global_position, extra):
 			is_parry_success = true
-			sfx_player.play_parry() # [추가] 패링 소리
+			sfx_player.play_parry()
 			
 			# 패링 성공 시에만 보너스 소모 및 팝업 출력
 			if has_perfect_guard_bonus:
@@ -328,11 +313,8 @@ func _on_guard_area_entered(area: Area2D) -> void:
 
 		# 2. 일반 가드 (타이밍은 놓쳤지만 가드 중일 때)
 		else:
-			# 단순히 제거하는 게 아니라 플레이어에게 데미지를 시도합니다.
-			# (apply_damage 내부에서 5 이하인 경우 무효화됨)
 			var p_vel = p.velocity
 			p.queue_free()
-			# apply_damage를 호출하되 10 데미지를 전달 (가드 시 5로 감쇄되고, 5 이하면 무시됨)
 			apply_damage(10, p_vel.normalized() * 100.0, false, 0.2, true)
 			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
@@ -397,9 +379,7 @@ func apply_gravity(delta: float) -> void:
 		velocity.y = max_fall_speed
 
 func _physics_process(delta: float) -> void:
-	# ----------------------------------------------------------------
 	# 보너스 효과 쉐이더 연동 (빛나는 오라)
-	# ----------------------------------------------------------------
 	if sprite and sprite.material is ShaderMaterial:
 		sprite.material.set_shader_parameter("glow_active", has_perfect_guard_bonus)
 		sprite.material.set_shader_parameter("glow_intensity", 2.0 if has_perfect_guard_bonus else 0.0)
@@ -504,7 +484,7 @@ func _process_movement(delta: float) -> void:
 		velocity.y = jumpforce
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
-		sfx_player.play_jump() # [추가] 점프 소리
+		sfx_player.play_jump()
 		spawn_dust(Vector2(0, 0))
 		apply_squash(0.8, 1.2) # 점프 시 길쭉하게
 		change_state(State.JUMP)
