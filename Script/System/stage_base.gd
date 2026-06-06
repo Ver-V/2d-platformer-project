@@ -293,7 +293,6 @@ func assign_persist_ids_by_formula() -> void:
 								prefix = "S%02d" % int(result.get_string())
 							else:
 								prefix = "SXX"
-								X
 					var s: String = "%s_R%02d_E%02d" % [prefix, rid2, idx]
 					e2.persist_id = StringName(s)
 				i += 1
