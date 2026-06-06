@@ -3,7 +3,8 @@ class_name BaseStage
 
 var is_waiting_respawn: bool = false
 
-@export var stage_title: String = "" # [추가] 스테이지 이름 (예: Bunny's Forest)
+@export var stage_title: String = "" # 스테이지 이름 
+@export var stage_prefix: String = "" # 몹 ID용 스테이지 접두사 
 @export var player_scene: PackedScene
 @export var room_size: Vector2 = Vector2(640.0, 360.0)
 @export var grid_size: Vector2i = Vector2i(12, 3)
@@ -279,7 +280,21 @@ func assign_persist_ids_by_formula() -> void:
 				var e2: EnemyBase = arr2[i] as EnemyBase
 				if e2 != null and e2.persist_id == &"":
 					var idx: int = i + 1
-					var s: String = "R%02d_E%02d" % [rid2, idx]
+					var prefix: String = stage_prefix
+					if prefix == "":
+						# 접두사가 없으면 씬 이름에서 추출 (예: Stage_01 -> S01, Stage_tutorial -> S00)
+						if name.to_lower().contains("tutorial"):
+							prefix = "S00"
+						else:
+							var regex := RegEx.new()
+							regex.compile("\\d+")
+							var result := regex.search(name)
+							if result:
+								prefix = "S%02d" % int(result.get_string())
+							else:
+								prefix = "SXX"
+								X
+					var s: String = "%s_R%02d_E%02d" % [prefix, rid2, idx]
 					e2.persist_id = StringName(s)
 				i += 1
 		rid2 += 1

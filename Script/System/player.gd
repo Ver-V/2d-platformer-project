@@ -20,17 +20,17 @@ var current_state: State = State.IDLE
 @export_group("Movement")
 @export var movespeed: float = 120.0
 @export var jumpforce: float = -350.0
-@export var jump_cut_factor: float = 0.35
+@export var jump_cut_factor: float = 0.45
 @export var fall_gravity_mult: float = 1.0
 @export var max_fall_speed: float = 280.0
 
 @export_group("Advanced Movement")
-@export var acceleration: float = 1400.0   # 바닥 가속도 (높을수록 쫀쫀함)
-@export var friction: float = 2000.0       # 바닥 마찰력 (떼면 미끄러지듯 멈춤)
+@export var acceleration: float = 1200.0   # 바닥 가속도 (높을수록 쫀쫀함)
+@export var friction: float = 2500.0       # 바닥 마찰력 (떼면 미끄러지듯 멈춤)
 
 @export_group("Jump Forgiveness")
-@export var coyote_time: float = 0.15     # 절벽에서 떨어져도 점프 가능한 시간
-@export var jump_buffer_time: float = 0.1 # 바닥에 닿기 전 미리 점프 입력받는 시간
+@export var coyote_time: float = 0.2     # 절벽에서 떨어져도 점프 가능한 시간
+@export var jump_buffer_time: float = 0.15 # 바닥에 닿기 전 미리 점프 입력받는 시간
 
 # 내부 타이머
 var _coyote_timer: float = 0.0
@@ -92,6 +92,10 @@ func _ready() -> void:
 		guard_area.area_entered.connect(_on_guard_area_entered)
 		guard_shape.disabled = true
 	
+	# 애니메이션 종료 신호 연결
+	if anim_player:
+		anim_player.animation_finished.connect(_on_animation_finished)
+	
 	# UI 갱신 신호 보내기 (현재 상태를 UI에 반영)
 	GameManager.update_hp(hp)
 	GameManager.gold_changed.emit(GameManager.gold)
@@ -134,11 +138,7 @@ func change_state(new_state: State) -> void:
 			sword_shape.disabled = false
 			_cooldown_left = attack_cooldown
 			
-			# 공격 종료 타이머
-			get_tree().create_timer(0.3).timeout.connect(func():
-				if current_state == State.ATTACK:
-					change_state(State.IDLE if is_on_floor() else State.FALL)
-			)
+			# (이전의 강제 0.3초 타이머 로직은 삭제되고, _ready()에서 연결된 animation_finished 신호로 처리됨)
 		State.GUARD:
 			is_guarding = true
 			guard_timer = 0.0
@@ -164,6 +164,9 @@ func change_state(new_state: State) -> void:
 				set_physics_process(false)
 				died.emit()
 			)
+		State.JUMP, State.FALL:
+			if anim_player.current_animation != "Jump":
+				anim_player.play("Jump")
 
 func update_gold(amount: int) -> void:
 	# 이미 GM에 구현된 함수가 있으므로 그대로 사용
@@ -424,7 +427,8 @@ func _physics_process(delta: float) -> void:
 		if velocity.y > 0:
 			change_state(State.FALL)
 		else:
-			change_state(State.JUMP)
+			if current_state != State.JUMP: # 점프 중이 아닐 때만 전환
+				change_state(State.JUMP)
 
 	# 글로벌 입력 처리 (어느 상태에서든 입력 받으면 플라스크/상호작용 가능)
 	if Input.is_action_just_pressed("use_flask"):
@@ -514,17 +518,18 @@ func _process_attack(delta: float) -> void:
 	var dir_input := Input.get_axis("left", "right")
 
 	# 인터럽트: 점프 (즉시 캔슬 후 점프)
-	if Input.is_action_just_pressed("jump"):
+	if Input.is_action_just_pressed("jump") and _menu_exit_cooldown <= 0.0:
 		_jump_buffer_timer = jump_buffer_time
 
+	# 공격 중 점프 캔슬 (바닥에 있거나 코요테 타임이 남아있을 때만)
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
 		velocity.y = jumpforce
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
+		sfx_player.play_jump() # 사운드 누락 추가
 		spawn_dust(Vector2(0, 0))
-		apply_squash(0.8, 1.2) # 점프 시 길쭉하게
+		apply_squash(0.8, 1.2)
 		change_state(State.JUMP)
-		return
 		
 	# 공격 중에도 이동 및 방향 전환 허용 (조작감 향상)
 	var target_speed = dir_input * movespeed
@@ -546,9 +551,9 @@ func _process_guard(delta: float) -> void:
 	apply_gravity(delta)
 	velocity.x = 0 # 가드 중 이동 불가
 	
-	guard_timer += delta
-	if guard_timer >= GUARD_DURATION:
-		change_state(State.IDLE)
+	guard_timer += delta # 퍼펙트 가드 판정을 위해 시간 측정은 계속 함
+	
+	# (GUARD_DURATION에 의한 강제 상태 전환 제거됨. 애니메이션 종료 신호에 맡김)
 		
 	move_with_knockback(delta)
 
@@ -614,14 +619,14 @@ func _update_animation(dir_input: float) -> void:
 			pass # Guard 애니메이션은 change_state에서 play() 됨
 		State.DEAD:
 			pass # Dead 애니메이션은 change_state에서 play() 됨
-		State.JUMP:
-			anim_player.play("Jump")
-		State.FALL:
-			anim_player.play("Jump") # 추후 Fall 애니메이션 분리 가능
+		State.JUMP, State.FALL:
+			pass # 진입(change_state) 시 1회만 실행됨
 		State.RUN:
-			if dir_input != 0: anim_player.play("Run")
+			if dir_input != 0 and anim_player.current_animation != "Run": 
+				anim_player.play("Run")
 		State.IDLE:
-			anim_player.play("Stand")
+			if anim_player.current_animation != "Stand":
+				anim_player.play("Stand")
 		
 func show_status(action_type: String) -> void:
 	var msg: String = ""
@@ -659,3 +664,11 @@ func _on_magnet_area_area_entered(area):
 	if area.has_method("attract_to"):
 		# "나(self)한테 빨려와라!" 명령
 		area.attract_to(self)
+
+func _on_animation_finished(anim_name: String) -> void:
+	if anim_name == "Attack":
+		if current_state == State.ATTACK:
+			change_state(State.IDLE if is_on_floor() else State.FALL)
+	elif anim_name == "guard":
+		if current_state == State.GUARD:
+			change_state(State.IDLE)

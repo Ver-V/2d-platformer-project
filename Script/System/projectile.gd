@@ -84,6 +84,17 @@ func _physics_process(delta: float) -> void:
 	if _current_life <= 0.0:
 		queue_free()
 
+func _on_screen_exited() -> void:
+	if _reflected and is_instance_valid(shooter):
+		# 패링된 투사체가 화면 밖으로 나갈 때, 쏜 적이 살아있다면 즉시 데미지 적용
+		if shooter is CombatBody2D:
+			shooter.apply_damage(damage, Vector2.ZERO, false, -1.0, true)
+		elif shooter.has_method("apply_damage"):
+			shooter.call("apply_damage", damage, Vector2.ZERO)
+		elif shooter.has_method("take_damage"):
+			shooter.call("take_damage", damage, global_position)
+	queue_free()
+
 func _on_body_entered(body: Node) -> void:
 	if body is CombatBody2D:
 		# 같은 팀이면 통과 (예: 적이 쏜 게 적을 맞추지 않음)

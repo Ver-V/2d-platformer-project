@@ -4,6 +4,7 @@ class_name CombatBody2D
 # 기본 스탯
 var max_hp: int = 1
 var hp: int = 1
+# 점프뛰고나서 아래쪽으로 공격하면서 툭 튕기는거 있으면 좋겠다는 의견도 있네
 
 # [추가] 시각 효과 리소스
 var hit_spark_scene: PackedScene = preload("res://Scenes/System/HitSpark.tscn")

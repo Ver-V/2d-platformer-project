@@ -16,7 +16,7 @@ var selected_index: int = -1 # [새로 추가] 클릭한 슬롯 번호 기억용
 
 func _ready():
 	var slots = grid.get_children()
-	
+
 	for i in range(slots.size()):
 		var slot = slots[i]
 		if not slot.slot_clicked.is_connected(_on_slot_clicked):
@@ -26,9 +26,24 @@ func _ready():
 	btn_use.pressed.connect(_on_use_pressed)
 	btn_close.pressed.connect(GameManager.play_ui_click)
 	btn_close.pressed.connect(_on_close_pressed)
+
+	# [실시간 스탯 반영을 위한 신호 연결 (메모리 누수 방지를 위해 메서드로 연결)]
+	GameManager.gold_changed.connect(_on_gold_changed)
+	GameManager.hp_changed.connect(_on_hp_changed)
+	GameManager.stats_changed.connect(_on_stats_changed)
+
 	action_menu.hide()
-	
 	close()
+
+func _on_gold_changed(_amount: int) -> void:
+	if is_open: update_ui()
+
+func _on_hp_changed(_cur: int, _max: int) -> void:
+	if is_open: update_ui()
+
+func _on_stats_changed() -> void:
+	if is_open: update_ui()
+
 
 func _input(event):
 	if event.is_action_pressed("inventory"):

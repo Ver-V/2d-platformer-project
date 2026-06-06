@@ -21,6 +21,7 @@ var flask_max_charges: int = 1
 var flask_current_charges: int = 1
 var flask_Hamount: int = 30
 signal flask_changed 
+signal stats_changed # [추가] 공격력/패링배율 등 스탯 변화 신호
 
 var is_menu_open: bool = false
 var mouse_sensitivity: float = 1.0
@@ -133,22 +134,39 @@ var merchant_stocks: Dictionary = {
 }
 
 func use_flask() -> bool:
+	# 1. 플라스크 확인
 	var has_flask = false
 	for item in inventory:
 		if item != null and item.id == "health_flask":
 			has_flask = true
 			break
-	if not has_flask: return false
 	
-	if flask_current_charges > 0 and player_current_hp < player_max_hp:
+	# 2. 플라스크 충전량이 있고 체력이 부족하면 사용
+	if has_flask and flask_current_charges > 0 and player_current_hp < player_max_hp:
 		flask_current_charges -= 1
 		var new_hp = min(player_current_hp + flask_Hamount, player_max_hp)
 		update_hp(new_hp)
-		
 		flask_changed.emit()
 		return true
-	else :
-		return false
+	
+	# 3. [추가] 플라스크가 없거나 다 썼다면 인벤토리의 다른 힐링포션 검색
+	return try_use_healing_potion()
+
+func try_use_healing_potion() -> bool:
+	if player_current_hp >= player_max_hp: return false
+	
+	for i in range(inventory.size()):
+		var item = inventory[i]
+		if item != null and item.type == ItemData.ItemType.CONSUMABLE and item.heal_amount > 0:
+			# 플라스크는 여기서 제외 (위에서 이미 체크함)
+			if item.id == "health_flask": continue
+			
+			var player = get_tree().get_first_node_in_group("player")
+			if player:
+				inventory[i] = null # 사용 후 소모 처리를 먼저 해서 UI 갱신 시 빈칸이 되도록 함
+				item.use(player)
+				return true
+	return false
 
 func add_defeated_mob(id: String) -> void:
 	if id != "" and not defeated_mobs.has(id):
@@ -166,17 +184,13 @@ func add_defeated_boss(id: String) -> void:
 	if not defeated_bosses.has(id):
 		defeated_bosses[id] = true
 
-# --- [함수 1] 돈 추가 ---
-# (update_gold 함수로 통합됨)
-
-# --- [함수 2] 스탯 변경 (추가됨) ---
-# Player가 아닌 GM이 직접 계산을 담당합니다.
-
 func add_player_damage(amount: int) -> void:
 	player_damage += amount
+	stats_changed.emit()
 
 func add_parry_ratio(amount: float) -> void:
 	player_parry_damage_multifac += amount
+	stats_changed.emit()
 
 # --- [함수 3] 체크포인트 저장 ---
 func save_checkpoint(pos: Vector2) -> void:
