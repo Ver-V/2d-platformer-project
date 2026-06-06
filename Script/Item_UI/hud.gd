@@ -45,10 +45,30 @@ func show_death_screen() -> void:
 	visible = true
 	ui_root.modulate.a = 1.0
 	hide_timer.stop()
-	
+
+	# [추가] 화면을 어둡게 만드는 이펙트 (동적 생성)
+	var darken_rect = ColorRect.new()
+	darken_rect.color = Color(0, 0, 0, 0) # 처음엔 투명하게
+	darken_rect.set_anchors_preset(Control.PRESET_FULL_RECT) # 전체 화면 덮기
+	darken_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	darken_rect.name = "DeathDarkenRect"
+	add_child(darken_rect)
+
+	# z_index를 높여서 다른 UI 위로 올라오게 함 (Restart Label 보다는 아래일 수 있음)
+	darken_rect.z_index = -1
+
+	# 트윈으로 서서히 어두워지는 애니메이션 (4초 동안)
+	var tween = create_tween()
+	tween.tween_property(darken_rect, "color:a", 0.7, 3.0).set_trans(Tween.TRANS_QUAD)
+
 func hide_death_screen() -> void:
 	if Restart_Label:
 		Restart_Label.hide()
+
+	# 어두워진 이펙트 제거
+	var darken_rect = get_node_or_null("DeathDarkenRect")
+	if darken_rect:
+		darken_rect.queue_free()
 
 func show_hud_temporarily():
 	# 메인 메뉴 등 BaseStage가 없는 씬에서는 표시하지 않음
