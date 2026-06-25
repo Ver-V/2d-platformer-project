@@ -26,13 +26,13 @@
 
 **3. 기술 스택 및 담당 역할**
 
-*Engine & Language : Godot / GDScript
+* Engine & Language : Godot / GDScript
 
-*Design Pattern / Architecture : FSM / Component Based Design / Singleton / Signal
+* Design Pattern / Architecture : FSM / Component Based Design / Singleton / Signal
 
-*Version Control : Git / Github Desktop
+* Version Control : Git / Github Desktop
 
-*Role : 1인 개발
+* Role : 1인 개발
 
 Role
 
@@ -63,9 +63,13 @@ Role
 * 플레이어 조작감을 개선하기 위해 다음 기능을 구현했습니다.
 
 코요테 타임 : 발판에서 살짝 벗어난 직후에도 짧은 시간 동안 점프가 가능하도록 유예 시간을 부여했습니다.
+
 선입력 버퍼 : 착지 직전에 점프 입력을 받으면, 착지 후 즉시 점프가 실행되도록 처리했습니다.
+
 가감속 / 마찰력 : acceleration과 friction 값을 활용하여 이동 시작과 정지를 자연스럽게 처리했습니다.
+
 모서리 보정 : 점프 중 머리 위쪽 모서리에 걸렸을 때 캐릭터 위치를 보정하여, 작은 지형 충돌 때문에 점프 흐름이 끊기지 않도록 했습니다.
+
 스쿼시 앤 스트레치 : 점프와 착지 시 캐릭터 스프라이트의 크기를 Tween으로 조절하여 시각적인 탄력감을 추가했습니다.
 
 **패링 및 퍼펙트 가드 전투 시스템**
