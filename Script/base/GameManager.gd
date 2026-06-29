@@ -309,7 +309,7 @@ func load_data_from_save(data: Dictionary) -> void:
 	has_checkpoint = data.get("has_checkpoint", false)
 	
 	var loaded_path = data.get("scene_path", "")
-	if loaded_path == "" or loaded_path == "res://Scenes/Stage/Stage.tscn":
+	if loaded_path == "" or loaded_path.get_file() == "Stage.tscn":
 		last_scene_path = get_stage_path(1)
 	else:
 		last_scene_path = loaded_path

@@ -1,10 +1,11 @@
 [gd_scene load_steps=2 format=3 uid="uid://dg2upwr6rcslo"]
 
-[ext_resource type="Script" path="res://Script/System/stage_title_ui.gd" id="1_h0x3u"]
+[ext_resource type="Script" path="res://Script/Item_UI/stage_title_ui.gd" id="1_h0x3u"]
 
 [node name="StageTitleUi" type="CanvasLayer"]
 script = ExtResource("1_h0x3u")
 layer = 128
+visible = false
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3

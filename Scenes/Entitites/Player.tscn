@@ -1,11 +1,11 @@
 [gd_scene load_steps=44 format=3 uid="uid://qfh6su8aeoy7"]
 
-[ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/System/player.gd" id="1_kpjcp"]
+[ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/Entity/player.gd" id="1_kpjcp"]
 [ext_resource type="PackedScene" uid="uid://b1tnix67gbct2" path="res://Scenes/System/InventoryUI.tscn" id="2_0kmp4"]
 [ext_resource type="Texture2D" uid="uid://csl0f5u6us4gn" path="res://Assets/sprites/SpriteSheet.png" id="3_6roe8"]
 [ext_resource type="Script" uid="uid://b00spr31wmhci" path="res://Script/System/sword_hitbox.gd" id="6_yu0nx"]
 [ext_resource type="Script" uid="uid://dleqtylnlbedr" path="res://Script/System/hazard_sensor.gd" id="7_im3yb"]
-[ext_resource type="Script" uid="uid://c82fbbhmso0k0" path="res://Script/SFXplayer.gd" id="10_3at2a"]
+[ext_resource type="Script" uid="uid://c82fbbhmso0k0" path="res://Script/System/SFXplayer.gd" id="10_3at2a"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hqcmm"]
 atlas = ExtResource("3_6roe8")
@@ -491,6 +491,7 @@ position = Vector2(-1.000001, -10.5)
 scale = Vector2(1.1875, 1.28125)
 sprite_frames = SubResource("SpriteFrames_jtq2j")
 animation = &"Run"
+frame = 3
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {

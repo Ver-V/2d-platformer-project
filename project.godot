@@ -17,8 +17,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-SaveManager="*res://Script/System/SaveManager.gd"
-GameManager="*res://Script/System/GameManager.gd"
+SaveManager="*res://Script/base/SaveManager.gd"
+GameManager="*res://Script/base/GameManager.gd"
 HUD="*res://Scenes/System/HUD.tscn"
 SceneTransition="*res://Scenes/Stage/SceneTransition.tscn"
 CustomCursor="*res://Scenes/System/CustomCursor.tscn"

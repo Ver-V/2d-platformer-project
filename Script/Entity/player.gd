@@ -268,17 +268,18 @@ func _on_sword_body_entered(body: Node) -> void:
 			# 넉백 방향 계산 (플레이어 -> 적)
 			var knock_dir = (body.global_position - global_position).normalized()
 			var knock_force = Vector2(knock_dir.x * 400, -200)
+			var hit_applied: bool = body.apply_damage(int(final_damage), knock_force)
 			
-			if body.apply_damage(int(final_damage), knock_force):
+			if hit_applied:
 				# 실제로 데미지가 들어갔을 때만 보너스 소모
 				if has_perfect_guard_bonus:
 					has_perfect_guard_bonus = false
 					show_popup("Counter Hit!", Color.ORANGE)
 				GameManager.apply_hitstop(0.25, 0.1)
 			
-			var stage = get_tree().current_scene
-			if stage and stage.has_method("apply_camera_shake"):
-				stage.apply_camera_shake(2.0)
+				var stage = get_tree().current_scene
+				if stage and stage.has_method("apply_camera_shake"):
+					stage.apply_camera_shake(2.0)
 			
 		elif body.has_method("take_damage"):
 			# take_damage를 쓰는 적들을 위한 처리

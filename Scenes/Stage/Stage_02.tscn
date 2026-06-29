@@ -1,0 +1,48 @@
+[gd_scene load_steps=7 format=3 uid="uid://djm13n0lh006k"]
+
+[ext_resource type="Script" uid="uid://dwuhj8dnf17t2" path="res://Script/stage/stage_02.gd" id="1_joehr"]
+[ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="2_3j8uf"]
+[ext_resource type="PackedScene" uid="uid://bqw80wdrftg4s" path="res://Scenes/System/PauseMenu.tscn" id="2_qn2eq"]
+[ext_resource type="Script" uid="uid://cnklf8macledf" path="res://Script/System/room_grid.gd" id="3_3j8uf"]
+[ext_resource type="PackedScene" uid="uid://c7jx653i6b2k3" path="res://Scenes/Stage/HazardTileMap.tscn" id="4_ucvjr"]
+[ext_resource type="AudioStream" uid="uid://bjb33qep6eamb" path="res://resources/Music/wild-road.mp3" id="5_v87du"]
+
+[node name="Stage_02" type="Node2D"]
+script = ExtResource("1_joehr")
+stage_title = "Rat's cave"
+stage_prefix = "Stage_02"
+player_scene = ExtResource("2_3j8uf")
+
+[node name="PauseMenu" parent="." instance=ExtResource("2_qn2eq")]
+visible = false
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(28, 18)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(2, 2)
+
+[node name="RoomGrid" type="Node2D" parent="."]
+process_mode = 3
+script = ExtResource("3_3j8uf")
+
+[node name="World" type="TileMapLayer" parent="."]
+
+[node name="HazardTileMap" parent="." instance=ExtResource("4_ucvjr")]
+
+[node name="HazardTileMap2" type="TileMapLayer" parent="HazardTileMap"]
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5_v87du")
+volume_db = -15.0
+autoplay = true
+bus = &"BGM"
+parameters/looping = true
+
+[node name="Item" type="Node" parent="."]
+
+[node name="Entities" type="Node" parent="."]
+
+[node name="Boss" type="Node" parent="."]
+
+[node name="SavePoint" type="Node" parent="."]

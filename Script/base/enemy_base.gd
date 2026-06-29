@@ -26,6 +26,12 @@ signal died(enemy: EnemyBase)
 @export var knockback_decay: float = 2600.0
 @export var contact_tick: float = 1.0
 
+@export_group("Enemy Health Bar")
+@export var show_health_bar: bool = true
+@export var health_bar_x_offset: float = 0.0
+@export var health_bar_gap: float = 4.0
+@export var health_bar_size: Vector2 = Vector2(34.0, 5.0)
+
 @export_group("Behavior")
 @export var disable_when_inactive: bool = true
 
@@ -98,7 +104,42 @@ func get_knockback_resist() -> float: return knockback_resist
 func get_knockback_cooldown() -> float: return knockback_cooldown
 func get_blink_node() -> CanvasItem: return sprite
 
+func _draw() -> void:
+	if not show_health_bar: return
+	if is_in_group("bosses"): return
+	if not _active: return
+	if hp <= 0 or max_hp <= 0: return
+	if health_bar_size.x <= 2.0 or health_bar_size.y <= 2.0: return
+	
+	var ratio: float = clampf(float(hp) / float(max_hp), 0.0, 1.0)
+	var center := _get_health_bar_center()
+	var top_left := center - health_bar_size * 0.5
+	var bg_rect := Rect2(top_left, health_bar_size)
+	var fill_rect := Rect2(top_left + Vector2.ONE, Vector2((health_bar_size.x - 2.0) * ratio, health_bar_size.y - 2.0))
+	
+	draw_rect(bg_rect, Color.BLACK)
+	draw_rect(fill_rect, Color(0.1, 0.9, 0.2, 1.0))
+
+func _get_health_bar_center() -> Vector2:
+	if sprite == null or sprite.sprite_frames == null:
+		return Vector2(health_bar_x_offset, -health_bar_gap - health_bar_size.y * 0.5)
+	
+	var frame_texture := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if frame_texture == null:
+		return Vector2(health_bar_x_offset, -health_bar_gap - health_bar_size.y * 0.5)
+	
+	var frame_size := frame_texture.get_size() * sprite.scale.abs()
+	var sprite_top_y := sprite.position.y + sprite.offset.y
+	if sprite.centered:
+		sprite_top_y -= frame_size.y * 0.5
+	
+	return Vector2(
+		sprite.position.x + sprite.offset.x + health_bar_x_offset,
+		sprite_top_y - health_bar_gap - health_bar_size.y * 0.5
+	)
+
 func _on_death() -> void:
+	queue_redraw()
 	# 죽음 신호를 보내야 Stage가 장부에 기록
 	died.emit(self)
 	spawn_gold()
@@ -135,6 +176,8 @@ func _on_death() -> void:
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
 	if not _active: return false
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
+	if took_damage:
+		queue_redraw()
 	if took_damage and hit_sound:
 		hit_sound.pitch_scale = randf_range(0.9, 1.1)
 		hit_sound.play()
@@ -276,6 +319,7 @@ func get_persist_id() -> StringName:
 # 방 활성화/비활성화
 func set_active(active: bool) -> void:
 	_active = active
+	queue_redraw()
 	
 	# 비활성화되면 물리 연산, 프로세스, 충돌체꺼서 리소스 절약
 	if disable_when_inactive:
@@ -301,6 +345,7 @@ func reset_to_home(reset_hp: bool = true) -> void:
 	
 	if reset_hp: 
 		hp = max_hp
+		queue_redraw()
 
 # 진행 방향에 낭떠러지가 있는지 확인하는 공용 함수
 func is_ledge_ahead(move_dir: int, offset: float = 12.0) -> bool:
