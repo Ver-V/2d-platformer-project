@@ -25,3 +25,20 @@ func start_transition(action: Callable, duration: float = 1.0) -> void:
 	
 	tween = create_tween()
 	tween.tween_property(color_rect, "modulate:a", 0.0, duration * 0.5)
+
+func start_elevator_transition(action: Callable, duration: float = 1.4, shake_amount: float = 7.0) -> void:
+	var current_scene = get_tree().current_scene
+	if current_scene and current_scene.has_method("apply_camera_shake"):
+		current_scene.apply_camera_shake(shake_amount)
+	
+	var tween = create_tween()
+	tween.tween_property(color_rect, "modulate:a", 1.0, duration * 0.55)
+	await tween.finished
+	
+	if action.is_valid():
+		action.call()
+	
+	await get_tree().create_timer(0.35).timeout
+	
+	tween = create_tween()
+	tween.tween_property(color_rect, "modulate:a", 0.0, duration * 0.45)

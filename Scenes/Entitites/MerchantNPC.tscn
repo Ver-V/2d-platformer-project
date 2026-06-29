@@ -1,7 +1,7 @@
 [gd_scene load_steps=11 format=3 uid="uid://cepa2x7wfxccs"]
 
 [ext_resource type="Texture2D" uid="uid://ctvg2ieoii6no" path="res://Assets/sprites/Soldier-Idle.png" id="1_7eu31"]
-[ext_resource type="Script" uid="uid://edf483d5ts15" path="res://Script/System/MerchantNPC.gd" id="1_qa6ul"]
+[ext_resource type="Script" uid="uid://edf483d5ts15" path="res://Script/Entity/MerchantNPC.gd" id="1_qa6ul"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7eu31"]
 atlas = ExtResource("1_7eu31")

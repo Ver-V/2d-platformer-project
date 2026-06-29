@@ -185,8 +185,26 @@ func _check_condition(cond: Dictionary) -> bool:
 
 func _on_choice_selected(choice_data: Dictionary):
 	_clear_choices()
+	if choice_data.has("scene_path"):
+		_start_scene_choice_transition(str(choice_data["scene_path"]))
+		return
 	if choice_data.has("next"): _jump_to_block(choice_data["next"])
 	else: end_dialogue()
+
+func _start_scene_choice_transition(scene_path: String) -> void:
+	if scene_path == "" or not ResourceLoader.exists(scene_path):
+		end_dialogue()
+		return
+	
+	end_dialogue()
+	await dialogue_finished
+	
+	if SceneTransition and SceneTransition.has_method("start_elevator_transition"):
+		SceneTransition.start_elevator_transition(func():
+			get_tree().change_scene_to_file(scene_path)
+		)
+	else:
+		get_tree().change_scene_to_file(scene_path)
 
 func _clear_choices():
 	choice_bg.visible = false

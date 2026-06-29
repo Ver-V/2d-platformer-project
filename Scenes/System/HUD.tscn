@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://bmfhkce3wvq1k" path="res://Assets/sprites/#2 - Transparent Icons & Drop Shadow.png" id="3_765yc"]
 [ext_resource type="FontFile" uid="uid://dexfxct02yiks" path="res://Assets/fonts/PixelOperator8.ttf" id="4_1emjh"]
 [ext_resource type="Texture2D" uid="uid://6p28cbcbp8hj" path="res://Assets/sprites/Keyboard Letters and Symbols.png" id="5_m7g0g"]
-[ext_resource type="Script" uid="uid://bltog7x3cptt0" path="res://Script/System/minimap_ui.gd" id="6_cpq7e"]
+[ext_resource type="Script" uid="uid://bltog7x3cptt0" path="res://Script/Item_UI/minimap_ui.gd" id="6_cpq7e"]
 
 [sub_resource type="SystemFont" id="SystemFont_l8u43"]
 

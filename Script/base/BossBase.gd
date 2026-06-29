@@ -68,10 +68,14 @@ func set_active(active: bool) -> void:
 		else:
 			# 이미 대화가 끝난 후 다시 들어온 경우 음악만 재생
 			_play_boss_music()
+			if HUD.has_method("show_boss_health"):
+				HUD.show_boss_health(self)
 			
 	elif not active and was_active:
 		# 보스 방에서 나갔을 때 음악 정지
 		_stop_boss_music()
+		if HUD.has_method("hide_boss_health"):
+			HUD.hide_boss_health(self)
 		# 방을 나갔을 때 문을 열어줌
 		_set_boss_doors(false)
 
@@ -115,6 +119,8 @@ func _start_combat() -> void:
 	set_active(true)
 	GameManager.is_menu_open = false
 	_play_boss_music()
+	if HUD.has_method("show_boss_health"):
+		HUD.show_boss_health(self)
 
 func _physics_process(delta:float) -> void:
 	if current_state != State.DEAD and is_instance_valid(target) and boss_sprite != null:
@@ -151,11 +157,15 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 	
 	if took_damage and hp > 0 and boss_sprite != null:
 		boss_sprite.play("gethit")
+	if took_damage and HUD.has_method("show_boss_health"):
+		HUD.show_boss_health(self)
 		
 	return took_damage
 
 func _on_death() -> void:
 	current_state = State.DEAD
+	if HUD.has_method("hide_boss_health"):
+		HUD.hide_boss_health(self)
 	
 	# 보스가 죽는 순간 플레이어를 무적으로 만듦
 	if is_instance_valid(target) and target.has_method("start_invuln"):
