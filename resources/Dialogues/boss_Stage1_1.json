@@ -12,7 +12,7 @@
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_hurt",
 		"name": "Big Bunny",
-		"text": "(Sigh)... Looks like you'll be having dinner with just our youngest tonight.",
+		"text": "(Sigh)... Looks like it'll be just me and our youngest at dinner tonight."
 	},
 	{
 		"speaker": "left", 
@@ -26,7 +26,7 @@
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_hurt",
 		"name": "Big Bunny",
-		"text": "Okay, watch your back. It’s a lot tougher out there than you might expect.",
-	},
+		"text": "Okay, watch your back. It’s a lot tougher out there than you might expect."
+	}
 	
 ]

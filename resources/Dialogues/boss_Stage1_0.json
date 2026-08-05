@@ -18,21 +18,21 @@
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_idle",
 		"name": "Big Bunny",
-		"text": "You know how it is. I should be done by dinner time, I guess."
+		"text": "You know how it is. I should be done by dinnertime, I guess."
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_idle",
 		"name": "Pink Bunny",
-		"text": "I'm Sorry. sis. I have something to tell you."
+		"text": "I'm sorry. Sis. I have something to tell you."
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_idle",
 		"name": "Pink Bunny",
-		"text": "I'm going outside! sis. I want to see what the world is really like!"
+		"text": "I'm going outside, Sis. I want to see what the world is really like!"
 	},
 	{
 		"speaker": "right", 
@@ -53,7 +53,7 @@
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_smile",
 		"name": "Big Bunny",
-		"text": "Oh, really? Then let’s see if you're actually ready. Or else, you'll be having dinner at home with me.",
+		"text": "Oh, really? Then let’s see if you're actually ready. Otherwise, you're having dinner at home with me.",
 		"event" : "play_boss_bgm"
 	},
 	{
