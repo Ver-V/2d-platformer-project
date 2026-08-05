@@ -92,7 +92,7 @@
   "B4": [
 	{
 	  "name": "Pink Bunny",
-	  "text": "I think the 4th floor is the floor I'm currently on.",
+	  "text": "I think this is the fourth floor.",
 	  "left_image": "HeroBunny_surprise",
 	  "speaker": "left",
 	  "next" : "start"

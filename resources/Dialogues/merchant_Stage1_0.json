@@ -11,14 +11,14 @@
 		"left_image": "HeroBunny_surprise",
 		"right_image": "LittleBunny_smile",
 		"name": "Little Bunny",
-		"text": "I just wanted to come outside world with you."
+		"text": "I just wanted to see the outside world with you."
 	},
 	{
 		"speaker": "left",
 		"left_image": "HeroBunny_surprise",
 		"right_image": "LittleBunny_smile",
 		"name": "Pink Bunny",
-		"text": "But… it could be dangerous outside world. Are you sure it’s okay?"
+		"text": "But... the outside world could be dangerous. Are you sure you'll be okay?"
 	},
 	{
 		"speaker": "right",
@@ -39,7 +39,7 @@
 		"left_image": "HeroBunny_embarrassed",
 		"right_image": "LittleBunny_smile",
 		"name": "Little Bunny",
-		"text": "Yeah, sister. Since you’re already here, you might as well take a look at the stuff. I brought some things from Mom and Dad’s storage."
+		"text": "Yeah, Sis. Since you’re already here, you might as well take a look at the stuff. I brought some things from Mom and Dad’s storage."
 	},
 	{
 		"speaker": "left",

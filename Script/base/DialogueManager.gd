@@ -30,6 +30,7 @@ var current_index: int = 0
 var is_dialogue_active: bool = false
 var is_typing: bool = false
 var is_waiting_choice: bool = false
+var pending_choices: Array = []
 var portrait_tween: Tween
 
 func _ready():
@@ -83,6 +84,8 @@ func _input(event):
 			text_label.visible_ratio = 1.0
 			is_typing = false
 			type_timer.stop()
+		elif not pending_choices.is_empty():
+			_display_choices(pending_choices)
 		else:
 			show_next_line()
 
@@ -110,6 +113,7 @@ func _jump_to_block(block_name: String):
 		current_block = dialogue_data[block_name]
 		current_index = 0
 		is_waiting_choice = false
+		pending_choices.clear()
 		_clear_choices()
 		show_next_line()
 	else:
@@ -118,6 +122,7 @@ func _jump_to_block(block_name: String):
 func show_next_line():
 	if current_index < current_block.size():
 		var line = current_block[current_index]
+		pending_choices.clear()
 		name_label.text = line.get("name", "")
 		text_label.text = line.get("text", "")
 		text_label.visible_ratio = 0.0
@@ -130,10 +135,7 @@ func show_next_line():
 		if line.has("event") and line["event"] != "": dialogue_event.emit(line["event"])
 		
 		if line.has("choices"):
-			text_label.visible_ratio = 1.0
-			is_typing = false
-			type_timer.stop()
-			_display_choices(line["choices"])
+			pending_choices = line["choices"]
 		
 		current_index += 1
 	else:
@@ -152,12 +154,14 @@ func _update_portraits(line: Dictionary):
 		right_portrait.visible = false
 
 func _display_choices(choices: Array):
+	var choices_to_display: Array = choices.duplicate(true)
+	pending_choices.clear()
 	is_waiting_choice = true
 	_clear_choices()
 	choice_bg.visible = true
 	
 	var first_btn = null
-	for c in choices:
+	for c in choices_to_display:
 		var btn = Button.new()
 		btn.text = c["text"]
 		if c.has("condition") and not _check_condition(c["condition"]):
@@ -232,6 +236,7 @@ func end_dialogue():
 	visible = false
 	left_portrait.visible = false
 	right_portrait.visible = false
+	pending_choices.clear()
 	_clear_choices()
 	
 	await get_tree().process_frame
