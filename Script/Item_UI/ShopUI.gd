@@ -22,6 +22,7 @@ func _ready():
 	hide()
 	confirm_panel.hide()
 	_create_item_slots()
+	GameManager.locale_changed.connect(_on_locale_changed)
 
 # --- 상점 열고 닫기 ---
 func open_shop(shop_id: String = "Stage1"): # 인자 받기
@@ -40,8 +41,7 @@ func open_shop(shop_id: String = "Stage1"): # 인자 받기
 	confirm_panel.hide()
 	
 	# [추가] UI를 그리기 전에 기존에 있던 아이템 목록을 싹 지워줍니다.
-	for child in item_list.get_children():
-		child.queue_free()
+	_clear_item_slots()
 		
 	show()
 	_create_item_slots() # 목록 생성
@@ -57,6 +57,20 @@ func close_shop():
 func close_confirm_panel():
 	is_confirming = false
 	confirm_panel.hide()
+
+func _clear_item_slots() -> void:
+	for child in item_list.get_children():
+		child.free()
+
+func _on_locale_changed(_new_locale: String) -> void:
+	if not is_open:
+		return
+
+	_clear_item_slots()
+	_create_item_slots()
+	_update_selection_ui()
+	if is_confirming:
+		_update_confirm_message()
 
 # --- 입력 처리 ---
 func _input(event):
@@ -126,8 +140,14 @@ func _create_item_slots():
 		
 		var label = Label.new()
 		# 텍스트에 남은 stock을 함께 표시합니다!
-		var stock_text = "Sold out" if stock <= 0 else str(int(stock)) + " remain"
-		label.text = item_resource.name + " [" + str(item_resource.price) + "G] - " + stock_text
+		var stock_text := tr(&"SHOP_SOLD_OUT") if stock <= 0 else tr(&"SHOP_STOCK_REMAINING").format({
+			"count": int(stock)
+		})
+		label.text = tr(&"SHOP_ITEM_ROW").format({
+			"name": tr(item_resource.name),
+			"price": item_resource.price,
+			"stock": stock_text
+		})
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		hbox.add_child(label)
 		
@@ -162,25 +182,45 @@ func _update_selection_ui():
 	var item_resource = GameManager.get_item_by_id(item_id)
 	
 	if item_resource:
-		name_label.text = item_resource.name
-		desc_label.text = item_resource.description
-		price_label.text = "My Gold: " + str(GameManager.gold) + " G\n\nPrice: " + str(item_resource.price) + " G"
+		name_label.text = tr(item_resource.name)
+		desc_label.text = tr(item_resource.description)
+		price_label.text = "%s\n\n%s" % [
+			tr(&"SHOP_MY_GOLD").format({"gold": GameManager.gold}),
+			tr(&"SHOP_PRICE").format({"price": item_resource.price})
+		]
 
 # --- 구매 확인창 로직 ---
 func open_confirm_panel():
 	if current_stock_list.is_empty(): return
 	
 	is_confirming = true
+	_update_confirm_message()
+	confirm_panel.show()
+
+func _update_confirm_message() -> void:
+	if current_stock_list.is_empty():
+		return
+
 	var item_data = current_stock_list[selected_index]
 	var item_resource = GameManager.get_item_by_id(item_data["id"])
+	if item_resource == null:
+		return
+
+	var item_name := tr(item_resource.name)
 	
 	# 이미 품절이라면 아예 못 사게 막기!
 	if item_data["stock"] <= 0:
-		confirm_msg.text = "[ " + item_resource.name + " ]\n\nOut of stock.\n\n(ESC : Exit)"
+		confirm_msg.text = "[ %s ]\n\n%s\n\n%s" % [
+			item_name,
+			tr(&"SHOP_OUT_OF_STOCK"),
+			tr(&"SHOP_EXIT_HINT")
+		]
 	else:
-		confirm_msg.text = "[ " + item_resource.name + " ]\n" + str(item_resource.price) + "Gold to purchase this item?\n\n(Enter : purchase / ESC: Cancel)"
-	
-	confirm_panel.show()
+		confirm_msg.text = "[ %s ]\n%s\n\n%s" % [
+			item_name,
+			tr(&"SHOP_PURCHASE_QUESTION").format({"price": item_resource.price}),
+			tr(&"SHOP_PURCHASE_HINT")
+		]
 
 # --- GameManager 연동 구매 로직 ---
 func buy_item():
@@ -207,14 +247,13 @@ func buy_item():
 			close_confirm_panel()
 			
 			# UI를 지웠다가 다시 그려서 남은 수량 텍스트를 즉시 갱신
-			for child in item_list.get_children():
-				child.queue_free()
+			_clear_item_slots()
 			_create_item_slots()
 			await get_tree().process_frame
 			
 			_update_selection_ui()
 			
 		else:
-			confirm_msg.text = "Inventory is full.\n\n(ESC: Cancel)"
+			confirm_msg.text = "%s\n\n%s" % [tr(&"SHOP_INVENTORY_FULL"), tr(&"SHOP_CANCEL_HINT")]
 	else:
-		confirm_msg.text = "Not enough Gold!\n\n(ESC: Cancel)"
+		confirm_msg.text = "%s\n\n%s" % [tr(&"SHOP_NOT_ENOUGH_GOLD"), tr(&"SHOP_CANCEL_HINT")]

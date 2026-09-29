@@ -26,10 +26,12 @@ signal stats_changed # [추가] 공격력/패링배율 등 스탯 변화 신호
 var is_menu_open: bool = false
 var mouse_sensitivity: float = 1.0
 var screenshake_intensity: float = 0.5
+var locale: String = "en"
 signal gold_changed(amount: int)
 signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
 signal interact_msg_requested(msg)    # [추가] 상호작용 텍스트 띄우기 요청
 signal interact_msg_hidden()          # [추가] 상호작용 텍스트 숨기기 요청
+signal locale_changed(new_locale: String)
 
 # 리스폰 중복 방지 플래그
 var is_respawning: bool = false
@@ -64,13 +66,16 @@ func save_settings() -> void:
 		"borderless": DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS),
 		"resolution_x": DisplayServer.window_get_size().x,
 		"resolution_y": DisplayServer.window_get_size().y,
-		"fps_limit": Engine.max_fps
+		"fps_limit": Engine.max_fps,
+		"locale": locale
 	}
 	SaveManager.save_settings(data)
 
 func load_settings() -> void:
 	var data = SaveManager.load_settings()
-	if data.is_empty(): return
+	set_locale(str(data.get("locale", SaveManager.DEFAULT_LOCALE)))
+	if data.size() == 1 and data.has("locale"):
+		return
 	
 	# 오디오 적용
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(data.get("master_vol", 1.0)))
@@ -83,6 +88,17 @@ func load_settings() -> void:
 	
 	# 그래픽 설정 (지연 실행)
 	call_deferred("_apply_graphics_settings", data)
+
+func set_locale(new_locale: String) -> void:
+	var normalized := new_locale.to_lower().get_slice("_", 0).get_slice("-", 0)
+	if normalized not in ["en", "ko"]:
+		normalized = SaveManager.DEFAULT_LOCALE
+
+	var did_change := locale != normalized
+	locale = normalized
+	TranslationServer.set_locale(locale)
+	if did_change:
+		locale_changed.emit(locale)
 
 func _apply_graphics_settings(data: Dictionary) -> void:
 	Engine.max_fps = data.get("fps_limit", 60)

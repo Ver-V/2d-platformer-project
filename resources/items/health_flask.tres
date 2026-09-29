@@ -10,9 +10,8 @@ region = Rect2(384, 288, 32, 32)
 [resource]
 script = ExtResource("2_vbwi5")
 id = "health_flask"
-name = "Red flask of the Flower Spring"
+name = "ITEM_HEALTH_FLASK_NAME"
 icon = SubResource("AtlasTexture_8a5l7")
-description = "A flask containing a mysterious, glowing red liquid found at the Spring of Flowers. According to ancient myths, it is said to refill itself whenever the bearer takes a rest.
-this red liquid mends your wounds with every drop."
+description = "ITEM_HEALTH_FLASK_DESCRIPTION"
 type = 1
 heal_amount = 30

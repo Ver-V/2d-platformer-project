@@ -10,10 +10,10 @@ region = Rect2(0, 288, 32, 32)
 [resource]
 script = ExtResource("1_4scv1")
 id = "health_potion"
-name = "Healing Potion"
+name = "ITEM_HEALTH_POTION_NAME"
 icon = SubResource("AtlasTexture_47tnu")
 price = 150
-description = "Restores 40 health points."
+description = "ITEM_HEALTH_POTION_DESCRIPTION"
 type = 1
 heal_amount = 40
 metadata/_custom_type_script = "uid://djy4vfexvhruh"

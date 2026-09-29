@@ -10,7 +10,7 @@ extends Area2D
 		if Engine.is_editor_hint():
 			_update_texture()
 
-@export_multiline var collection_tutorial: String = "" # 획득 시 띄울 튜토리얼 텍스트
+@export var collection_tutorial_key: StringName = &"" # 획득 시 띄울 튜토리얼 번역 키
 
 # 둥둥 떠다니는 설정
 var time_passed: float = 0.0
@@ -75,9 +75,9 @@ func _on_body_entered(body: Node):
 			$Sprite2D.visible = false
 			
 			# 튜토리얼 텍스트가 설정되어 있다면 팝업 띄우기
-			if collection_tutorial != "":
+			if collection_tutorial_key != &"":
 				if has_node("/root/TutorialPopup"):
-					get_node("/root/TutorialPopup").display(collection_tutorial)
+					get_node("/root/TutorialPopup").display(collection_tutorial_key)
 			
 			GameManager.add_collected_item(id)
 			

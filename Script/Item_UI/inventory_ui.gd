@@ -31,6 +31,7 @@ func _ready():
 	GameManager.gold_changed.connect(_on_gold_changed)
 	GameManager.hp_changed.connect(_on_hp_changed)
 	GameManager.stats_changed.connect(_on_stats_changed)
+	GameManager.locale_changed.connect(_on_locale_changed)
 
 	action_menu.hide()
 	close()
@@ -43,6 +44,10 @@ func _on_hp_changed(_cur: int, _max: int) -> void:
 
 func _on_stats_changed() -> void:
 	if is_open: update_ui()
+
+func _on_locale_changed(_new_locale: String) -> void:
+	if is_open:
+		update_ui()
 
 
 func _input(event):
@@ -74,10 +79,15 @@ func close():
 
 func update_ui():
 	# --- 정보 갱신 ---
-	gold_label.text = "Gold : " + str(GameManager.gold)
-	hp_label.text = "HP: %d / %d" % [GameManager.player_current_hp, GameManager.player_max_hp]
-	atk_label.text = "Dmg : " + str(GameManager.player_damage)
-	pd_label.text = "Parry dmg Mult: x %.1f" % GameManager.player_parry_damage_multifac
+	gold_label.text = tr(&"INVENTORY_GOLD").format({"gold": GameManager.gold})
+	hp_label.text = tr(&"INVENTORY_HP").format({
+		"current": GameManager.player_current_hp,
+		"maximum": GameManager.player_max_hp
+	})
+	atk_label.text = tr(&"INVENTORY_DAMAGE").format({"damage": GameManager.player_damage})
+	pd_label.text = tr(&"INVENTORY_PARRY_MULTIPLIER").format({
+		"multiplier": "%.1f" % GameManager.player_parry_damage_multifac
+	})
 	
 	# --- 아이템 슬롯 갱신 ---
 	var slots = grid.get_children()

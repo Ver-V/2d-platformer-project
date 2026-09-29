@@ -154,22 +154,22 @@ layout_mode = 2
 
 [node name="GoldLabel" type="Label" parent="Control/TextureRect/Panel/HBoxContainer/VBoxContainer"]
 layout_mode = 2
-text = "Gold:"
+text = "INVENTORY_GOLD_LABEL"
 label_settings = SubResource("LabelSettings_nwg6v")
 
 [node name="HpLabel" type="Label" parent="Control/TextureRect/Panel/HBoxContainer/VBoxContainer"]
 layout_mode = 2
-text = "Currenthp:"
+text = "INVENTORY_HP_LABEL"
 label_settings = SubResource("LabelSettings_jos1c")
 
 [node name="AtkLabel" type="Label" parent="Control/TextureRect/Panel/HBoxContainer/VBoxContainer"]
 layout_mode = 2
-text = "Damage:"
+text = "INVENTORY_DAMAGE_LABEL"
 label_settings = SubResource("LabelSettings_nehv6")
 
 [node name="ParryDmgLabel" type="Label" parent="Control/TextureRect/Panel/HBoxContainer/VBoxContainer"]
 layout_mode = 2
-text = "ParryMulti: "
+text = "INVENTORY_PARRY_LABEL"
 label_settings = SubResource("LabelSettings_p7xya")
 
 [node name="Button" type="Button" parent="Control"]
@@ -199,10 +199,10 @@ theme_override_constants/separation = 0
 
 [node name="BtnUse" type="Button" parent="ActionMenu/VBoxContainer"]
 layout_mode = 2
-text = "Use"
+text = "INVENTORY_USE"
 
 [node name="BtnClose" type="Button" parent="ActionMenu/VBoxContainer"]
 layout_mode = 2
-text = "Close"
+text = "COMMON_CLOSE"
 
 [connection signal="pressed" from="Control/Button" to="." method="_on_button_pressed"]

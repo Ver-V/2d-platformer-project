@@ -1,0 +1,20 @@
+{
+  "without_item": [
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "HeroBunny_idle",
+	  "name": "Pink Bunny",
+	  "text": "It's locked. I'll need something to get in - like a key, maybe?"
+	}
+  ],
+  "with_item": [
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "HeroBunny_surprise",
+	  "name": "Pink Bunny",
+	  "text": "The pink key fits the lock. I can open the path now!"
+	}
+  ]
+}

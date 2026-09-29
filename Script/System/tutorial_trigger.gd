@@ -1,6 +1,6 @@
 extends Area2D
 
-@export_multiline var tutorial_text: String = "설명 텍스트를 입력하세요."
+@export var tutorial_text_key: StringName = &""
 @export var pause_game: bool = true
 @export var one_shot: bool = true # 한 번만 보여줄지 여부
 
@@ -19,7 +19,7 @@ func _on_body_entered(body: Node2D) -> void:
 		
 		# Autoload로 등록될 TutorialPopup을 사용
 		if has_node("/root/TutorialPopup"):
-			get_node("/root/TutorialPopup").display(tutorial_text, pause_game)
+			get_node("/root/TutorialPopup").display(tutorial_text_key, pause_game)
 		else:
 			push_error("TutorialPopup Autoload가 등록되지 않았습니다!")
 		

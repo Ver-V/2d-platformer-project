@@ -14,6 +14,7 @@ signal close_requested
 @onready var lbl_sens_value: Label = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/Mouse Sensitivity"
 @onready var slider_shake: HSlider = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/SliderShake"
 @onready var lbl_shake_value: Label = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/ShakeValue"
+@onready var btn_language: OptionButton = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/BtnLanguage"
 
 
 var bus_index_master: int
@@ -29,27 +30,31 @@ const RESOLUTIONS: Dictionary = {
 }
 
 # 2. 화면 모드 목록
-const WINDOW_MODES: Array = [
-	"Windowed",
-	"Fullscreen",
-	"Borderless"
+const WINDOW_MODE_KEYS: Array[StringName] = [
+	&"OPTIONS_WINDOWED",
+	&"OPTIONS_FULLSCREEN",
+	&"OPTIONS_BORDERLESS"
 ]
+
+const LANGUAGE_CODES: Array[String] = ["en", "ko"]
+const LANGUAGE_NAMES: Array[String] = ["English", "한국어"]
 
 # 3. FPS(Hz) 목록
 # Godot에서 Hz를 강제로 바꾸는 건 위험할 수 있어서(블랙스크린),
 # 보통 '최대 FPS 제한'을 두는 방식으로 처리합니다.
-const FPS_LIMITS: Dictionary = {
-	"30 FPS": 30,
-	"60 FPS": 60,
-	"144 FPS": 144,
-	"240 FPS": 240,
-	"무제한": 0 # 0은 제한 없음
-}
+const FPS_OPTIONS: Array[Dictionary] = [
+	{"label_key": &"OPTIONS_FPS_30", "value": 30},
+	{"label_key": &"OPTIONS_FPS_60", "value": 60},
+	{"label_key": &"OPTIONS_FPS_144", "value": 144},
+	{"label_key": &"OPTIONS_FPS_240", "value": 240},
+	{"label_key": &"OPTIONS_FPS_UNLIMITED", "value": 0}
+]
 
 func _ready():
 	_add_items_to_ui()
 	_connect_signals()
 	visibility_changed.connect(_on_visibility_changed)
+	GameManager.locale_changed.connect(_on_locale_changed)
 	
 	# 모든 버튼 및 옵션 버튼에 클릭 소리 연결
 	for btn in find_children("*", "BaseButton", true):
@@ -63,7 +68,9 @@ func _ready():
 	
 	_init_audio_sliders()
 	_init_game_settings()
+	_init_language_ui()
 	_init_graphics_ui() # 그래픽 UI 초기화 추가
+	_refresh_translated_texts()
 	
 	slider_shake.value_changed.connect(_on_shake_changed)
 	
@@ -99,31 +106,62 @@ func _init_graphics_ui():
 
 	# 3. FPS 초기값 설정
 	var current_fps = Engine.max_fps
-	for i in range(btn_fps.item_count):
-		var fps_name = btn_fps.get_item_text(i)
-		if FPS_LIMITS.has(fps_name) and FPS_LIMITS[fps_name] == current_fps:
+	for i in range(FPS_OPTIONS.size()):
+		if int(FPS_OPTIONS[i]["value"]) == current_fps:
 			btn_fps.selected = i
 			break
 	
 	
 func _add_items_to_ui():
 	# 1. 화면 모드 추가
-	for mode in WINDOW_MODES:
-		btn_mode.add_item(mode)
+	for mode_key in WINDOW_MODE_KEYS:
+		btn_mode.add_item(tr(mode_key))
 	
 	# 2. 해상도 추가
 	for res_name in RESOLUTIONS.keys():
 		btn_res.add_item(res_name)
 		
 	# 3. FPS 추가
-	for fps_name in FPS_LIMITS.keys():
-		btn_fps.add_item(fps_name)
+	for option in FPS_OPTIONS:
+		btn_fps.add_item(tr(option["label_key"]))
+
+	for language_name in LANGUAGE_NAMES:
+		btn_language.add_item(language_name)
 
 func _connect_signals():
 	# 옵션을 선택했을 때 실행될 함수 연결
 	btn_mode.item_selected.connect(_on_mode_selected)
 	btn_res.item_selected.connect(_on_resolution_selected)
 	btn_fps.item_selected.connect(_on_fps_selected)
+	btn_language.item_selected.connect(_on_language_selected)
+
+func _init_language_ui() -> void:
+	var current_locale := GameManager.locale
+	var selected_index := LANGUAGE_CODES.find(current_locale)
+	btn_language.select(selected_index if selected_index >= 0 else 0)
+
+func _on_language_selected(index: int) -> void:
+	if index < 0 or index >= LANGUAGE_CODES.size():
+		return
+
+	GameManager.set_locale(LANGUAGE_CODES[index])
+	GameManager.save_settings()
+
+func _on_locale_changed(_new_locale: String) -> void:
+	_refresh_translated_texts()
+
+func _refresh_translated_texts() -> void:
+	for i in range(WINDOW_MODE_KEYS.size()):
+		btn_mode.set_item_text(i, tr(WINDOW_MODE_KEYS[i]))
+
+	for i in range(FPS_OPTIONS.size()):
+		btn_fps.set_item_text(i, tr(FPS_OPTIONS[i]["label_key"]))
+
+	tab_container.set_tab_title(0, tr(&"OPTIONS_TAB_GRAPHICS"))
+	tab_container.set_tab_title(1, tr(&"OPTIONS_TAB_AUDIO"))
+	tab_container.set_tab_title(2, tr(&"OPTIONS_TAB_CONTROLS"))
+	_update_sens_label(slider_sens.value)
+	_update_shake_label(slider_shake.value)
 
 # --- 기능 구현 ---
 
@@ -164,8 +202,9 @@ func _on_resolution_selected(index: int):
 	print("Resolution changed: ", target_size)
 
 func _on_fps_selected(index: int):
-	var key = btn_fps.get_item_text(index)
-	var limit = FPS_LIMITS[key]
+	if index < 0 or index >= FPS_OPTIONS.size():
+		return
+	var limit: int = int(FPS_OPTIONS[index]["value"])
 	
 	# 엔진의 최대 FPS 설정
 	Engine.max_fps = limit
@@ -203,7 +242,9 @@ func _on_sens_changed(value: float):
 
 func _update_sens_label(value: float):
 	# 0.5 -> "50%" 처럼 보기 좋게 변환
-	lbl_sens_value.text = "Mouse Sensitivity: " + str(int(value * 100)) + "%"
+	lbl_sens_value.text = tr(&"OPTIONS_MOUSE_SENSITIVITY_VALUE").format({
+		"percent": int(value * 100)
+	})
 
 func _init_game_settings():
 	# 1. 마우스 감도 초기화 (저장된 값 불러오기)
@@ -241,4 +282,6 @@ func _on_shake_changed(value: float):
 	GameManager.save_settings()
 
 func _update_shake_label(value: float):
-	lbl_shake_value.text = "Shake Value: " + str(int(value * 100)) + "%"
+	lbl_shake_value.text = tr(&"OPTIONS_SHAKE_VALUE").format({
+		"percent": int(value * 100)
+	})

@@ -10,11 +10,11 @@ func _ready() -> void:
 	visible = false
 	panel.scale = Vector2.ZERO
 
-func display(text: String, pause: bool = true) -> void:
+func display(text_key: StringName, pause: bool = true) -> void:
 	if is_active: return
 	
 	is_active = true
-	label.text = text
+	label.text = tr(text_key)
 	visible = true
 	
 	if pause:

@@ -10,12 +10,10 @@ region = Rect2(448, 288, 32, 32)
 [resource]
 script = ExtResource("1_vgs86")
 id = "Parry_increase_potion"
-name = "Purple potion"
+name = "ITEM_PARRY_POTION_NAME"
 icon = SubResource("AtlasTexture_3n0ct")
 price = 750
-description = "A vial containing a mystical purple liquid. 
-It looks as though it might grant the ability 
-to parry attacks more effectively."
+description = "ITEM_PARRY_POTION_DESCRIPTION"
 type = 1
 parry_multifactor = 0.1
 metadata/_custom_type_script = "uid://djy4vfexvhruh"

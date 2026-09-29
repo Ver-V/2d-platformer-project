@@ -40,7 +40,7 @@ theme_override_constants/separation = 150
 [node name="Label" type="Label" parent="OptionsUI/Panel/TabContainer/Graphics/HBox_Mode"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-text = "Screen Mode"
+text = "OPTIONS_SCREEN_MODE"
 
 [node name="BtnMode" type="OptionButton" parent="OptionsUI/Panel/TabContainer/Graphics/HBox_Mode"]
 layout_mode = 2
@@ -53,7 +53,7 @@ theme_override_constants/separation = 150
 [node name="Label" type="Label" parent="OptionsUI/Panel/TabContainer/Graphics/HBox_Res"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-text = "Resolution"
+text = "OPTIONS_RESOLUTION"
 
 [node name="BtnRes" type="OptionButton" parent="OptionsUI/Panel/TabContainer/Graphics/HBox_Res"]
 layout_mode = 2
@@ -65,7 +65,7 @@ theme_override_constants/separation = 150
 [node name="Label" type="Label" parent="OptionsUI/Panel/TabContainer/Graphics/HBox_FPS"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-text = "FPS limit"
+text = "OPTIONS_FPS_LIMIT"
 
 [node name="BtnFPS" type="OptionButton" parent="OptionsUI/Panel/TabContainer/Graphics/HBox_FPS"]
 layout_mode = 2
@@ -83,7 +83,7 @@ columns = 2
 
 [node name="Master Volume" type="Label" parent="OptionsUI/Panel/TabContainer/Audio/GridContainer"]
 layout_mode = 2
-text = "Master Volume "
+text = "OPTIONS_MASTER_VOLUME"
 
 [node name="SliderMaster" type="HSlider" parent="OptionsUI/Panel/TabContainer/Audio/GridContainer"]
 custom_minimum_size = Vector2(300, 0)
@@ -95,7 +95,7 @@ value = 1.0
 
 [node name="BGM Volume" type="Label" parent="OptionsUI/Panel/TabContainer/Audio/GridContainer"]
 layout_mode = 2
-text = "BGM"
+text = "OPTIONS_BGM"
 
 [node name="SliderBGM" type="HSlider" parent="OptionsUI/Panel/TabContainer/Audio/GridContainer"]
 custom_minimum_size = Vector2(300, 0)
@@ -107,7 +107,7 @@ value = 1.0
 
 [node name="SFX Volume" type="Label" parent="OptionsUI/Panel/TabContainer/Audio/GridContainer"]
 layout_mode = 2
-text = "SFX"
+text = "OPTIONS_SFX"
 
 [node name="SliderSFX" type="HSlider" parent="OptionsUI/Panel/TabContainer/Audio/GridContainer"]
 custom_minimum_size = Vector2(300, 0)
@@ -131,7 +131,7 @@ columns = 2
 [node name="Mouse Sensitivity" type="Label" parent="OptionsUI/Panel/TabContainer/Control and game/GridContainer"]
 layout_mode = 2
 size_flags_vertical = 1
-text = "Mouse Sensitivity "
+text = "OPTIONS_MOUSE_SENSITIVITY"
 
 [node name="SliderSens" type="HSlider" parent="OptionsUI/Panel/TabContainer/Control and game/GridContainer"]
 custom_minimum_size = Vector2(200, 0)
@@ -142,12 +142,20 @@ step = 0.01
 [node name="ShakeValue" type="Label" parent="OptionsUI/Panel/TabContainer/Control and game/GridContainer"]
 layout_mode = 2
 size_flags_vertical = 1
-text = "ShakeValue"
+text = "OPTIONS_SHAKE"
 
 [node name="SliderShake" type="HSlider" parent="OptionsUI/Panel/TabContainer/Control and game/GridContainer"]
 layout_mode = 2
 max_value = 1.0
 step = 0.01
+
+[node name="LanguageLabel" type="Label" parent="OptionsUI/Panel/TabContainer/Control and game/GridContainer"]
+layout_mode = 2
+text = "OPTIONS_LANGUAGE"
+
+[node name="BtnLanguage" type="OptionButton" parent="OptionsUI/Panel/TabContainer/Control and game/GridContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
 
 [node name="ExitButton" type="Button" parent="OptionsUI"]
 layout_mode = 0

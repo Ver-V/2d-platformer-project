@@ -279,7 +279,7 @@ size = Vector2(45, 124.5)
 
 [node name="StageTutorial" type="Node2D"]
 script = ExtResource("1_qt11q")
-stage_title = "The Depths of the Forest"
+stage_title_key = &"STAGE_TUTORIAL_TITLE"
 player_scene = ExtResource("2_cjvf8")
 
 [node name="PauseMenu" parent="." instance=ExtResource("1_h6ev7")]
@@ -329,10 +329,7 @@ target_scene_path = "uid://dfx7ligqjd22g"
 position = Vector2(3530, 599)
 id = "health_flask"
 item_resource = ExtResource("14_o7v4y")
-collection_tutorial = "You have obtained the Flask of Blessed Health. 
-Resting at a save point will replenish its charges,
- allowing for semi permanent use.
-Press [Q] to use."
+collection_tutorial_key = &"TUTORIAL_HEALTH_FLASK"
 
 [node name="Entities" type="Node" parent="."]
 
@@ -383,38 +380,27 @@ slime_move_speed = 0.0
 
 [node name="TutorialTrigger" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(73, 698)
-tutorial_text = "Welcome to the game. 
-Press the 'Z' key to jump.
-You can adjust your jump height depending on how long you hold the button."
+tutorial_text_key = &"TUTORIAL_JUMP"
 
 [node name="TutorialTrigger2" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(690, 540)
-tutorial_text = "Look, there's an enemy over there! 
-Let's attack and take them down by pressing the 'X' key."
+tutorial_text_key = &"TUTORIAL_ATTACK"
 
 [node name="TutorialTrigger3" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(1328, 680)
-tutorial_text = "Hold [Shift] to block projectiles and reduce incoming damage. 
-If you guard with perfect timing, the damage will be 
-negated and your next attack will be empowered.
-Guard has a 1.5-second cooldown, so use it wisely."
+tutorial_text_key = &"TUTORIAL_GUARD"
 
 [node name="TutorialTrigger4" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(1973, 681)
-tutorial_text = "Bullets of specific colors can be parried by pressing [X] with perfect timing. 
-A parried bullet will always hit the opponent, dealing heavy counter damage."
+tutorial_text_key = &"TUTORIAL_PARRY"
 
 [node name="TutorialTrigger5" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(2601, 684)
-tutorial_text = "Defeating enemies will cause them to drop Gold, 
-which can be used in shops or during specific events. 
-Saving it up will surely bring you good fortune. 
-Or, you might just find it scattered across the field."
+tutorial_text_key = &"TUTORIAL_GOLD"
 
 [node name="TutorialTrigger6" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(3914, 685)
-tutorial_text = "Press [I] to see your inventory and your status.
-Well then, let's dive into the real adventure! Enjoy your journey."
+tutorial_text_key = &"TUTORIAL_INVENTORY"
 
 [node name="DialogueBlock" type="Area2D" parent="Entities"]
 position = Vector2(3223, 694)

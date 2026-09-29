@@ -1,0 +1,23 @@
+[
+	{
+		"speaker": "right", 
+		"left_image": "",
+		"right_image": "HeroBunny_idle",
+		"name": "Pink Bunny",
+		"text": "Huh... Wait... Was it all a dream?"
+	},
+	{
+		"speaker": "right", 
+		"left_image": "",
+		"right_image": "HeroBunny_surprise",
+		"name": "Pink Bunny",
+		"text": "Ah! The flask I picked up... it's still here."
+	},
+	{
+		"speaker": "right", 
+		"left_image": "",
+		"right_image": "HeroBunny_smile",
+		"name": "Pink Bunny",
+		"text": "Not sure what just happened... but I'm not complaining. Let's go see Sis again!"
+	}
+]

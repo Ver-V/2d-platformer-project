@@ -3,7 +3,7 @@ class_name BaseStage
 
 var is_waiting_respawn: bool = false
 
-@export var stage_title: String = "" # 스테이지 이름 
+@export var stage_title_key: StringName = &"" # 스테이지 제목 번역 키
 @export var stage_prefix: String = "" # 몹 ID용 스테이지 접두사 
 @export var player_scene: PackedScene
 @export var room_size: Vector2 = Vector2(640.0, 360.0)
@@ -43,7 +43,7 @@ func _ready() -> void:
 	
 	spawn_player()
 
-	if stage_title != "":
+	if stage_title_key != &"":
 		_show_stage_title()
 
 	if player != null:
@@ -118,12 +118,12 @@ func _show_stage_title() -> void:
 	# Autoload에 StageTitleUI가 등록되어 있다고 가정하거나 
 	# 혹은 직접 찾아서 실행합니다.
 	if has_node("/root/StageTitleUI"):
-		get_node("/root/StageTitleUI").play_title(stage_title)
+		get_node("/root/StageTitleUI").play_title(stage_title_key)
 	else:
 		# Autoload가 아니더라도 씬에 수동으로 올렸을 경우를 대비
 		var title_node = get_tree().root.find_child("StageTitleUI", true, false)
 		if title_node and title_node.has_method("play_title"):
-			title_node.play_title(stage_title)
+			title_node.play_title(stage_title_key)
 
 func _input(event:InputEvent) -> void:
 	if is_waiting_respawn and event.is_action_pressed("rest") and not GameManager.is_menu_open:

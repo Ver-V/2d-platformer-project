@@ -3,6 +3,7 @@ extends Node
 
 const SAVE_PATH = "user://save_game.json"
 const SETTINGS_PATH = "user://settings.json"
+const DEFAULT_LOCALE: String = "en"
 
 func save_game(data: Dictionary) -> void:
 	# 플레이어 체력 0이하면 저장 안하기 (GameManager에서 체크하지만 여기서도 안전장치)
@@ -50,11 +51,13 @@ func save_settings(data: Dictionary) -> void:
 
 func load_settings() -> Dictionary:
 	if not FileAccess.file_exists(SETTINGS_PATH):
-		return {}
+		return {"locale": DEFAULT_LOCALE}
 	var file = FileAccess.open(SETTINGS_PATH, FileAccess.READ)
 	if file:
 		var data = JSON.parse_string(file.get_as_text())
 		if typeof(data) == TYPE_DICTIONARY:
+			if not data.has("locale"):
+				data["locale"] = DEFAULT_LOCALE
 			print("SaveManager: 설정 로드 성공")
 			return data
-	return {}
+	return {"locale": DEFAULT_LOCALE}

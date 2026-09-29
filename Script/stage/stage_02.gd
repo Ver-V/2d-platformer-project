@@ -3,7 +3,6 @@ class_name Stage02
 
 func _ready() -> void:
 	super._ready()
-	stage_title = "Stage 02"
 	stage_prefix = "S02"
 	_setup_stage_02_gimmicks()
 

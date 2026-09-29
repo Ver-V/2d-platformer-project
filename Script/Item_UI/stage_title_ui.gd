@@ -8,8 +8,8 @@ func _ready() -> void:
 	control.modulate.a = 0.0
 	visible = false
 
-func play_title(title_text: String, duration: float = 3.0) -> void:
-	label.text = title_text
+func play_title(title_key: StringName, duration: float = 3.0) -> void:
+	label.text = tr(title_key)
 	visible = true
 	
 	var tween = create_tween()

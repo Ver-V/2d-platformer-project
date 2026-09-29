@@ -32,6 +32,9 @@ var is_typing: bool = false
 var is_waiting_choice: bool = false
 var pending_choices: Array = []
 var portrait_tween: Tween
+var input_lock_time: float = 0.0
+
+const DIALOGUE_INPUT_LOCK_DURATION: float = 0.2
 
 func _ready():
 	visible = false
@@ -77,8 +80,12 @@ func _ready():
 func _input(event):
 	if not is_dialogue_active or is_waiting_choice:
 		return
+	if input_lock_time > 0.0:
+		return
+	if event is InputEventKey and event.echo:
+		return
 
-	if event.is_action_pressed("jump") or event.is_action_pressed("attack"):
+	if event.is_action_pressed("jump") or event.is_action_pressed("attack") or event.is_action_pressed("ui_accept"):
 		get_viewport().set_input_as_handled()
 		if is_typing:
 			text_label.visible_ratio = 1.0
@@ -90,6 +97,7 @@ func _input(event):
 			show_next_line()
 
 func start_dialogue(json_file_path: String, start_block: String = "start"):
+	json_file_path = _get_localized_dialogue_path(json_file_path)
 	print("[DialogueManager] Loading dialogue: ", json_file_path)
 	if not FileAccess.file_exists(json_file_path):
 		print("[DialogueManager] Error: File not found at ", json_file_path)
@@ -102,11 +110,32 @@ func start_dialogue(json_file_path: String, start_block: String = "start"):
 		var data = json.data
 		dialogue_data = data if typeof(data) == TYPE_DICTIONARY else {"start": data}
 		is_dialogue_active = true
+		input_lock_time = DIALOGUE_INPUT_LOCK_DURATION
 		visible = true
 		GameManager.is_menu_open = true
 		_jump_to_block(start_block)
 	else:
 		print("[DialogueManager] JSON Parse Error: ", json.get_error_message(), " at line ", json.get_error_line())
+
+func _get_localized_dialogue_path(original_path: String) -> String:
+	var language_code := TranslationServer.get_locale().to_lower().get_slice("_", 0).get_slice("-", 0)
+	if language_code not in ["en", "ko"]:
+		language_code = "en"
+
+	var file_name := original_path.get_file()
+	var localized_path := "res://resources/Dialogues/%s/%s" % [language_code, file_name]
+	if FileAccess.file_exists(localized_path):
+		return localized_path
+
+	var english_fallback := "res://resources/Dialogues/en/%s" % file_name
+	if FileAccess.file_exists(english_fallback):
+		return english_fallback
+
+	# Keep old dialogue paths working while files are being moved into locale folders.
+	if FileAccess.file_exists(original_path):
+		return original_path
+
+	return english_fallback
 
 func _jump_to_block(block_name: String):
 	if dialogue_data.has(block_name):
@@ -230,6 +259,10 @@ func _on_type_timer_timeout():
 	if text_label.visible_ratio >= 1.0:
 		is_typing = false
 		type_timer.stop()
+
+func _process(delta: float) -> void:
+	if input_lock_time > 0.0:
+		input_lock_time = maxf(0.0, input_lock_time - delta)
 
 func end_dialogue():
 	if portrait_tween: portrait_tween.kill()
