@@ -13,8 +13,7 @@ class_name ItemConditionalDialogueBlock
 func _ready() -> void:
 	add_to_group("dialogue_blocks")
 
-	if GameManager.triggered_dialogues.has(get_persist_id()):
-		_has_triggered = true
+	if _restore_completed_state():
 		return
 
 	body_entered.connect(_on_conditional_body_entered)
@@ -29,14 +28,16 @@ func _on_conditional_body_entered(body: Node2D) -> void:
 	if DialogueManager.is_dialogue_active:
 		await DialogueManager.dialogue_finished
 
-	if dialogue_file.is_empty() or not FileAccess.file_exists(dialogue_file):
+	if not DialogueManager.has_dialogue_file(dialogue_file):
 		push_warning("ItemConditionalDialogueBlock: Dialogue file is missing: " + dialogue_file)
 		_has_triggered = false
 		return
 
 	var has_item := _has_required_item()
 	var start_block := block_with_item if has_item else block_without_item
-	DialogueManager.start_dialogue(dialogue_file, start_block)
+	if not DialogueManager.start_dialogue(dialogue_file, start_block):
+		_has_triggered = false
+		return
 	await DialogueManager.dialogue_finished
 
 	# Keep the block active when the item is missing, so the player can
@@ -45,9 +46,7 @@ func _on_conditional_body_entered(body: Node2D) -> void:
 		_has_triggered = false
 		return
 
-	var block_id := get_persist_id()
-	if not GameManager.triggered_dialogues.has(block_id):
-		GameManager.triggered_dialogues.append(block_id)
+	_record_completion()
 
 	queue_free()
 

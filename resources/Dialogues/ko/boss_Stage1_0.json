@@ -3,71 +3,71 @@
 		"speaker": "right", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_surprise",
-		"name": "Big Bunny",
-		"text": "Look who it is!"
+		"name": "언니 토끼",
+		"text": "어머, 이게 누구람!"
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_idle",
-		"name": "Pink Bunny",
-		"text": "Hey, big sis. Long time no see. You’re working hard. So, when do you get off?"
+		"name": "분홍 토끼",
+		"text": "안녕, 언니. 오랜만이네. 열심히 일하는 거 같은데, 퇴근은 언제 해?"
 	},
 	{
 		"speaker": "right", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_idle",
-		"name": "Big Bunny",
-		"text": "You know how it is. I should be done by dinnertime, I guess."
+		"name": "언니 토끼",
+		"text": "이미 알고 있잖아. 아마 저녁 먹을 시간은 돼야 퇴근하겠지."
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_idle",
-		"name": "Pink Bunny",
-		"text": "I'm sorry. Sis. I have something to tell you."
+		"name": "분홍 토끼",
+		"text": "그래? 아, 미안한데. 언니, 할 말이 있어."
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_idle",
-		"name": "Pink Bunny",
-		"text": "I'm going outside, Sis. I want to see what the world is really like!"
+		"name": "분홍 토끼",
+		"text": "언니, 나 밖으로 나가 볼 거야. 세상이 어떻게 생겼는지 직접 두 눈으로 보고 싶거든!"
 	},
 	{
 		"speaker": "right", 
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_surprise",
-		"name": "Big Bunny",
-		"text": "Um, sorry... I lost count. Which time is this again?"
+		"name": "언니 토끼",
+		"text": "어, 음... 미안한데. 벌써 몇 번째인지 까먹었어. 이번이 몇 번째 도전이더라?"
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_surprise",
-		"name": "Pink Bunny",
-		"text": "This time, it's different. I mean it."
+		"name": "분홍 토끼",
+		"text": "이번엔 다를 걸? 진짜로."
 	},
 	{
 		"speaker": "right", 
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_smile",
-		"name": "Big Bunny",
-		"text": "Oh, really? Then let’s see if you're actually ready. Otherwise, you're having dinner at home with me.",
+		"name": "언니 토끼",
+		"text": "그래? 그럼 정말 준비됐는지 한번 보자. 결국엔 오늘도 집에서 나랑 저녁이나 먹겠지만.",
 		"event" : "play_boss_bgm"
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_angry",
 		"right_image": "BigBunny_smile",
-		"name": "Pink Bunny",
-		"text": "Keep acting relaxed, and you'll regret it!"
+		"name": "분홍 토끼",
+		"text": "계속 그렇게 여유 부리다가는 후회할 걸! 언니!"
 	},
 	{
 		"speaker": "right", 
 		"left_image": "HeroBunny_angry",
 		"right_image": "BigBunny_angry",
-		"name": "Big Bunny",
-		"text": "Hmm... Look at this little troublemaker. You're asking for it."
+		"name": "언니 토끼",
+		"text": "이 말썽꾸러기가... 흥, 어디 한번 해봐."
 	}
 ]

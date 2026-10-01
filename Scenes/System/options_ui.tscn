@@ -136,8 +136,10 @@ text = "OPTIONS_MOUSE_SENSITIVITY"
 [node name="SliderSens" type="HSlider" parent="OptionsUI/Panel/TabContainer/Control and game/GridContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-max_value = 1.0
+min_value = 0.5
+max_value = 2.0
 step = 0.01
+value = 1.0
 
 [node name="ShakeValue" type="Label" parent="OptionsUI/Panel/TabContainer/Control and game/GridContainer"]
 layout_mode = 2

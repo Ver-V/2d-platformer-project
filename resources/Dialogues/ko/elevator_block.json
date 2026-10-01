@@ -1,89 +1,88 @@
 {
   "start": [
 	{
-	  "name": "Ancient tablet",
-	  "text": "A weathered stone tablet floats in mid-air. An inscription is carved onto its surface. \n'If you possess the Gatekeeper's Token, I shall take you wherever you desire.'",
+	  "name": "고대 석판",
+	  "text": "낡은 석판이 공중에 떠 있다. 표면에 글귀가 새겨져 있다. \n'문지기의 징표를 지닌 자여, 원하는 곳으로 데려다주겠다.'",
 	  "left_image": "HeroBunny_idle",
 	  "speaker": "left",
 	  "choices": [
 		{
-		  "text": "Ground Floor",
+		  "text": "지상층",
 		  "next": "Ground Floor",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B1",
+		  "text": "지하 1층",
 		  "next": "B1",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B2",
+		  "text": "지하 2층",
 		  "next": "B2",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B3",
+		  "text": "지하 3층",
 		  "next": "B3",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B4",
+		  "text": "지하 4층",
 		  "next": "B4"
 		},
 		{
-		  "text": "B5",
+		  "text": "지하 5층",
 		  "next": "B5",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B6",
+		  "text": "지하 6층",
 		  "next": "B6",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B7",
+		  "text": "지하 7층",
 		  "next": "B7",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B8",
+		  "text": "지하 8층",
 		  "next": "B8",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B9",
+		  "text": "지하 9층",
 		  "next": "B9",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B10",
+		  "text": "지하 10층",
 		  "next": "B10",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "B11",
+		  "text": "지하 11층",
 		  "next": "B11",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" }
 		},
 		{
-		  "text": "B12",
+		  "text": "지하 12층",
 		  "next": "B12",
 		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "fail_text": "데모에서는 이용할 수 없습니다."
 		},
 		{
-		  "text": "Ignore",
+		  "text": "그만둔다",
 		  "next": "ignore"
 		}
 	  ]
@@ -91,8 +90,8 @@
   ],
   "B4": [
 	{
-	  "name": "Pink Bunny",
-	  "text": "I think this is the fourth floor.",
+	  "name": "분홍 토끼",
+	  "text": "여기가 이미 지하 4층인가 봐.",
 	  "left_image": "HeroBunny_surprise",
 	  "speaker": "left",
 	  "next" : "start"
@@ -100,8 +99,8 @@
   ],
   "ignore": [
 	{
-	  "name": "Pink Bunny",
-	  "text": "Let's come back later.",
+	  "name": "분홍 토끼",
+	  "text": "나중에 다시 오자.",
 	  "left_image": "HeroBunny_idle",
 	  "speaker": "left"
 	}

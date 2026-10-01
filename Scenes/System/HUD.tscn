@@ -189,3 +189,8 @@ script = ExtResource("6_cpq7e")
 process_mode = 3
 wait_time = 2.0
 one_shot = true
+
+[node name="DamageVignette" type="ColorRect" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0.97566444, 4.5724214e-06, 1.540184e-06, 1)

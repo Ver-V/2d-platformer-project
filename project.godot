@@ -26,6 +26,9 @@ DialogueManager="*res://Scenes/System/DialogueUI.tscn"
 ShopUI="*res://Scenes/System/ShopUI.tscn"
 TutorialPopup="*res://Scenes/System/Popup.tscn"
 StageTitleUI="*res://Scenes/System/StageTitleUI.tscn"
+MCPRuntimeBridge="*res://addons/godot_mcp/services/mcp_runtime_bridge.gd"
+MCPInputBridge="*res://addons/godot_mcp/services/mcp_input_bridge.gd"
+MCPScreenshotBridge="*res://addons/godot_mcp/services/mcp_screenshot_bridge.gd"
 
 [display]
 

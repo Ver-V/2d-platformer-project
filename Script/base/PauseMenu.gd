@@ -51,9 +51,13 @@ func toggle_menu():
 		colorR.visible = true
 		menu_container.visible = true
 		options_ui.visible = false
-		GameManager.ui_opened() # "나 열렸으니까 마우스 커서 좀 켜줘!" (요청)
+		GameManager.ui_opened(self)
 	else:
-		GameManager.ui_closed() # "나 닫혔으니까 알아서 마우스 꺼줘!" (요청)
+		GameManager.ui_closed(self)
+
+func _exit_tree() -> void:
+	if is_open:
+		GameManager.ui_closed(self)
 
 
 func _on_btn_resume_pressed():

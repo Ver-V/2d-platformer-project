@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Script/System/BreakableBox.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
+size = Vector2(24, 24)
+
+[node name="BreakableBox" type="StaticBody2D"]
+collision_layer = 5
+collision_mask = 0
+script = ExtResource("1_script")
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(0.48, 0.29, 0.14, 1)
+polygon = PackedVector2Array(-12, -24, 12, -24, 12, 0, -12, 0)
+
+[node name="Plank" type="Polygon2D" parent="."]
+color = Color(0.67, 0.43, 0.22, 1)
+polygon = PackedVector2Array(-12, -15, 12, -15, 12, -11, -12, -11)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -12)
+shape = SubResource("RectangleShape2D_box")

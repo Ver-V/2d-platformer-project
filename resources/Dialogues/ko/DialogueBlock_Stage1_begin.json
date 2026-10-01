@@ -3,21 +3,21 @@
 		"speaker": "right", 
 		"left_image": "",
 		"right_image": "HeroBunny_idle",
-		"name": "Pink Bunny",
-		"text": "Huh... Wait... Was it all a dream?"
+		"name": "분홍 토끼",
+		"text": "어... 잠깐. 방금까지 그냥 꿈이었나?"
 	},
 	{
 		"speaker": "right", 
 		"left_image": "",
 		"right_image": "HeroBunny_surprise",
-		"name": "Pink Bunny",
-		"text": "Ah! The flask I picked up... it's still here."
+		"name": "분홍 토끼",
+		"text": "아! 주웠던 플라스크가... 아직 있잖아."
 	},
 	{
 		"speaker": "right", 
 		"left_image": "",
 		"right_image": "HeroBunny_smile",
-		"name": "Pink Bunny",
-		"text": "Not sure what just happened... but I'm not complaining. Let's go see Sis again!"
+		"name": "분홍 토끼",
+		"text": "무슨 일이 있었는진 잘 모르겠지만... 뭐, 됐나! 언니를 만나러 가자."
 	}
 ]

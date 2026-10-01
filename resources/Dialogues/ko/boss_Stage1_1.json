@@ -4,29 +4,29 @@
 		"speaker": "left", 
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_hurt",
-		"name": "Pink Bunny",
-		"text": "I said it's different this time. And I meant it."
+		"name": "분홍 토끼",
+		"text": "이번엔 다르다고 했지? 진짜라니까."
 	},
 	{
 		"speaker": "right", 
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_hurt",
-		"name": "Big Bunny",
-		"text": "(Sigh)... Looks like it'll be just me and our youngest at dinner tonight."
+		"name": "언니 토끼",
+		"text": "후우... 오늘 저녁은 나랑 막내 둘이서만 먹어야겠네."
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_hurt",
-		"name": "Pink Bunny",
-		"text": "Go ahead and eat without me. I'll be back before you know it."
+		"name": "분홍 토끼",
+		"text": "헤헷. 언니, 나 기다리지 말고 먼저 먹어. 금방 돌아올 테니까."
 	},
 	{
 		"speaker": "right", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_hurt",
-		"name": "Big Bunny",
-		"text": "Okay, watch your back. It’s a lot tougher out there than you might expect."
+		"name": "언니 토끼",
+		"text": "그래, 조심해. 바깥세상은 네가 생각하는 것보다 훨씬 위험하거든."
 	}
 	
 ]

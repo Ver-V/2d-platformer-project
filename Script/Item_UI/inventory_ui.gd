@@ -63,19 +63,27 @@ func _input(event):
 			get_viewport().set_input_as_handled()
 
 func open():
+	if is_open or GameManager.is_menu_open:
+		return
 	visible = true
 	is_open = true
 	selected_index = -1 # 열 때 선택 초기화
 	action_menu.hide()  # 열 때 팝업 무조건 숨김
 	
 	update_ui()
-	GameManager.ui_opened()
+	GameManager.ui_opened(self)
 	
 func close():
+	var was_open := is_open
 	visible = false
 	is_open = false
 	action_menu.hide() # 닫을 때 팝업도 같이 닫기
-	GameManager.ui_closed()
+	if was_open:
+		GameManager.ui_closed(self)
+
+func _exit_tree() -> void:
+	if is_open:
+		GameManager.ui_closed(self)
 
 func update_ui():
 	# --- 정보 갱신 ---
@@ -93,7 +101,7 @@ func update_ui():
 	var slots = grid.get_children()
 	for i in range(slots.size()):
 		if i < GameManager.inventory.size():
-			slots[i].set_item(GameManager.inventory[i])
+			slots[i].set_item(GameManager.inventory[i], i)
 		else:
 			slots[i].set_item(null)
 

@@ -16,6 +16,7 @@ var target_body = null
 var speed = 0.0 
 var time_passed: float = 0.0  # 시간 누적용
 var can_float: bool = false   # "지금 둥둥 떠도 되니?" 상태 확인
+var _collected: bool = false
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -126,7 +127,8 @@ func _update_color():
 		sprite.modulate = Color(0.8, 0.5, 0.2) # 구리덧칠
 		
 func _on_body_entered(body):
-	if body.is_in_group("player"):
+	if not _collected and body.is_in_group("player"):
+		_collected = true
 		# 중복 획득 방지를 위해 충돌체와 시각 요소 즉시 비활성화
 		collision.set_deferred("disabled", true)
 		sprite.visible = false

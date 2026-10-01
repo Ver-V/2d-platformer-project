@@ -8,13 +8,38 @@
 	  "text": "It's locked. I'll need something to get in - like a key, maybe?"
 	}
   ],
-  "with_item": [
+	"with_item": [
 	{
 	  "speaker": "right",
 	  "left_image": "",
 	  "right_image": "HeroBunny_surprise",
 	  "name": "Pink Bunny",
 	  "text": "The pink key fits the lock. I can open the path now!"
+	}
+  ],
+	"key_spent": [
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "HeroBunny_idle",
+	  "name": "Pink Bunny",
+	  "text": "The door is open. I don't need this key anymore."
+	},
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "",
+	  "name": "",
+	  "text": "Discarded the pink key."
+	}
+  ],
+	"key_kept": [
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "HeroBunny_idle",
+	  "name": "Pink Bunny",
+	  "text": "The door is open, but I think I'll still need this key. I'll keep it."
 	}
   ]
 }

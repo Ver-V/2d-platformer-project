@@ -3,22 +3,22 @@
 		"speaker": "right", 
 		"left_image": "",
 		"right_image": "HeroBunny_idle",
-		"name": "Pink Bunny",
-		"text": "It's a dead end. How do I get through here?"
+		"name": "분홍 토끼",
+		"text": "막다른 길이네. 여기서 어떻게 지나가면 좋담?"
 	},
 	{
 		"speaker": "right", 
 		"left_image": "",
 		"right_image": "HeroBunny_tired",
-		"name": "Pink Bunny",
-		"text": "Ah... Wait. I have a bad feeling about this."
+		"name": "분홍 토끼",
+		"text": "아... 잠깐. 왠지 불길한데."
 	},
 	{
 		"speaker": "right", 
 		"left_image": "",
 		"right_image": "HeroBunny_surprise",
-		"name": "Pink Bunny",
-		"text": "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah!",
+		"name": "분홍 토끼",
+		"text": "으아아아아아아아악!",
 		"event": "block_fall"
 	}
 ]

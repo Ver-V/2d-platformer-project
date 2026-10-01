@@ -1,9 +1,13 @@
 extends Control
 
 # 미니맵 설정
-const ROOM_SIZE = Vector2(640, 360) # room_grid.gd와 동일한 기준
 const MAP_SCALE = 0.1 # 화면에 보여질 축소 비율 (1/10 크기)
-const ROOM_DRAW_SIZE = ROOM_SIZE * MAP_SCALE
+var room_size: Vector2 = Vector2(640, 360)
+var grid_origin: Vector2 = Vector2.ZERO
+var room_draw_size: Vector2:
+	get: return room_size * MAP_SCALE
+var visited_rooms: Array:
+	get: return GameManager.get_visited_rooms(current_scene_path)
 
 # 색상 설정
 const COLOR_BG_VISITED = Color(0.7, 0.7, 0.7, 0.8)   # 방문한 방 배경 (밝은 회색)
@@ -20,7 +24,6 @@ var current_room_coords: Vector2i = Vector2i.ZERO
 # 지형 데이터를 담아둘 변수들
 var room_terrain_points: Dictionary = {}
 var valid_rooms: Array = []
-var map_initialized: bool = false
 var current_scene_path: String = ""
 
 # RoomGrid 데이터 저장용
@@ -41,11 +44,12 @@ func _process(_delta):
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
 		var pos = player.global_position
-		current_room_coords = Vector2i(floor(pos.x / ROOM_SIZE.x), floor(pos.y / ROOM_SIZE.y))
+		current_room_coords = _room_from_world(pos)
 		
 		# 방문 기록에 없으면 추가 (새로운 방 발견!)
-		if not GameManager.visited_rooms.has(current_room_coords):
-			GameManager.visited_rooms.append(current_room_coords)
+		if current_scene is BaseStage:
+			current_room_coords = current_scene.room_from_pos(pos)
+			GameManager.visit_room(current_scene_path, current_room_coords)
 	
 	# 화면이 계속 갱신되도록 다시 그리기 요청
 	queue_redraw()
@@ -55,14 +59,20 @@ func _init_map_data(scene_node: Node):
 	room_terrain_points.clear()
 	valid_rooms.clear()
 	
-	# RoomGrid 노드 찾아서 맵 경계선 설정
+	# 게임 진행에 쓰는 BaseStage 좌표계를 그대로 사용한다.
+	room_size = Vector2(640, 360)
+	grid_origin = Vector2.ZERO
 	var room_grid = scene_node.get_node_or_null("RoomGrid")
-	if room_grid:
-		var grid_origin = room_grid.get("origin")
-		if grid_origin == null: grid_origin = Vector2.ZERO
+	if scene_node is BaseStage:
+		room_size = scene_node.room_size
+		grid_origin = scene_node.grid_origin
+		map_origin_room = Vector2i.ZERO
+		map_size_rooms = scene_node.grid_size
+	elif room_grid:
+		grid_origin = room_grid.origin
+		room_size = room_grid.room_size
 		var counts = room_grid.get("rooms")
-		
-		map_origin_room = Vector2i(floor(grid_origin.x / ROOM_SIZE.x), floor(grid_origin.y / ROOM_SIZE.y))
+		map_origin_room = Vector2i.ZERO
 		map_size_rooms = counts if counts != null else Vector2i(999, 999)
 	else:
 		map_origin_room = Vector2i(-9999, -9999)
@@ -91,8 +101,12 @@ func _get_all_tilemap_layers(node: Node) -> Array:
 		result.append_array(_get_all_tilemap_layers(child))
 	return result
 
+func _room_from_world(world_pos: Vector2) -> Vector2i:
+	var relative_pos := world_pos - grid_origin
+	return Vector2i(floor(relative_pos.x / room_size.x), floor(relative_pos.y / room_size.y))
+
 func _add_terrain_point(global_pos: Vector2):
-	var room_coords = Vector2i(floor(global_pos.x / ROOM_SIZE.x), floor(global_pos.y / ROOM_SIZE.y))
+	var room_coords = _room_from_world(global_pos)
 	
 	# [핵심] RoomGrid 범위 바깥으로 삐져나온 타일은 미니맵 방으로 취급하지 않음!
 	if map_origin_room.x != -9999:
@@ -111,33 +125,33 @@ func _draw():
 	if not player: return
 
 	var center_offset = size / 2.0
-	var current_room_origin = Vector2(current_room_coords) * ROOM_SIZE
+	var current_room_origin = grid_origin + Vector2(current_room_coords) * room_size
 	
 	# 0. 아직 방문하지 않았지만 갈 수 있는 인접한 방(새까맣게 표시)
 	var adjacent_unvisited = []
-	for v_room in GameManager.visited_rooms:
+	for v_room in visited_rooms:
 		# 현재 방문한 방의 상하좌우 검사
 		var neighbors = [v_room + Vector2i(1, 0), v_room + Vector2i(-1, 0), v_room + Vector2i(0, 1), v_room + Vector2i(0, -1)]
 		for n in neighbors:
 			# 실제로 타일이 존재하는 유효한 방(valid_rooms)이면서, 아직 방문하지 않았다면? -> 까맣게 그릴 대상!
-			if valid_rooms.has(n) and not GameManager.visited_rooms.has(n) and not adjacent_unvisited.has(n):
+			if valid_rooms.has(n) and not visited_rooms.has(n) and not adjacent_unvisited.has(n):
 				adjacent_unvisited.append(n)
 				
 	for room in adjacent_unvisited:
 		var diff = room - current_room_coords
-		var draw_pos = center_offset + Vector2(diff) * ROOM_DRAW_SIZE
-		var rect = Rect2(draw_pos, ROOM_DRAW_SIZE)
+		var draw_pos = center_offset + Vector2(diff) * room_draw_size
+		var rect = Rect2(draw_pos, room_draw_size)
 		# 까만색으로 칠하기
 		draw_rect(rect, Color(0, 0, 0, 0.95)) 
 		draw_rect(rect, COLOR_BORDER, false, 1.0) 
 	
 	# 1. 방문했던 모든 방의 뼈대(배경과 테두리) 및 지형 그리기
-	for room in GameManager.visited_rooms:
+	for room in visited_rooms:
 		var is_current = (room == current_room_coords)
 		
 		var diff = room - current_room_coords
-		var draw_pos = center_offset + Vector2(diff) * ROOM_DRAW_SIZE
-		var rect = Rect2(draw_pos, ROOM_DRAW_SIZE)
+		var draw_pos = center_offset + Vector2(diff) * room_draw_size
+		var rect = Rect2(draw_pos, room_draw_size)
 		
 		# 배경
 		draw_rect(rect, COLOR_BG_CURRENT if is_current else COLOR_BG_VISITED)
@@ -168,9 +182,9 @@ func _draw_entities_as_dots(group_name: String, color: Color, center_offset: Vec
 		if not node is Node2D: continue
 		
 		var pos = node.global_position
-		var room_coords = Vector2i(floor(pos.x / ROOM_SIZE.x), floor(pos.y / ROOM_SIZE.y))
+		var room_coords = _room_from_world(pos)
 		
-		if not GameManager.visited_rooms.has(room_coords): continue
+		if not visited_rooms.has(room_coords): continue
 		if only_current_room and room_coords != current_room_coords: continue
 		
 		var draw_pos = center_offset + (pos - current_room_origin) * MAP_SCALE

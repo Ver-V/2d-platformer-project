@@ -767,6 +767,5 @@ position = Vector2(4785, 492)
 [node name="SavePoint6" parent="SavePoint" instance=ExtResource("9_ae7cf")]
 position = Vector2(177, 444)
 
-[connection signal="body_entered" from="Entities/MerchantNPC" to="." method="_on_merchant_npc_body_entered"]
 
 [editable path="HazardTileMap"]

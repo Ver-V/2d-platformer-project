@@ -4,60 +4,182 @@ extends Node
 const SAVE_PATH = "user://save_game.json"
 const SETTINGS_PATH = "user://settings.json"
 const DEFAULT_LOCALE: String = "en"
+const SAVE_VERSION: int = 2
 
-func save_game(data: Dictionary) -> void:
-	# 플레이어 체력 0이하면 저장 안하기 (GameManager에서 체크하지만 여기서도 안전장치)
-	if data.get("current_hp", 0) <= 0:
-		return
-	
-	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file:
-		var json_string = JSON.stringify(data)
-		file.store_string(json_string)
-		print("SaveManager: 게임 저장 완료!")
-	else:
-		print("SaveManager: 게임 저장 실패! 경로 오류: ", FileAccess.get_open_error())
+func save_game(data: Dictionary, path: String = SAVE_PATH) -> bool:
+	if not _is_valid_game(data):
+		push_warning("SaveManager: 유효하지 않은 게임 데이터는 저장하지 않습니다.")
+		return false
+	var payload := data.duplicate(true)
+	payload["save_version"] = SAVE_VERSION
+	# 정상인 이전 저장만 백업한다. 손상 파일로 정상 백업을 덮어쓰지 않는다.
+	if not _read_valid_game(path).is_empty():
+		if DirAccess.copy_absolute(path, path + ".bak.tmp") != OK:
+			return false
+		if DirAccess.rename_absolute(path + ".bak.tmp", path + ".bak") != OK:
+			return false
+	return _write_json_atomic(path, payload)
 
-func load_game() -> Dictionary:
-	if not FileAccess.file_exists(SAVE_PATH):
-		print("SaveManager: 저장된 파일이 없습니다.")
-		return {}
-	
-	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		print("SaveManager: 파일 열기 실패! (에러 코드: ", FileAccess.get_open_error(), ")")
-		return {}
-
-	var json_string = file.get_as_text()
-	var data = JSON.parse_string(json_string)
-	
-	if data and typeof(data) == TYPE_DICTIONARY:
-		print("SaveManager: 데이터 로드 성공")
+func load_game(path: String = SAVE_PATH) -> Dictionary:
+	var data := _read_valid_game(path)
+	if not data.is_empty():
 		return data
-		
-	return {}
+	data = _read_valid_game(path + ".bak")
+	if not data.is_empty():
+		push_warning("SaveManager: 이전 정상 저장으로 복구했습니다.")
+	return data
 
-func delete_save() -> void:
-	if FileAccess.file_exists(SAVE_PATH):
-		DirAccess.remove_absolute(SAVE_PATH)
-		print("SaveManager: 세이브 파일 삭제됨")
+func has_save(path: String = SAVE_PATH) -> bool:
+	return not _read_valid_game(path).is_empty() or not _read_valid_game(path + ".bak").is_empty()
+
+func delete_save(path: String = SAVE_PATH) -> void:
+	# 새 게임에서 백업이 이전 진행 상태를 되살리지 않도록 함께 제거한다.
+	for suffix in ["", ".bak", ".tmp", ".bak.tmp"]:
+		if FileAccess.file_exists(path + suffix):
+			DirAccess.remove_absolute(path + suffix)
+
+func _read_valid_game(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return {}
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) != OK:
+		return {}
+	var data: Variant = parser.data
+	return data if _is_valid_game(data) else {}
+
+func _write_json_atomic(path: String, data: Dictionary) -> bool:
+	var temp_path := path + ".tmp"
+	var file := FileAccess.open(temp_path, FileAccess.WRITE)
+	if file == null:
+		push_error("SaveManager: 임시 저장 파일을 열지 못했습니다: " + temp_path)
+		return false
+	file.store_string(JSON.stringify(data))
+	file.flush()
+	var write_error := file.get_error()
+	file.close()
+	if write_error != OK:
+		return false
+	# 쓰인 내용까지 검증한 후 같은 디렉터리에서 본 파일을 교체한다.
+	var check := FileAccess.open(temp_path, FileAccess.READ)
+	if check == null:
+		return false
+	var parser := JSON.new()
+	var parse_error := parser.parse(check.get_as_text())
+	check.close()
+	if parse_error != OK or not parser.data is Dictionary:
+		return false
+	var error := DirAccess.rename_absolute(temp_path, path)
+	if error != OK:
+		push_error("SaveManager: 저장 파일 교체 실패 (오류 %s)" % error)
+		return false
+	return true
+
+func _is_number(value: Variant) -> bool:
+	return (value is int or value is float) and is_finite(float(value))
+
+func _is_integer(value: Variant) -> bool:
+	return _is_number(value) and float(value) == floor(float(value))
+
+func _is_text(value: Variant) -> bool:
+	return value is String or value is StringName
+
+func _valid_rooms(value: Variant) -> bool:
+	if not value is Array:
+		return false
+	for room in value:
+		if not room is Dictionary or not _is_integer(room.get("x")) or not _is_integer(room.get("y")):
+			return false
+	return true
+
+func _is_valid_game(data: Variant) -> bool:
+	if not data is Dictionary:
+		return false
+	var version: Variant = data.get("save_version", 1)
+	if not _is_integer(version) or version < 1 or version > SAVE_VERSION:
+		return false
+	if not _is_integer(data.get("current_hp")) or not _is_integer(data.get("max_hp")):
+		return false
+	if data.current_hp <= 0 or data.max_hp < data.current_hp:
+		return false
+	for key in ["gold", "damage", "flask_max", "flask_current"]:
+		if data.has(key) and (not _is_integer(data[key]) or data[key] < 0):
+			return false
+	if data.get("flask_current", 1) > data.get("flask_max", 1):
+		return false
+	for key in ["parrydamage", "pos_x", "pos_y"]:
+		if data.has(key) and not _is_number(data[key]):
+			return false
+	if data.get("parrydamage", 1.5) < 0:
+		return false
+	if data.has("has_checkpoint") and not data.has_checkpoint is bool:
+		return false
+	if data.has("scene_path") and not data.scene_path is String:
+		return false
+	for key in ["defeated_mobs", "triggered_dialogues", "collected_items"]:
+		if not data.get(key, []) is Array:
+			return false
+		for entry in data.get(key, []):
+			if not _is_text(entry):
+				return false
+	for key in ["defeated_bosses", "talked_bosses", "npc_talk_counts"]:
+		if not data.get(key, {}) is Dictionary:
+			return false
+		for id in data.get(key, {}):
+			var entry: Variant = data[key][id]
+			if not _is_text(id):
+				return false
+			if key == "npc_talk_counts":
+				if not _is_integer(entry) or entry < 0:
+					return false
+			elif not entry is bool:
+				return false
+	if not data.get("inventory", []) is Array:
+		return false
+	for slot in data.get("inventory", []):
+		if slot == null:
+			continue
+		if not slot is Dictionary or not slot.get("id") is String:
+			return false
+		if slot.has("key_uses") and (not _is_integer(slot.key_uses) or slot.key_uses < 0):
+			return false
+	if not data.get("merchant_stocks", {}) is Dictionary:
+		return false
+	for shop in data.get("merchant_stocks", {}):
+		if not shop is String or not data.merchant_stocks[shop] is Array:
+			return false
+		for item in data.merchant_stocks[shop]:
+			if not item is Dictionary or not item.get("id") is String or not _is_integer(item.get("stock")):
+				return false
+			if item.stock < 0:
+				return false
+	if data.has("visited_rooms") and not _valid_rooms(data.visited_rooms):
+		return false
+	if not data.get("visited_rooms_by_scene", {}) is Dictionary:
+		return false
+	for scene in data.get("visited_rooms_by_scene", {}):
+		if not scene is String or not _valid_rooms(data.visited_rooms_by_scene[scene]):
+			return false
+	return true
 
 # --- 설정(옵션) 저장 및 불러오기 ---
-func save_settings(data: Dictionary) -> void:
-	var file = FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
-	if file:
-		file.store_string(JSON.stringify(data))
-		print("SaveManager: 설정 저장 완료")
+func save_settings(data: Dictionary) -> bool:
+	return _write_json_atomic(SETTINGS_PATH, data)
 
 func load_settings() -> Dictionary:
 	if not FileAccess.file_exists(SETTINGS_PATH):
 		return {"locale": DEFAULT_LOCALE}
 	var file = FileAccess.open(SETTINGS_PATH, FileAccess.READ)
-	if file:
-		var data = JSON.parse_string(file.get_as_text())
-		if typeof(data) == TYPE_DICTIONARY:
-			if not data.has("locale"):
-				data["locale"] = DEFAULT_LOCALE
-			print("SaveManager: 설정 로드 성공")
-			return data
+	if file == null:
+		push_error("SaveManager: 설정 파일을 읽지 못했습니다: %s (오류 %s)" % [SETTINGS_PATH, FileAccess.get_open_error()])
+		return {"locale": DEFAULT_LOCALE}
+	var data = JSON.parse_string(file.get_as_text())
+	if typeof(data) == TYPE_DICTIONARY:
+		if not data.has("locale"):
+			data["locale"] = DEFAULT_LOCALE
+		print("SaveManager: 설정 로드 성공")
+		return data
+	push_warning("SaveManager: 설정 파일 형식이 잘못되어 기본값을 사용합니다: " + SETTINGS_PATH)
 	return {"locale": DEFAULT_LOCALE}

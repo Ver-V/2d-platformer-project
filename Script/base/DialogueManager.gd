@@ -33,6 +33,7 @@ var is_waiting_choice: bool = false
 var pending_choices: Array = []
 var portrait_tween: Tween
 var input_lock_time: float = 0.0
+var _is_ending: bool = false
 
 const DIALOGUE_INPUT_LOCK_DURATION: float = 0.2
 
@@ -78,7 +79,7 @@ func _ready():
 	print("[DialogueManager] ChoiceUI 노드가 생성되었습니다.")
 
 func _input(event):
-	if not is_dialogue_active or is_waiting_choice:
+	if not is_dialogue_active or is_waiting_choice or _is_ending:
 		return
 	if input_lock_time > 0.0:
 		return
@@ -96,26 +97,40 @@ func _input(event):
 		else:
 			show_next_line()
 
-func start_dialogue(json_file_path: String, start_block: String = "start"):
+func start_dialogue(json_file_path: String, start_block: String = "start") -> bool:
+	if is_dialogue_active:
+		return false
 	json_file_path = _get_localized_dialogue_path(json_file_path)
 	print("[DialogueManager] Loading dialogue: ", json_file_path)
 	if not FileAccess.file_exists(json_file_path):
 		print("[DialogueManager] Error: File not found at ", json_file_path)
-		return
+		return false
 	var file = FileAccess.open(json_file_path, FileAccess.READ)
+	if file == null:
+		return false
 	var content = file.get_as_text()
 	var json = JSON.new()
 	var error = json.parse(content)
 	if error == OK:
 		var data = json.data
+		if typeof(data) not in [TYPE_DICTIONARY, TYPE_ARRAY]:
+			return false
 		dialogue_data = data if typeof(data) == TYPE_DICTIONARY else {"start": data}
+		if not dialogue_data.has(start_block) or not dialogue_data[start_block] is Array:
+			return false
 		is_dialogue_active = true
+		_is_ending = false
 		input_lock_time = DIALOGUE_INPUT_LOCK_DURATION
 		visible = true
-		GameManager.is_menu_open = true
+		GameManager.ui_opened(self, false)
 		_jump_to_block(start_block)
+		return true
 	else:
 		print("[DialogueManager] JSON Parse Error: ", json.get_error_message(), " at line ", json.get_error_line())
+	return false
+
+func has_dialogue_file(json_file_path: String) -> bool:
+	return not json_file_path.is_empty() and FileAccess.file_exists(_get_localized_dialogue_path(json_file_path))
 
 func _get_localized_dialogue_path(original_path: String) -> String:
 	var language_code := TranslationServer.get_locale().to_lower().get_slice("_", 0).get_slice("-", 0)
@@ -265,6 +280,11 @@ func _process(delta: float) -> void:
 		input_lock_time = maxf(0.0, input_lock_time - delta)
 
 func end_dialogue():
+	if not is_dialogue_active or _is_ending:
+		return
+	_is_ending = true
+	type_timer.stop()
+	is_typing = false
 	if portrait_tween: portrait_tween.kill()
 	visible = false
 	left_portrait.visible = false
@@ -274,7 +294,8 @@ func end_dialogue():
 	
 	await get_tree().process_frame
 	is_dialogue_active = false
-	GameManager.is_menu_open = false
+	_is_ending = false
+	GameManager.ui_closed(self)
 	dialogue_finished.emit()
 
 func force_close():

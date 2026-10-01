@@ -12,6 +12,9 @@ enum ItemType { GENERIC, CONSUMABLE, EQUIPMENT }
 @export_multiline var description: String = ""
 @export var type: ItemType = ItemType.GENERIC # 기본값은 잡동사니
 
+@export_group("Key Setting")
+@export_range(0, 99, 1) var key_uses: int = 0 # 0이면 열쇠가 아님; 문에서 요구하는 일반 아이템은 1회 사용
+
 @export_group("Consumable Setting")
 @export var heal_amount: int = 0  # 포션 아니면 그냥 0으로 두면 됨
 @export var damage_amount: int = 0

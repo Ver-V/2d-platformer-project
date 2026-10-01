@@ -3,9 +3,9 @@ extends CanvasLayer
 @onready var cursor_sprite: Sprite2D = $CursorSprite
 const CURSOR_NONE = preload("res://Assets/cursor_none.png")
 
-# 논리적 마우스 좌표가 아닌 시스템 커서 기준 누적 오프셋
-var sensitivity_offset: Vector2 = Vector2.ZERO
-var last_mouse_pos: Vector2 = Vector2.ZERO
+# 실제 클릭 위치와 커서 그림이 항상 같은 위치를 가리키게 한다.
+var cursor_position: Vector2 = Vector2.ZERO
+var _last_raw_position: Vector2 = Vector2.ZERO
 
 func _ready():
 	# 처음엔 숨김
@@ -14,7 +14,7 @@ func _ready():
 	# 웹 브라우저 대비용: 실제 시스템 커서 이미지를 아예 투명하게 덮어씌움
 	Input.set_custom_mouse_cursor(CURSOR_NONE)
 
-func _input(event):
+func _input(event: InputEvent) -> void:
 	# 웹 버전의 경우 클릭 시 마우스 모드가 풀리는 현상 방지
 	if event is InputEventMouseButton and event.pressed:
 		if cursor_sprite.visible:
@@ -22,38 +22,47 @@ func _input(event):
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
-	# 커서가 켜져 있을 때만 감도 계산
-	if cursor_sprite.visible and event is InputEventMouseMotion:
-		# 실제 마우스의 이동량(relative)에 감도를 곱한 만큼 오프셋을 누적
-		# 감도가 1.0이면 오프셋은 0으로 유지됨
-		var sensitivity_diff = event.relative * (GameManager.mouse_sensitivity - 1.0)
-		sensitivity_offset += sensitivity_diff
+	if not cursor_sprite.visible:
+		return
+
+	if event is InputEventMouseMotion:
+		var raw_position: Vector2 = event.position
+		var raw_movement: Vector2 = raw_position - _last_raw_position
+		var sensitivity := GameManager.mouse_sensitivity
+		var viewport_size := get_viewport().get_visible_rect().size
+		cursor_position += raw_movement * sensitivity
+		cursor_position = cursor_position.clamp(Vector2.ZERO, viewport_size)
+		_last_raw_position = raw_position
+
+		# 실제 OS 포인터도 이동시켜 GUI의 호버·드래그·클릭 좌표를 맞춘다.
+		# Web에서는 warp_mouse가 지원되지 않아 기본 커서 속도를 사용한다.
+		if OS.has_feature("web"):
+			cursor_position = raw_position
+		elif cursor_position.distance_to(raw_position) > 0.5:
+			get_viewport().warp_mouse(cursor_position)
+			_last_raw_position = cursor_position
+
+		event.position = cursor_position
+		event.global_position = cursor_position
+		event.relative = raw_movement * sensitivity
+		event.velocity *= sensitivity
+	elif event is InputEventMouseButton:
+		event.position = cursor_position
+		event.global_position = cursor_position
 
 func _process(_delta):
 	if cursor_sprite.visible:
-		# OS 기준 실제 마우스 위치 가져오기 (웹 클릭 어긋남 방지)
-		var base_pos = get_viewport().get_mouse_position()
-		
-		# 시스템 위치에 감도 오프셋을 더해 최종 가짜 커서 위치 결정
-		var final_pos = base_pos + sensitivity_offset
-		
-		# 화면 밖으로 가두기 (clamp)
-		var viewport_rect = get_viewport().get_visible_rect()
-		final_pos.x = clamp(final_pos.x, 0, viewport_rect.size.x)
-		final_pos.y = clamp(final_pos.y, 0, viewport_rect.size.y)
-		
-		cursor_sprite.global_position = final_pos
+		cursor_sprite.global_position = cursor_position
 
 # --- 외부 호출 함수 ---
 
 func show_cursor():
 	cursor_sprite.visible = true
 	
-	# 초기화: 커서를 켤 때마다 오프셋을 초기화하여 현재 마우스 위치와 동기화
-	sensitivity_offset = Vector2.ZERO
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
-	
-	cursor_sprite.global_position = get_viewport().get_mouse_position()
+	cursor_position = get_viewport().get_mouse_position()
+	_last_raw_position = cursor_position
+	cursor_sprite.global_position = cursor_position
 
 func hide_cursor():
 	cursor_sprite.visible = false

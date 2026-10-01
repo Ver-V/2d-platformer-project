@@ -4,17 +4,42 @@
 	  "speaker": "right",
 	  "left_image": "",
 	  "right_image": "HeroBunny_idle",
-	  "name": "Pink Bunny",
-	  "text": "It's locked. I'll need something to get in - like a key, maybe?"
+	  "name": "분홍 토끼",
+	  "text": "잠겨 있네. 안으로 들어가려면... 열쇠 같은 게 필요하겠지?"
 	}
   ],
-  "with_item": [
+	"with_item": [
 	{
 	  "speaker": "right",
 	  "left_image": "",
 	  "right_image": "HeroBunny_surprise",
-	  "name": "Pink Bunny",
-	  "text": "The pink key fits the lock. I can open the path now!"
+	  "name": "분홍 토끼",
+	  "text": "분홍색 열쇠가 딱 맞아. 이제 길을 열 수 있겠어!"
+	}
+  ],
+	"key_spent": [
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "HeroBunny_idle",
+	  "name": "분홍 토끼",
+	  "text": "문이 열렸어. 이제 이건 버려도 돼."
+	},
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "",
+	  "name": "",
+	  "text": "분홍색 열쇠를 버렸습니다."
+	}
+  ],
+	"key_kept": [
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "HeroBunny_idle",
+	  "name": "분홍 토끼",
+	  "text": "문이 열렸어. 그래도 이 열쇠는 아직 필요할 것 같아."
 	}
   ]
 }

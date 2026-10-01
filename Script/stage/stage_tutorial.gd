@@ -15,7 +15,7 @@ func _ready() -> void:
 	start_tutorial_intro()
 
 func start_tutorial_intro() -> void:
-	if intro_dialogue_path == "" or not FileAccess.file_exists(intro_dialogue_path):
+	if not DialogueManager.has_dialogue_file(intro_dialogue_path):
 		if SceneTransition:
 			SceneTransition.color_rect.modulate.a = 0.0
 		return

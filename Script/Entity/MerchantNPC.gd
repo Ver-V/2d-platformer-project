@@ -23,7 +23,7 @@ func _on_shop_closed(bought: bool):
 		# 물건을 샀다면, 상점 UI가 닫히자마자 즉시 감사 대사 출력!
 		var bought_file = "res://resources/Dialogues/merchant_" + "thanks.json"
 		
-		if FileAccess.file_exists(bought_file):
+		if DialogueManager.has_dialogue_file(bought_file):
 			DialogueManager.start_dialogue(bought_file)
 		else:
 			print("구매 후 대사 파일이 없습니다: ", bought_file)
@@ -38,7 +38,7 @@ func _input(event):
 		get_viewport().set_input_as_handled()
 		var file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count) + ".json"
 		
-		if FileAccess.file_exists(file_path):
+		if DialogueManager.has_dialogue_file(file_path):
 			DialogueManager.start_dialogue(file_path)
 		
 			await DialogueManager.dialogue_finished 
@@ -55,7 +55,7 @@ func _input(event):
 			if talk_count > 0:
 				var last_file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count - 1) + ".json"
 				
-				if FileAccess.file_exists(last_file_path):
+				if DialogueManager.has_dialogue_file(last_file_path):
 					DialogueManager.start_dialogue(last_file_path)
 					await DialogueManager.dialogue_finished 
 					

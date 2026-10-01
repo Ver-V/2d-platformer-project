@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/pink_key.svg" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+id = "pink_key"
+name = "ITEM_PINK_KEY_NAME"
+icon = ExtResource("2_icon")
+description = "ITEM_PINK_KEY_DESCRIPTION"
+key_uses = 1

@@ -18,7 +18,7 @@ func _ready() -> void:
 	new_game_dialog.confirmed.connect(_on_new_game_confirmed)
 	
 	# 1. 저장된 파일이 없으면 'Load Game' 버튼 비활성화 (클릭 불가)
-	if not FileAccess.file_exists(SaveManager.SAVE_PATH):
+	if not SaveManager.has_save():
 		btn_load.disabled = true
 		btn_load.modulate = Color(1, 1, 1, 0.5) # 반투명하게 처리 (시각적 효과)
 
@@ -35,7 +35,7 @@ func _ready() -> void:
 	$VBoxContainer/BtnExit.pressed.connect(_on_exit_pressed)
 
 func _on_new_game_pressed() -> void:
-	if FileAccess.file_exists(SaveManager.SAVE_PATH):
+	if SaveManager.has_save():
 		new_game_dialog.popup_centered()
 	else:
 		_start_new_game()
@@ -46,16 +46,16 @@ func _on_new_game_confirmed() -> void:
 
 func _start_new_game() -> void:
 	GameManager.reset_data()
-	get_tree().change_scene_to_file("res://Scenes/Stage/Stage_tutorial.tscn")
+	get_tree().change_scene_to_file(FIRST_LEVEL_PATH)
 
 func _on_continue_button_pressed() -> void: 
 	if GameManager.load_game():
 		var path = GameManager.last_scene_path
 		if path == "" or not ResourceLoader.exists(path):
-			path = "res://Scenes/Stage/Stage_tutorial.tscn"
+			path = FIRST_LEVEL_PATH
 		get_tree().change_scene_to_file(path)
 	else:
-		get_tree().change_scene_to_file("res://Scenes/Stage/Stage_tutorial.tscn")
+		get_tree().change_scene_to_file(FIRST_LEVEL_PATH)
 
 func _on_load_game_pressed() -> void:
 	_on_continue_button_pressed()

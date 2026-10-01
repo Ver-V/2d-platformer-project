@@ -1,0 +1,11 @@
+{
+  "without_item": [
+    {
+      "speaker": "right",
+      "left_image": "",
+      "right_image": "HeroBunny_idle",
+      "name": "Pink Bunny",
+      "text": "This chest is locked. I think I need a particular key to open it."
+    }
+  ]
+}

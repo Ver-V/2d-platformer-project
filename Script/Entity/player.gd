@@ -37,6 +37,7 @@ var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
 var _was_on_floor: bool = false
 var _menu_exit_cooldown: float = 0.0
+var context_interactable: Node = null
 @export_group("Visuals")
 @export var dust_particles_scene: PackedScene = preload("res://Scenes/System/DustParticles.tscn")
 
@@ -58,7 +59,6 @@ var is_guarding: bool = false
 var guard_timer: float = 0.0
 var guard_cooldown_timer: float = 0.0
 
-const GUARD_DURATION: float = 0.5          # 가드 지속 시간
 const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
 const GUARD_COOLDOWN_TIME: float = 1.5      # 가드 재사용 대기 시간
 
@@ -230,7 +230,7 @@ func _on_sword_area_entered(area: Area2D) -> void:
 		# 퍼펙트 가드 보너스가 있으면 +10 전달 (성공 시에만 소모하도록 아래에서 처리)
 		var extra = 10 if has_perfect_guard_bonus else 0
 
-		if p.attempt_parry(global_position, extra):
+		if p.attempt_parry(global_position, extra, player_parry_damage_multifac):
 			is_parry_success = true
 			sfx_player.play_parry()
 			
@@ -252,8 +252,8 @@ func _on_sword_area_entered(area: Area2D) -> void:
 		# 칼이 몬스터 몸에 닿았을 때 정상적으로 데미지가 들어감.
 		
 func _on_sword_body_entered(body: Node) -> void:
-	# 1. 적 그룹인지 확인
-	if body.is_in_group("enemies"):
+	# 적과 파괴 가능한 오브젝트만 검으로 타격
+	if body.is_in_group("enemies") or body.is_in_group("breakables"):
 		await get_tree().process_frame
 		
 		# 이미 투사체를 패링했다면 검으로 직접 데미지를 주지 않음
@@ -296,30 +296,10 @@ func _on_sword_body_entered(body: Node) -> void:
 			GameManager.apply_hitstop(0.25, 0.1)
 			
 func _on_guard_area_entered(area: Area2D) -> void:
-	if not is_guarding: return
-
-	# 닿은 것이 투사체인지 확인
-	if area is Projectile:
-		var p: Projectile = area as Projectile
-
-		# 1. 퍼펙트 가드 타이밍 체크
-		if guard_timer <= PERFECT_GUARD_WINDOW:
-			# 퍼펙트 가드 보너스 부여
-			has_perfect_guard_bonus = true
-			
-			show_popup("Perfect Guard!", Color.CYAN)
-			sfx_player.play_perfect_guard()
-			GameManager.apply_hitstop(0.15, 0.1)
-
-			# 무적 시간 부여 및 투사체 제거
-			start_invuln(0.2)
-			p.queue_free()
-
-		# 2. 일반 가드 (타이밍은 놓쳤지만 가드 중일 때)
-		else:
-			var p_vel = p.velocity
-			p.queue_free()
-			apply_damage(10, p_vel.normalized() * 100.0, false, 0.2, true)
+	if is_guarding and area is Projectile:
+		# 몸 충돌과 같은 경로에서 방향·무적·가드 및 투사체 소모를 판정한다.
+		if area.velocity.x * attack_pivot.scale.x < 0:
+			area._on_body_entered(self)
 			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
 	if is_guarding and amount > 0 and not is_invulnerable() and is_projectile:
@@ -340,14 +320,11 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 				
 				has_perfect_guard_bonus = true
 				start_invuln(0.2)
-				return false
+				return true # 피해는 없지만 투사체 충돌은 처리되었으므로 소모한다.
 			else:
 				amount = 5
 				show_popup("Guard", Color.GRAY)
 				sfx_player.play_guard()
-
-	if is_guarding and amount <= 5:
-		return false
 
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
 	
@@ -355,6 +332,7 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 		sfx_player.play_hurt()
 		GameManager.update_hp(hp)
 		HUD.show_hud_temporarily()
+		HUD.show_damage_vignette(hp, max_hp)
 		GameManager.apply_hitstop(0.25, 0.2)
 		
 		if current_state == State.ATTACK or current_state == State.GUARD:
@@ -482,7 +460,10 @@ func _process_movement(delta: float) -> void:
 
 	# 점프 선입력
 	if Input.is_action_just_pressed("jump") and _menu_exit_cooldown <= 0.0:
-		_jump_buffer_timer = jump_buffer_time
+		if _try_context_interaction():
+			_jump_buffer_timer = 0.0
+		else:
+			_jump_buffer_timer = jump_buffer_time
 
 	# 점프 실행
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
@@ -520,7 +501,10 @@ func _process_attack(delta: float) -> void:
 
 	# 인터럽트: 점프 (즉시 캔슬 후 점프)
 	if Input.is_action_just_pressed("jump") and _menu_exit_cooldown <= 0.0:
-		_jump_buffer_timer = jump_buffer_time
+		if _try_context_interaction():
+			_jump_buffer_timer = 0.0
+		else:
+			_jump_buffer_timer = jump_buffer_time
 
 	# 공격 중 점프 캔슬 (바닥에 있거나 코요테 타임이 남아있을 때만)
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
@@ -554,9 +538,14 @@ func _process_guard(delta: float) -> void:
 	
 	guard_timer += delta # 퍼펙트 가드 판정을 위해 시간 측정은 계속 함
 	
-	# (GUARD_DURATION에 의한 강제 상태 전환 제거됨. 애니메이션 종료 신호에 맡김)
+	# 가드 지속 시간은 guard 애니메이션 종료 신호로 결정한다.
 		
 	move_with_knockback(delta)
+
+func _try_context_interaction() -> bool:
+	if is_instance_valid(context_interactable) and context_interactable.has_method("try_interact"):
+		return context_interactable.try_interact(self)
+	return false
 
 # 먼지 파티클 소환 함수
 func spawn_dust(offset: Vector2 = Vector2.ZERO, scale_mult: float = 1.0) -> void:

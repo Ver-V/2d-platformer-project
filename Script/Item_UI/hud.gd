@@ -9,6 +9,26 @@ extends CanvasLayer
 @onready var interact_label: Label = $Control/InteractLabel
 @onready var save_panel: HBoxContainer = $Control/SavePanel
 @onready var minimap_container = $Control/MinimapContainer
+@onready var damage_vignette: ColorRect = get_node_or_null("DamageVignette") as ColorRect
+
+const DAMAGE_VIGNETTE_SHADER := """
+shader_type canvas_item;
+render_mode unshaded;
+
+uniform float strength = 0.0;
+
+void fragment() {
+	vec2 from_center = (UV - vec2(0.5)) * 2.0;
+	float edge = smoothstep(0.55, 1.15, length(from_center * vec2(1.0, 0.8)));
+	COLOR = vec4(0.72, 0.025, 0.035, edge * strength);
+}
+"""
+const DAMAGE_VIGNETTE_HOLD_MS: int = 500
+const DAMAGE_VIGNETTE_FADE_MS: int = 250
+
+var _damage_vignette_material: ShaderMaterial
+var _damage_vignette_start_ms: int = -1
+var _damage_vignette_strength: float = 0.0
 
 var fade_tween: Tween
 var heart_scene: PackedScene = preload("res://Scenes/System/HeartIcon.tscn")
@@ -35,8 +55,46 @@ func _ready() -> void:
 	visible = false
 	
 	hide_timer.timeout.connect(_on_hide_timer_timeout)
+	_setup_damage_vignette()
 	_setup_boss_health_bar()
 	_setup_ui()
+
+func _setup_damage_vignette() -> void:
+	if damage_vignette == null:
+		return
+	var shader := Shader.new()
+	shader.code = DAMAGE_VIGNETTE_SHADER
+	_damage_vignette_material = ShaderMaterial.new()
+	_damage_vignette_material.shader = shader
+	damage_vignette.material = _damage_vignette_material
+	damage_vignette.color = Color.WHITE
+	damage_vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	damage_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	damage_vignette.z_index = -1
+	damage_vignette.hide()
+
+func show_damage_vignette(current_hp: int, maximum_hp: int) -> void:
+	if damage_vignette == null or _damage_vignette_material == null:
+		return
+	var health_ratio := clampf(float(current_hp) / float(maxi(maximum_hp, 1)), 0.0, 1.0)
+	_damage_vignette_strength = lerpf(0.22, 0.12, health_ratio)
+	_damage_vignette_start_ms = Time.get_ticks_msec()
+	_damage_vignette_material.set_shader_parameter("strength", _damage_vignette_strength)
+	damage_vignette.show()
+
+func _update_damage_vignette() -> void:
+	if _damage_vignette_start_ms < 0 or damage_vignette == null:
+		return
+	var elapsed_ms := Time.get_ticks_msec() - _damage_vignette_start_ms
+	if elapsed_ms < DAMAGE_VIGNETTE_HOLD_MS:
+		return
+	if elapsed_ms >= DAMAGE_VIGNETTE_HOLD_MS + DAMAGE_VIGNETTE_FADE_MS:
+		_damage_vignette_start_ms = -1
+		_damage_vignette_material.set_shader_parameter("strength", 0.0)
+		damage_vignette.hide()
+		return
+	var fade_progress := float(elapsed_ms - DAMAGE_VIGNETTE_HOLD_MS) / float(DAMAGE_VIGNETTE_FADE_MS)
+	_damage_vignette_material.set_shader_parameter("strength", _damage_vignette_strength * (1.0 - fade_progress))
 
 func _input(event):
 	if event.is_action_pressed("toggle_map"):
@@ -48,6 +106,7 @@ func _input(event):
 			hide_timer.start()
 
 func _process(_delta: float) -> void:
+	_update_damage_vignette()
 	if boss_target == null:
 		return
 	if not is_instance_valid(boss_target) or boss_target.hp <= 0:

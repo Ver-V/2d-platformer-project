@@ -3,49 +3,49 @@
 		"speaker": "left", 
 		"left_image": "HeroBunny_surprise",
 		"right_image": "LittleBunny_idle",
-		"name": "Pink Bunny",
-		"text": "Wait, what are you doing here?"
+		"name": "분홍 토끼",
+		"text": "잠깐, 네가 왜 여기 있어?"
 	},
 	{
 		"speaker": "right",
 		"left_image": "HeroBunny_surprise",
 		"right_image": "LittleBunny_smile",
-		"name": "Little Bunny",
-		"text": "I just wanted to see the outside world with you."
+		"name": "동생 토끼",
+		"text": "언니랑 같이 바깥세상을 보고 싶어서 여기까지 왔지롱~"
 	},
 	{
 		"speaker": "left",
 		"left_image": "HeroBunny_surprise",
 		"right_image": "LittleBunny_smile",
-		"name": "Pink Bunny",
-		"text": "But... the outside world could be dangerous. Are you sure you'll be okay?"
+		"name": "분홍 토끼",
+		"text": "하지만... 밖은 위험할 수도 있는데, 괜찮겠어?"
 	},
 	{
 		"speaker": "right",
 		"left_image": "HeroBunny_surprise",
 		"right_image": "LittleBunny_idle",
-		"name": "Little Bunny",
-		"text": "But you came out because you wanted to see the outside world too."
+		"name": "동생 토끼",
+		"text": "그렇게 말하는 언니도 바깥세상이 보고 싶어서 나온 거잖아."
 	},
 	{
 		"speaker": "left",
 		"left_image": "HeroBunny_embarrassed",
 		"right_image": "LittleBunny_idle",
-		"name": "Pink Bunny",
-		"text": "Yeah… you’ve got a point."
+		"name": "분홍 토끼",
+		"text": "그건... 그렇지."
 	},
 	{
 		"speaker": "right",
 		"left_image": "HeroBunny_embarrassed",
 		"right_image": "LittleBunny_smile",
-		"name": "Little Bunny",
-		"text": "Yeah, Sis. Since you’re already here, you might as well take a look at the stuff. I brought some things from Mom and Dad’s storage."
+		"name": "동생 토끼",
+		"text": "그치? 온 김에 내가 가져온 물건도 좀 봐. 엄마 아빠 창고에서 몰래 가져왔어."
 	},
 	{
 		"speaker": "left",
 		"left_image": "HeroBunny_tired",
 		"right_image": "LittleBunny_smile",
-		"name": "Pink Bunny",
-		"text": "(Sigh)... Alright."
+		"name": "분홍 토끼",
+		"text": "휴... 알았어."
 	}
 ]

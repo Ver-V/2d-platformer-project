@@ -117,7 +117,6 @@ func _start_combat() -> void:
 	current_state = State.IDLE
 	
 	set_active(true)
-	GameManager.is_menu_open = false
 	_play_boss_music()
 	if HUD.has_method("show_boss_health"):
 		HUD.show_boss_health(self)
@@ -178,10 +177,9 @@ func _on_death() -> void:
 		DialogueManager.start_dialogue(outro_dialogue_file)
 		await DialogueManager.dialogue_finished
 
-	# 보스 처치 기록 및 저장은 stage.gd의 _on_enemy_died에서 통합 처리됨
-	super._on_death() 
-	
+	# died 신호가 자동 저장을 실행하므로 보상을 먼저 반영한다.
 	GameManager.update_gold(drop_gold_amount)
+	super._on_death()
 
 # 보스는 코인을 뿌리지 않고 바로 GameManager.update_gold로 지급하므로 부모의 spawn_gold를 덮어씁니다.
 func spawn_gold() -> void:

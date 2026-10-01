@@ -46,13 +46,15 @@ func open_shop(shop_id: String = "Stage1"): # 인자 받기
 	show()
 	_create_item_slots() # 목록 생성
 	_update_selection_ui()
-	GameManager.ui_opened()
+	GameManager.ui_opened(self)
 	
 func close_shop():
+	if not is_open:
+		return
 	is_open = false
 	hide()
+	GameManager.ui_closed(self)
 	shop_closed.emit(bought_something)
-	GameManager.ui_closed()
 
 func close_confirm_panel():
 	is_confirming = false

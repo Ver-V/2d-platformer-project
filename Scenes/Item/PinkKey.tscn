@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Item/field_item.tscn" id="1_field_item"]
+[ext_resource type="Resource" path="res://resources/items/pink_key.tres" id="2_key"]
+
+[node name="PinkKey" instance=ExtResource("1_field_item")]
+item_resource = ExtResource("2_key")

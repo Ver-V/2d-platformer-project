@@ -11,7 +11,7 @@ var is_waiting_respawn: bool = false
 @export var grid_origin: Vector2 = Vector2(0.0, 0.0)
 
 # 방 이동 관련 설정
-@export var reset_enemies_on_room_enter: bool = true
+@export var reset_enemies_on_room_enter: bool = true # 재진입 시 위치·전투 상태 초기화, HP 유지
 @export var deactivate_enemies_outside_room: bool = true
 @export var clear_projectiles_on_room_change: bool = true
 @export var clear_projectiles_outside_current_room: bool = true
@@ -212,11 +212,13 @@ func apply_room_rules(current_player_room: Vector2i) -> void:
 		var is_visible_in_cam = view_rect.has_point(e.global_position) if cam else false
 		
 		if eroom == current_player_room or is_visible_in_cam:
+			if reset_enemies_on_room_enter and not e._active and e.hp > 0:
+				e.reset_to_home(false)
 			e.set_active(true)
 		else:
 			if deactivate_enemies_outside_room:
 				# 화면 밖으로 나가면 리셋 및 비활성화
-				if e._active: # 활성 상태였다가 꺼질 때만 리셋
+				if reset_enemies_on_room_enter and e._active and e.hp > 0:
 					e.reset_to_home(false)
 				e.set_active(false)
 

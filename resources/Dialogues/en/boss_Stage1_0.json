@@ -3,36 +3,36 @@
 		"speaker": "right", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_surprise",
-		"name": "언니 토끼",
-		"text": "어머, 이게 누구람!"
+		"name": "Big Bunny",
+		"text": "Look who it is!"
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_idle",
-		"name": "분홍 토끼",
-		"text": "안녕, 언니. 오랜만이네. 열심히 일하는 거 같은데, 퇴근은 언제 해?"
+		"name": "Pink Bunny",
+		"text": "Hey, big sis. Long time no see. You’re working hard. So, when do you get off?"
 	},
 	{
 		"speaker": "right", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_idle",
-		"name": "언니 토끼",
-		"text": "이미 알고 있잖아. 아마 저녁 먹을 시간은 돼야 퇴근하겠지."
+		"name": "Big Bunny",
+		"text": "You know how it is. I should be done by dinnertime, I guess."
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_idle",
 		"right_image": "BigBunny_idle",
-		"name": "분홍 토끼",
-		"text": "그래? 아, 미안한데. 언니, 할 말이 있어."
+		"name": "Pink Bunny",
+		"text": "I'm sorry. Sis. I have something to tell you."
 	},
 	{
 		"speaker": "left", 
 		"left_image": "HeroBunny_smile",
 		"right_image": "BigBunny_idle",
-		"name": "분홍 토끼 ",
-		"text": "언니, 나 밖으로 나가볼거야. 세상이 어떻게 생겼는지 직접 두 눈으로 보고 싶거든!"
+		"name": "Pink Bunny",
+		"text": "I'm going outside, Sis. I want to see what the world is really like!"
 	},
 	{
 		"speaker": "right", 

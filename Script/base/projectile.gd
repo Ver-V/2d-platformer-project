@@ -29,6 +29,7 @@ var _current_life: float = 0.0
 var team: String = "enemy" 
 
 func _ready() -> void:
+	add_to_group("projectiles")
 	# 수명이 다하면 사라지도록 타이머 연결 혹은 직접 계산
 	_current_life = life_time
 	
@@ -43,7 +44,7 @@ func _ready() -> void:
 	
 	var notifier = get_node_or_null("VisibleOnScreenNotifier2D")
 	if notifier:
-		notifier.screen_exited.connect(queue_free)
+		notifier.screen_exited.connect(_on_screen_exited)
 	
 	if start_homing and team == "enemy":
 		_is_homing = true
@@ -85,6 +86,8 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 func _on_screen_exited() -> void:
+	if is_queued_for_deletion():
+		return
 	if _reflected and is_instance_valid(shooter):
 		# 패링된 투사체가 화면 밖으로 나갈 때, 쏜 적이 살아있다면 즉시 데미지 적용
 		if shooter is CombatBody2D:
@@ -96,6 +99,8 @@ func _on_screen_exited() -> void:
 	queue_free()
 
 func _on_body_entered(body: Node) -> void:
+	if is_queued_for_deletion():
+		return
 	if body is CombatBody2D:
 		# 같은 팀이면 통과 (예: 적이 쏜 게 적을 맞추지 않음)
 		if _is_same_team(body):
@@ -130,8 +135,8 @@ func set_parryable_mode(active: bool, cue_color: Color = Color.YELLOW) -> void:
 	else:
 		modulate = Color.WHITE
 
-func attempt_parry(source_pos: Vector2, extra_damage: int = 0) -> bool:
-	if not is_parryable:
+func attempt_parry(source_pos: Vector2, extra_damage: int = 0, damage_multiplier: float = 1.5) -> bool:
+	if not is_parryable or team != "enemy" or is_queued_for_deletion():
 		return false
 	
 	_reflected = true
@@ -146,7 +151,7 @@ func attempt_parry(source_pos: Vector2, extra_damage: int = 0) -> bool:
 	# 일단 튕겨나가는 초기 방향은 플레이어가 바라보는 방향 or 반사각
 	# (유도탄이라 초기 방향은 크게 중요하지 않지만, 멋을 위해 반대편으로 설정)
 	direction = (global_position - source_pos).normalized()
-	damage = ceil(damage * 1.5) + extra_damage
+	damage = ceili(damage * damage_multiplier) + extra_damage
 	speed *= 2.0 # 유도탄이니까 속도는 2배만 (너무 빠르면 선회하기 힘듦)
 	velocity = direction * speed  # <-- 이거 꼭 있어야 날아갑니다!
 	
@@ -164,7 +169,3 @@ func attempt_parry(source_pos: Vector2, extra_damage: int = 0) -> bool:
 	call_deferred("set_collision_mask_value", 4, true)
 	
 	return true
-	
-
-func _on_visible_on_screen_notifier_2d_screen_exited() -> void:
-	queue_free()
