@@ -9,6 +9,8 @@ var shooter: Node2D = null # [추가] 나를 쏜 놈을 기억하는 변수
 var _reflected: bool = false
 @export_group("Parry")
 @export var is_parryable: bool = false         # 이 옵션을 켜면 패링 가능
+@export var practice_parry_defeats_shooter: bool = false
+var _practice_parried: bool = false
 @export var parried_color: Color = Color(0.464, 0.727, 0.67, 1.0) # 반사시 색상 변경
 
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -55,35 +57,49 @@ func _ready() -> void:
 	# 여기서 area_entered로 처리할 수도 있지만, 보통 투사체는 '몸'에 닿는 걸 체크함.
 
 func _physics_process(delta: float) -> void:
+	var movement := velocity * delta
 	if _is_homing:
-		if is_instance_valid(_homing_target):
-			# 1. 목표 지점 계산 (상대방의 가슴/명치 노리기)
+		if _has_live_homing_target():
+			# 상대방의 가슴/명치를 조준한다.
 			var target_pos = _homing_target.global_position + Vector2(0, -10)
-			
-			# 2. 목표 방향 벡터
-			var desired_dir = (target_pos - global_position).normalized()
-			
-			# 3. 현재 이동 방향(velocity)을 목표 방향으로 서서히 회전 (Slerp)
-			# direction 변수를 갱신
-			direction = direction.slerp(desired_dir, homing_turn_speed * delta).normalized()
-			
-			# 4. 실제 속도(velocity)에 적용
+			var to_target: Vector2 = target_pos - global_position
+			var desired_dir := to_target.normalized()
+			if _reflected:
+				# 패링탄은 직접 추적한다. 느린 선회로 목표 주변을 도는 현상을 방지한다.
+				if not to_target.is_zero_approx():
+					direction = desired_dir
+			else:
+				direction = direction.slerp(desired_dir, clampf(homing_turn_speed * delta, 0.0, 1.0)).normalized()
 			velocity = direction * speed
+			movement = velocity * delta
+			if _reflected:
+				# 빠른 탄환도 목표를 지나치지 않고 도착 지점에서 명중 처리한다.
+				movement = direction * minf(speed * delta, to_target.length())
 		else:
-			# 타겟이 죽거나 사라지면 유도 중단 (그냥 직진)
+			# 타겟이 죽거나 사라지면 유도를 중단하고 현재 방향으로 직진한다.
 			_is_homing = false
 	
 	# 이동
-	global_position += velocity * delta
+	global_position += movement
 	
 	# 회전 (선택사항: 진행 방향을 바라보게)
 	if velocity != Vector2.ZERO:
 		rotation = velocity.angle()
 
+	if _reflected and _is_homing and _has_live_homing_target():
+		var target_pos := _homing_target.global_position + Vector2(0, -10)
+		if global_position.distance_squared_to(target_pos) <= 0.0001:
+			_on_body_entered(_homing_target)
+
 	# 수명 체크
 	_current_life -= delta
 	if _current_life <= 0.0:
 		queue_free()
+
+func _has_live_homing_target() -> bool:
+	if not is_instance_valid(_homing_target) or _homing_target.is_queued_for_deletion():
+		return false
+	return not (_homing_target is CombatBody2D and _homing_target.hp <= 0)
 
 func _on_screen_exited() -> void:
 	if is_queued_for_deletion():
@@ -91,7 +107,7 @@ func _on_screen_exited() -> void:
 	if _reflected and is_instance_valid(shooter):
 		# 패링된 투사체가 화면 밖으로 나갈 때, 쏜 적이 살아있다면 즉시 데미지 적용
 		if shooter is CombatBody2D:
-			shooter.apply_damage(damage, Vector2.ZERO, false, -1.0, true)
+			shooter.apply_damage(_get_impact_damage(shooter), Vector2.ZERO, false, -1.0, true)
 		elif shooter.has_method("apply_damage"):
 			shooter.call("apply_damage", damage, Vector2.ZERO)
 		elif shooter.has_method("take_damage"):
@@ -109,11 +125,18 @@ func _on_body_entered(body: Node) -> void:
 		# 데미지 적용
 		var knock_dir = velocity.normalized()
 		# 넉백값은 투사체 설정에 따라 조절 가능. 일단 하드코딩 혹은 export 변수 사용
-		var applied = body.apply_damage(damage, knock_dir * 150.0, false, -1.0, true)
+		var applied = body.apply_damage(_get_impact_damage(body), knock_dir * 150.0, false, -1.0, true)
 		
 		if applied:
 			_destroy_projectile()
 	
+
+func _get_impact_damage(body: CombatBody2D) -> int:
+	# 연습용 무해 탄환만, 반사 후 발사자에게 명중했을 때 처치한다.
+	# apply_damage를 통해 기존 사망 연출·드롭·기록 처리를 유지한다.
+	if _practice_parried and is_instance_valid(shooter) and body == shooter:
+		return maxi(body.hp, 0)
+	return damage
 
 func _is_same_team(body: Node) -> bool:
 	if team == "enemy" and body.is_in_group("enemies"):
@@ -140,20 +163,25 @@ func attempt_parry(source_pos: Vector2, extra_damage: int = 0, damage_multiplier
 		return false
 	
 	_reflected = true
+	_practice_parried = practice_parry_defeats_shooter and damage == 0
 	
 	team = "player"
 	
-	# 1. 쏜 놈(shooter)이 아직 살아있는지 확인
-	if is_instance_valid(shooter):
-		_is_homing = true
-		_homing_target = shooter
-	
-	# 일단 튕겨나가는 초기 방향은 플레이어가 바라보는 방향 or 반사각
-	# (유도탄이라 초기 방향은 크게 중요하지 않지만, 멋을 위해 반대편으로 설정)
+	# 발사자가 없을 때는 플레이어 앞쪽으로 반사하고, 있으면 즉시 발사자를 조준한다.
+	_is_homing = false
+	_homing_target = shooter
 	direction = (global_position - source_pos).normalized()
+	if direction.is_zero_approx():
+		direction = -velocity.normalized() if not velocity.is_zero_approx() else Vector2.RIGHT
+	if _has_live_homing_target():
+		_is_homing = true
+		var to_shooter := shooter.global_position + Vector2(0, -10) - global_position
+		if not to_shooter.is_zero_approx():
+			direction = to_shooter.normalized()
 	damage = ceili(damage * damage_multiplier) + extra_damage
-	speed *= 2.0 # 유도탄이니까 속도는 2배만 (너무 빠르면 선회하기 힘듦)
-	velocity = direction * speed  # <-- 이거 꼭 있어야 날아갑니다!
+	speed *= 2.0
+	velocity = direction * speed
+	rotation = velocity.angle()
 	
 	# [추가] 패링된 탄환은 5초 내로 못 맞추면 소멸
 	_current_life = 5.0

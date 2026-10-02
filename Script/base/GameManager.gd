@@ -481,10 +481,24 @@ func load_data_from_save(data: Dictionary) -> void:
 func get_stage_path(stage_num: int) -> String:
 	return "res://Scenes/Stage/Stage_%02d.tscn" % stage_num
 
+var _hitstop_token: int = 0
+var _hitstop_end_ms: int = 0
+
+# 겹친 히트스탑은 더 느린 배율과 더 늦은 종료 시각을 유지하고, 마지막 호출만 시간을 복구한다.
 func apply_hitstop(time_scale: float, duration: float):
+	var now := Time.get_ticks_msec()
+	var end_ms := now + int(duration * 1000.0)
+	if _hitstop_end_ms > now:
+		time_scale = minf(time_scale, Engine.time_scale)
+		end_ms = maxi(end_ms, _hitstop_end_ms)
+	_hitstop_token += 1
+	var token := _hitstop_token
+	_hitstop_end_ms = end_ms
 	Engine.time_scale = time_scale
-	await get_tree().create_timer(duration, true, false, true).timeout
-	Engine.time_scale = 1.0
+	await get_tree().create_timer((end_ms - now) / 1000.0, true, false, true).timeout
+	if token == _hitstop_token:
+		_hitstop_end_ms = 0
+		Engine.time_scale = 1.0
 
 var item_database: Dictionary = {
 	"health_potion": "res://resources/items/health_potion.tres",

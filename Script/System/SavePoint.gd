@@ -25,7 +25,13 @@ func _on_body_exited(body: Node) -> void:
 func _input(event: InputEvent) -> void:
 	if not player_in_range or not can_save:
 		return
-		
+	# 메뉴·대화 중이거나 사망 화면의 재시작 입력(R)과 겹치지 않도록 막는다.
+	if GameManager.is_menu_open:
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or player.hp <= 0:
+		return
+
 	# [선택 1] 저장만 (E키)
 	if event.is_action_pressed("interact"):
 		action_save_only()

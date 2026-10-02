@@ -367,6 +367,7 @@ drop_gold_amount = 0
 [node name="ShooterComponent" parent="Entities/Slime3" instance=ExtResource("9_o1nv7")]
 projectile_scene = ExtResource("10_cjvf8")
 projectile_damage = 0
+practice_parry_defeats_shooter = true
 parry_interval = 1
 auto_shoot = true
 fire_rate = 1.0

@@ -222,11 +222,7 @@ func apply_room_rules(current_player_room: Vector2i) -> void:
 					e.reset_to_home(false)
 				e.set_active(false)
 
-# --- 유틸리티 및 기타 로직 (기존 그대로) ---
-# ... (assign_persist_ids_by_formula 등 아래 부분은 원래 코드 그대로 두시면 됩니다) ...
-# ...
-# ...
-# --- 아래는 생략된 부분입니다. 작성하신 코드 그대로 유지하세요 ---
+# --- 방 이동·적 ID·좌표 유틸리티 ---
 func _physics_process(_delta: float) -> void:
 	if not is_instance_valid(player): return
 	var r: Vector2i = room_from_pos(player.global_position)

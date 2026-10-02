@@ -15,14 +15,15 @@ func _on_body_entered(body: Node2D) -> void:
 	
 	# 플레이어인지 확인 (Player 클래스 이름이나 그룹 사용)
 	if body is Player:
-		_triggered = true
-		
 		# Autoload로 등록될 TutorialPopup을 사용
 		if has_node("/root/TutorialPopup"):
-			get_node("/root/TutorialPopup").display(tutorial_text_key, pause_game)
+			if not get_node("/root/TutorialPopup").display(tutorial_text_key, pause_game):
+				return
 		else:
 			push_error("TutorialPopup Autoload가 등록되지 않았습니다!")
+			return
+		_triggered = true
 		
 		if one_shot:
 			# 트리거 영역 비활성화 (충돌 레이어 제거)
-			collision_mask = 0
+			set_deferred("collision_mask", 0)

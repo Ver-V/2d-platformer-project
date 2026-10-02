@@ -1,4 +1,25 @@
 keys,en,ko
+MAIN_MENU_NEW_GAME,"New Game","새 게임"
+MAIN_MENU_LOAD_GAME,"Load Game","불러오기"
+MAIN_MENU_OPTIONS,"Options","설정"
+MAIN_MENU_CREDITS,"Credits","제작진"
+MAIN_MENU_EXIT,"Exit","종료"
+MAIN_MENU_NEW_GAME_WARNING,"Warning!","주의!"
+MAIN_MENU_NEW_GAME_CONFIRM,"Saved data already exists. Are you sure you want to start a new game?","저장된 데이터가 있습니다. 새 게임을 시작하시겠습니까?"
+COMMON_YES,"Yes","예"
+COMMON_NO,"No","아니요"
+COMBAT_DAMAGE_UP,"Damage Up!","공격력 증가!"
+COMBAT_PARRY_POWER_UP,"Parry Power Up!","패링 위력 증가!"
+COMBAT_COUNTER_PARRY,"Counter Parry!","반격 패링!"
+COMBAT_COUNTER_HIT,"Counter Hit!","반격 적중!"
+COMBAT_PERFECT_GUARD,"Perfect Guard!","퍼펙트 가드!"
+COMBAT_GUARD,"Guard","가드"
+STATUS_SAVED,"Saved!","저장 완료!"
+STATUS_HEALED,"Healed!","회복!"
+STATUS_MANA_UP,"Mana Up!","마나 증가!"
+STATUS_KEY_FOUND,"Key Found","열쇠 획득"
+STATUS_RESTED,"Rested","휴식 완료"
+STATUS_INVENTORY_FULL,"Inventory Full","인벤토리가 가득 찼습니다"
 SHOP_SOLD_OUT,"Sold out","품절"
 SHOP_STOCK_REMAINING,"{count} remaining","{count}개 남음"
 SHOP_ITEM_ROW,"{name} [{price} G] - {stock}","{name} [{price} G] - {stock}"
@@ -46,13 +67,33 @@ OPTIONS_SHAKE_VALUE,"Screen Shake: {percent}%","화면 흔들림: {percent}%"
 STAGE_TUTORIAL_TITLE,"The Depths of the Forest","깊은 숲"
 STAGE_01_TITLE,"Bunny's Forest","토끼의 숲"
 STAGE_02_TITLE,"Rat's Cave","쥐의 동굴"
-TUTORIAL_HEALTH_FLASK,"You obtained the Flask of Blessed Health. Resting at a save point replenishes its charges, allowing repeated use. Press [Q] to use it.","축복받은 생명의 플라스크를 획득했습니다. 세이브 포인트에서 휴식하면 사용 횟수가 초기화되어 다시 사용할 수 있습니다. [Q]를 눌러서 사용하세요."
-TUTORIAL_JUMP,"Welcome to the game. Press [Z] to jump. You can adjust your jump height by how long you hold the button.","게임에 오신 것을 환영합니다. [Z]를 눌러 점프하세요. 버튼을 누르는 시간에 따라 점프 높이를 조절할 수 있습니다."
-TUTORIAL_ATTACK,"There's an enemy ahead! Press [X] to attack and defeat it.","앞에 적이 있습니다! [X]를 눌러 공격하고 쓰러뜨리세요."
-TUTORIAL_GUARD,"[Shift] to guard against projectiles and reduce incoming damage. A perfectly timed guard negates the damage and empowers your next attack. Guard has a 1.5-second cooldown, so use it wisely.","[Shift]를 눌러 투사체를 막고 받는 피해를 줄이세요. 정확한 타이밍에 가드하면 피해를 무효화하고 다음 공격이 강화됩니다. 가드에는 1.5초의 재사용 대기시간이 있으니 신중하게 사용하세요."
-TUTORIAL_PARRY,"Press [X] with perfect timing to parry bullets of specific colors. A parried bullet always hits the enemy and deals heavy counter damage.","특정 색상의 탄환은 정확한 타이밍에 [X]를 눌러 패링할 수 있습니다. 패링한 탄환은 반드시 적에게 명중하며 강력한 반격 피해를 줍니다."
-TUTORIAL_GOLD,"Defeated enemies may drop Gold. Gold can be used in shops or during special events, and can also be found scattered throughout the field.","적을 쓰러뜨리면 골드를 떨어뜨릴 수 있습니다. 골드는 상점이나 특별한 이벤트에서 사용할 수 있으며 필드 곳곳에서도 발견할 수 있습니다."
-TUTORIAL_INVENTORY,"Press [I] to view your inventory and status. Now, step into the real adventure and enjoy your journey!","[I]를 눌러 인벤토리와 상태를 확인하세요. 이제 모험을 시작하고 여정을 즐겨 보세요!"
+TUTORIAL_HEALTH_FLASK,"You obtained the Flask of Blessed Health.
+Resting at a save point replenishes its charges, allowing repeated use.
+Press [Q] to use it.","축복받은 생명의 플라스크를 획득했습니다.
+세이브 포인트에서 휴식하면 사용 횟수가 초기화되어 다시 사용할 수 있습니다.
+[Q]를 눌러서 사용하세요."
+TUTORIAL_JUMP,"Welcome to the game.
+Press [Z] to jump.
+You can adjust your jump height by how long you hold the button.","게임에 오신 것을 환영합니다.
+[Z]를 눌러 점프하세요.
+버튼을 누르는 시간에 따라 점프 높이를 조절할 수 있습니다."
+TUTORIAL_ATTACK,"There's an enemy ahead!
+Press [X] to attack and defeat it.","앞에 적이 있습니다!
+[X]를 눌러 공격하고 쓰러뜨리세요."
+TUTORIAL_GUARD,"[Shift] to guard against projectiles and reduce incoming damage.
+A perfectly timed guard negates the damage and empowers your next attack.
+Guard has a 1.5-second cooldown, so use it wisely.","[Shift]를 눌러 투사체를 막고 받는 피해를 줄이세요.
+정확한 타이밍에 가드하면 피해를 무효화하고 다음 공격이 강화됩니다.
+가드에는 1.5초의 재사용 대기시간이 있으니 신중하게 사용하세요."
+TUTORIAL_PARRY,"Press [X] with perfect timing to parry bullets of specific colors.
+A parried bullet always hits the enemy and deals heavy counter damage.","특정 색상의 탄환은 정확한 타이밍에 [X]를 눌러 패링할 수 있습니다.
+패링한 탄환은 반드시 적에게 명중하며 강력한 반격 피해를 줍니다."
+TUTORIAL_GOLD,"Defeated enemies may drop Gold.
+Gold can be used in shops or during special events, and can also be found scattered throughout the field.","적을 쓰러뜨리면 골드를 떨어뜨릴 수 있습니다.
+골드는 상점이나 특별한 이벤트에서 사용할 수 있으며 필드 곳곳에서도 발견할 수 있습니다."
+TUTORIAL_INVENTORY,"Press [I] to view your inventory and status.
+Now, step into the real adventure and enjoy your journey!","[I]를 눌러 인벤토리와 상태를 확인하세요.
+이제 모험을 시작하고 여정을 즐겨 보세요!"
 ITEM_HEALTH_FLASK_NAME,"Red Flask of the Flower Spring","꽃샘의 붉은 플라스크"
 ITEM_HEALTH_FLASK_DESCRIPTION,"A flask containing a mysterious, glowing red liquid found at the Spring of Flowers. Ancient myths say it refills whenever its bearer rests, and every drop mends wounds.","꽃의 샘에서 발견된 신비롭게 빛나는 붉은 액체가 담긴 플라스크입니다. 설화에 따르면 소유자가 휴식할 때마다 저절로 채워지며, 들어있는 액체의 방울은 상처를 치유한다고 합니다."
 ITEM_HEALTH_POTION_NAME,"Healing Potion","치유 물약"

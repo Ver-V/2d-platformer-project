@@ -61,35 +61,35 @@ custom_minimum_size = Vector2(60, 16)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_xtrvd")
 theme_override_font_sizes/font_size = 16
-text = "New Game"
+text = "MAIN_MENU_NEW_GAME"
 
 [node name="BtnLoadGame" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_peupw")
 theme_override_font_sizes/font_size = 16
-text = "Load Game"
+text = "MAIN_MENU_LOAD_GAME"
 
 [node name="BtnOptions" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_l3522")
 theme_override_font_sizes/font_size = 16
-text = "Options"
+text = "MAIN_MENU_OPTIONS"
 
 [node name="BtnCredits" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_kfbj1")
 theme_override_font_sizes/font_size = 16
-text = "Credits"
+text = "MAIN_MENU_CREDITS"
 
 [node name="BtnExit" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_068qs")
 theme_override_font_sizes/font_size = 16
-text = "Exit"
+text = "MAIN_MENU_EXIT"
 
 [node name="CreditsPanel" type="Panel" parent="."]
 visible = false
@@ -101,8 +101,8 @@ offset_bottom = 40.0
 visible = false
 
 [node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="."]
-title = "Warning!"
+title = "MAIN_MENU_NEW_GAME_WARNING"
 size = Vector2i(680, 200)
-ok_button_text = "Yes"
-dialog_text = "Saved data already exists. Are you sure you want to start a new game?"
-cancel_button_text = "No"
+ok_button_text = "COMMON_YES"
+dialog_text = "MAIN_MENU_NEW_GAME_CONFIRM"
+cancel_button_text = "COMMON_NO"

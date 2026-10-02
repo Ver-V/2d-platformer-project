@@ -59,6 +59,12 @@ var is_guarding: bool = false
 var guard_timer: float = 0.0
 var guard_cooldown_timer: float = 0.0
 
+@export_group("Guard Cooldown Bar")
+@export var show_guard_cooldown_bar: bool = true
+@export var guard_bar_size: Vector2 = Vector2(34.0, 5.0)
+@export var guard_bar_gap: float = 4.0
+@export var guard_bar_x_offset: float = 0.0
+
 const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
 const GUARD_COOLDOWN_TIME: float = 1.5      # 가드 재사용 대기 시간
 
@@ -127,6 +133,7 @@ func change_state(new_state: State) -> void:
 			guard_cooldown_timer = GUARD_COOLDOWN_TIME
 
 	current_state = new_state
+	queue_redraw()
 	
 	# 2. 새로운 상태 진입(Enter) 처리
 	match current_state:
@@ -181,7 +188,7 @@ func update_damage(amount: int) -> void:
 	attack_damage = GameManager.player_damage 
 	
 	if amount > 0:
-		show_popup("Damage Up!", Color.RED)
+		show_popup(tr(&"COMBAT_DAMAGE_UP"), Color.RED)
 
 func update_parry_ratio(amount: float) -> void:
 	# 1. GM에게 "패링 배율 좀 바꿔줘" 요청
@@ -191,12 +198,42 @@ func update_parry_ratio(amount: float) -> void:
 	player_parry_damage_multifac = GameManager.player_parry_damage_multifac
 	
 	if amount > 0:
-		show_popup("Parry Power Up!", Color.CYAN)
+		show_popup(tr(&"COMBAT_PARRY_POWER_UP"), Color.CYAN)
 		
 func get_invuln_time() -> float: return invuln_time
 func get_blink_interval() -> float: return blink_interval
 func get_knockback_decay() -> float: return knockback_decay
 func get_blink_node() -> CanvasItem: return sprite
+
+func _draw() -> void:
+	if not show_guard_cooldown_bar or hp <= 0:
+		return
+	if not is_guarding and guard_cooldown_timer <= 0.0:
+		return
+	if guard_bar_size.x <= 2.0 or guard_bar_size.y <= 2.0:
+		return
+	var ratio := get_guard_recharge_ratio()
+	var top_left := _get_guard_bar_center() - guard_bar_size * 0.5
+	draw_rect(Rect2(top_left, guard_bar_size), Color.BLACK)
+	draw_rect(
+		Rect2(top_left + Vector2.ONE, Vector2((guard_bar_size.x - 2.0) * ratio, guard_bar_size.y - 2.0)),
+		Color(0.15, 0.55, 1.0, 1.0)
+	)
+
+func get_guard_recharge_ratio() -> float:
+	if is_guarding:
+		return 0.0
+	return clampf(1.0 - guard_cooldown_timer / GUARD_COOLDOWN_TIME, 0.0, 1.0)
+
+func _get_guard_bar_center() -> Vector2:
+	# 애니메이션의 투명 여백이나 스쿼시에 흔들리지 않도록 발밑 충돌체에 맞춘다.
+	var center_x := guard_bar_x_offset
+	var bottom_y := 0.0
+	if collision_stand and collision_stand.shape:
+		center_x += collision_stand.position.x
+		var shape_rect: Rect2 = collision_stand.shape.get_rect()
+		bottom_y = collision_stand.position.y + shape_rect.end.y * absf(collision_stand.scale.y)
+	return Vector2(center_x, bottom_y + guard_bar_gap + guard_bar_size.y * 0.5)
 
 
 func show_popup(text: String, color: Color = Color.YELLOW) -> void:
@@ -237,7 +274,7 @@ func _on_sword_area_entered(area: Area2D) -> void:
 			# 패링 성공 시에만 보너스 소모 및 팝업 출력
 			if has_perfect_guard_bonus:
 				has_perfect_guard_bonus = false
-				show_popup("Counter Parry!", Color.CYAN)
+				show_popup(tr(&"COMBAT_COUNTER_PARRY"), Color.CYAN)
 			
 			var stage = get_tree().current_scene
 			if stage and stage.has_method("apply_camera_shake"):
@@ -274,7 +311,7 @@ func _on_sword_body_entered(body: Node) -> void:
 				# 실제로 데미지가 들어갔을 때만 보너스 소모
 				if has_perfect_guard_bonus:
 					has_perfect_guard_bonus = false
-					show_popup("Counter Hit!", Color.ORANGE)
+					show_popup(tr(&"COMBAT_COUNTER_HIT"), Color.ORANGE)
 				GameManager.apply_hitstop(0.25, 0.1)
 			
 				var stage = get_tree().current_scene
@@ -291,7 +328,7 @@ func _on_sword_body_entered(body: Node) -> void:
 			# take_damage는 성공 여부 리턴이 없으므로 일단 소모
 			if has_perfect_guard_bonus:
 				has_perfect_guard_bonus = false
-				show_popup("Counter Hit!", Color.ORANGE)
+				show_popup(tr(&"COMBAT_COUNTER_HIT"), Color.ORANGE)
 				
 			GameManager.apply_hitstop(0.25, 0.1)
 			
@@ -302,7 +339,8 @@ func _on_guard_area_entered(area: Area2D) -> void:
 			area._on_body_entered(self)
 			
 func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
-	if is_guarding and amount > 0 and not is_invulnerable() and is_projectile:
+	# 튜토리얼의 피해량 0인 투사체도 가드 성공과 소멸을 처리한다.
+	if is_guarding and hp > 0 and amount >= 0 and not is_invulnerable() and is_projectile:
 		var can_guard = false
 		if knockback.x != 0:
 			if (knockback.x * attack_pivot.scale.x) < 0:
@@ -310,7 +348,7 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 				
 		if can_guard:
 			if guard_timer <= PERFECT_GUARD_WINDOW:
-				show_popup("Perfect Guard!", Color.CYAN)
+				show_popup(tr(&"COMBAT_PERFECT_GUARD"), Color.CYAN)
 				GameManager.apply_hitstop(0.15, 0.1)
 				sfx_player.play_perfect_guard()
 				
@@ -322,9 +360,11 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 				start_invuln(0.2)
 				return true # 피해는 없지만 투사체 충돌은 처리되었으므로 소모한다.
 			else:
-				amount = 5
-				show_popup("Guard", Color.GRAY)
+				amount = mini(amount, 5)
+				show_popup(tr(&"COMBAT_GUARD"), Color.GRAY)
 				sfx_player.play_guard()
+				if amount == 0:
+					return true # 연습용 탄환은 피해 없이 소모한다.
 
 	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
 	
@@ -361,6 +401,7 @@ func apply_gravity(delta: float) -> void:
 		velocity.y = max_fall_speed
 
 func _physics_process(delta: float) -> void:
+	queue_redraw()
 	# 보너스 효과 쉐이더 연동 (빛나는 오라)
 	if sprite and sprite.material is ShaderMaterial:
 		sprite.material.set_shader_parameter("glow_active", has_perfect_guard_bonus)
@@ -391,7 +432,8 @@ func _physics_process(delta: float) -> void:
 		
 	# 공통 타이머 감소
 	if _cooldown_left > 0.0: _cooldown_left -= delta
-	if guard_cooldown_timer > 0.0: guard_cooldown_timer -= delta
+	if guard_cooldown_timer > 0.0:
+		guard_cooldown_timer = maxf(0.0, guard_cooldown_timer - delta)
 	if _menu_exit_cooldown > 0.0: _menu_exit_cooldown -= delta
 	_coyote_timer -= delta
 	_jump_buffer_timer -= delta
@@ -625,22 +667,22 @@ func show_status(action_type: String) -> void:
 	# 상황별로 텍스트와 색상을 여기서 결정합니다 (case 문과 같음)
 	match action_type:
 		"save":
-			msg = "Saved!"
+			msg = tr(&"STATUS_SAVED")
 			color = Color(0.347, 0.824, 0.885, 1.0) # 연두색
 		"heal":
-			msg = "Healed!"
+			msg = tr(&"STATUS_HEALED")
 			color = Color(1.0, 0.3, 0.3) # 빨간색
 		"mana":
-			msg = "Mana Up!"
+			msg = tr(&"STATUS_MANA_UP")
 			color = Color(0.3, 0.3, 1.0) # 파란색
 		"key":
-			msg = "Key Found"
+			msg = tr(&"STATUS_KEY_FOUND")
 			color = Color(0.8, 0.8, 0.8) # 은색
 		"rest":
-			msg = "Rested"
+			msg = tr(&"STATUS_RESTED")
 			color = Color(0.429, 0.793, 0.33, 1.0)
 		"full":
-			msg = "Inventory Full"
+			msg = tr(&"STATUS_INVENTORY_FULL")
 			color = Color.ORANGE
 		_: # default (그 외 나머지)
 			msg = "!"

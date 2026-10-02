@@ -5,6 +5,7 @@ class_name ShooterComponent
 # 발사체 및 패링 규칙
 @export var projectile_scene: PackedScene
 @export var projectile_damage: int = 10      # 투사체 기본 데미지 추가
+@export var practice_parry_defeats_shooter: bool = false
 @export var parry_interval: int = 3          # 몇 발마다 패링 가능한가?
 @export var parry_cue_color: Color = Color(1, 0.6, 1)
 
@@ -55,6 +56,8 @@ func shoot(shooter_mob: Node2D, target_node: Node2D, spawn_pos: Vector2) -> Node
 	# 데미지 설정
 	if "damage" in p:
 		p.damage = projectile_damage
+	if p is Projectile:
+		p.practice_parry_defeats_shooter = practice_parry_defeats_shooter
 	
 	# 타겟 중앙 조준
 	var target_center = target_node.global_position + Vector2(0, -8)
@@ -97,6 +100,8 @@ func shoot_dir(shooter_mob: Node2D, dir: Vector2, spawn_pos: Vector2) -> Node2D:
 	# 데미지 설정
 	if "damage" in p:
 		p.damage = projectile_damage
+	if p is Projectile:
+		p.practice_parry_defeats_shooter = practice_parry_defeats_shooter
 		
 	p.direction = dir.normalized()
 	p.rotation = p.direction.angle()
