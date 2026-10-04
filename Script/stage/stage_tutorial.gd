@@ -1,6 +1,6 @@
 extends BaseStage
 
-@export var intro_dialogue_path: String = "res://resources/Dialogues/tutorial_intro.json"
+@export var intro_dialogue_path: String = "res://resources/Dialogues/en/tutorial_intro.json"
 @export var intro_delay: float = 0.5
 
 func _ready() -> void:

@@ -3,7 +3,7 @@ class_name KeyDoor
 
 @export var locked: bool = true
 @export var item_key: String = "pink_key"
-@export_file("*.json") var dialogue_file: String = "res://resources/Dialogues/item_conditional_example.json"
+@export_file("*.json") var dialogue_file: String = "res://resources/Dialogues/en/item_conditional_example.json"
 @export var block_without_item: String = "without_item"
 @export var block_key_spent: String = "key_spent"
 @export var block_key_kept: String = "key_kept"
@@ -68,7 +68,7 @@ func _show_prompt() -> void:
 		_player.show_popup(message, Color.YELLOW)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event.is_action_pressed("ui_up") or (event is InputEventKey and event.echo):
+	if not event.is_action_pressed("interact") or (event is InputEventKey and event.echo):
 		return
 	if _busy or not is_instance_valid(_player) or GameManager.is_menu_open:
 		return

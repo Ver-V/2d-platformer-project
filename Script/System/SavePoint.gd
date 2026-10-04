@@ -1,43 +1,30 @@
 # SavePoint.gd
-extends Area2D
+extends Interactable
 
 @onready var sprite = $AnimatedSprite2D 
 @onready var sfx_player = $AudioStreamPlayer2D
 
 var can_save: bool = true   # 쿨타임
-var player_in_range: bool = false 
 
 func _ready() -> void:
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(_on_body_exited)
+	interact_msg = "save_mode"
+	super()
 	if sprite: sprite.play("default")
 
-func _on_body_entered(body: Node) -> void:
-	if body.is_in_group("player"):
-		player_in_range = true
-		GameManager.interact_msg_requested.emit("save_mode")
-
-func _on_body_exited(body: Node) -> void:
-	if body.is_in_group("player"):
-		player_in_range = false
-		GameManager.interact_msg_hidden.emit()
-
-func _input(event: InputEvent) -> void:
-	if not player_in_range or not can_save:
-		return
-	# 메뉴·대화 중이거나 사망 화면의 재시작 입력(R)과 겹치지 않도록 막는다.
-	if GameManager.is_menu_open:
-		return
+# 메뉴·대화 중 확인은 Interactable이 한다. 사망 화면의 재시작 입력(R)과 겹치지 않도록 막는다.
+func _can_interact() -> bool:
+	if not can_save:
+		return false
 	var player := get_tree().get_first_node_in_group("player")
-	if player == null or player.hp <= 0:
-		return
+	return player != null and player.hp > 0
 
-	# [선택 1] 저장만 (E키)
-	if event.is_action_pressed("interact"):
-		action_save_only()
-		
-	# [선택 2] 휴식 (R키) - 프로젝트 설정에 'rest' 추가 필요
-	elif event.is_action_pressed("rest"):
+# [선택 1] 저장만 (E키)
+func _on_interact() -> void:
+	action_save_only()
+
+# [선택 2] 휴식 (R키)
+func _on_other_input(event: InputEvent) -> void:
+	if event.is_action_pressed("rest"):
 		action_rest()
 
 # --- 기능 1: 단순 저장 ---

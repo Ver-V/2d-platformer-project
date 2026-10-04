@@ -1,5 +1,5 @@
 # MerchantNPC.gd
-extends Area2D
+extends Interactable
 
 # [1] 장소 구분용 변수
 @export var location_name: String = "Stage1"
@@ -11,69 +11,58 @@ var talk_count: int:
 	set(value):
 		GameManager.npc_talk_counts[location_name] = value
 
-var player_in_range = false
-
 func _ready() -> void:
+	interact_msg = "shop"
+	super()
 	add_to_group("npc")
 	sprite.play("Idle")
 	ShopUI.shop_closed.connect(_on_shop_closed)
 
 func _on_shop_closed(bought: bool):
-	if bought:
+	# 같은 씬에 상인이 여럿이어도 방금 닫힌 상점의 상인만 대사를 한다
+	if bought and ShopUI.current_shop_id == location_name:
 		# 물건을 샀다면, 상점 UI가 닫히자마자 즉시 감사 대사 출력!
-		var bought_file = "res://resources/Dialogues/merchant_" + "thanks.json"
+		var bought_file = "res://resources/Dialogues/en/merchant_" + "thanks.json"
 		
 		if DialogueManager.has_dialogue_file(bought_file):
 			DialogueManager.start_dialogue(bought_file)
 		else:
 			print("구매 후 대사 파일이 없습니다: ", bought_file)
 			
-func _input(event):
-	if player_in_range and event.is_action_pressed("interact"):
+# 메뉴 잠금은 Interactable이 확인한다. 대화·상점 상태도 한 번 더 확인.
+func _can_interact() -> bool:
+	return not DialogueManager.is_dialogue_active and not ShopUI.is_open
+
+func _on_interact() -> void:
+	var file_path = "res://resources/Dialogues/en/merchant_" + location_name + "_" + str(talk_count) + ".json"
+	
+	if DialogueManager.has_dialogue_file(file_path):
+		DialogueManager.start_dialogue(file_path)
+	
+		await DialogueManager.dialogue_finished 
 		
-		# 대화 중이거나, 상점이 열려있다면 무조건 무시!
-		if DialogueManager.is_dialogue_active or ShopUI.is_open:
+		# 대화가 끝났는데 플레이어가 범위 밖에 있다면
+		if not player_in_range:
 			return
 			
-		get_viewport().set_input_as_handled()
-		var file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count) + ".json"
+		# 정상적으로 끝났을 때만 횟수 증가 및 상점 오픈
+		talk_count += 1
+		ShopUI.open_shop(location_name)
 		
-		if DialogueManager.has_dialogue_file(file_path):
-			DialogueManager.start_dialogue(file_path)
-		
-			await DialogueManager.dialogue_finished 
+	else:
+		if talk_count > 0:
+			var last_file_path = "res://resources/Dialogues/en/merchant_" + location_name + "_" + str(talk_count - 1) + ".json"
 			
-			# 대화가 끝났는데 플레이어가 범위 밖에 있다면
-			if not player_in_range:
-				return
+			if DialogueManager.has_dialogue_file(last_file_path):
+				DialogueManager.start_dialogue(last_file_path)
+				await DialogueManager.dialogue_finished 
 				
-			# 정상적으로 끝났을 때만 횟수 증가 및 상점 오픈
-			talk_count += 1
-			ShopUI.open_shop(location_name)
-			
-		else:
-			if talk_count > 0:
-				var last_file_path = "res://resources/Dialogues/merchant_" + location_name + "_" + str(talk_count - 1) + ".json"
+				if not player_in_range:
+					return
 				
-				if DialogueManager.has_dialogue_file(last_file_path):
-					DialogueManager.start_dialogue(last_file_path)
-					await DialogueManager.dialogue_finished 
-					
-					if not player_in_range:
-						return
-					
-					ShopUI.open_shop(location_name) 
+				ShopUI.open_shop(location_name) 
 
-func _on_body_entered(body):
-	if body.is_in_group("player"):
-		player_in_range = true
-		GameManager.interact_msg_requested.emit("shop")
-
-func _on_body_exited(body):
-	if body.is_in_group("player"):
-		player_in_range = false
-		GameManager.interact_msg_hidden.emit()
-		
-		# 플레이어가 멀어지면 대화창 강제 종료!
-		if DialogueManager.is_dialogue_active:
-			DialogueManager.force_close()
+# 플레이어가 멀어지면 대화창 강제 종료!
+func _on_player_exited(_body: Node) -> void:
+	if DialogueManager.is_dialogue_active:
+		DialogueManager.force_close()

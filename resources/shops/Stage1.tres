@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ShopStock" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://Script/Item_UI/ShopStock.gd" id="1_stock"]
+[ext_resource type="Script" path="res://Script/Item_UI/ShopEntry.gd" id="2_entry"]
+[ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="3_potion"]
+[ext_resource type="Resource" uid="uid://d1dtrn5b5bsgu" path="res://resources/items/Parry_increase_potion.tres" id="4_parry"]
+
+[sub_resource type="Resource" id="Resource_potion"]
+script = ExtResource("2_entry")
+item = ExtResource("3_potion")
+stock = 3
+
+[sub_resource type="Resource" id="Resource_parry"]
+script = ExtResource("2_entry")
+item = ExtResource("4_parry")
+stock = 1
+
+[resource]
+script = ExtResource("1_stock")
+shop_id = "Stage1"
+entries = Array[ExtResource("2_entry")]([SubResource("Resource_potion"), SubResource("Resource_parry")])

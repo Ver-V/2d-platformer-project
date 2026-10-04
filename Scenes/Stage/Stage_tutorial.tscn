@@ -407,7 +407,7 @@ tutorial_text_key = &"TUTORIAL_INVENTORY"
 position = Vector2(3223, 694)
 collision_mask = 2
 script = ExtResource("13_o7v4y")
-dialogue_file = "res://resources/Dialogues/DialogueBlock_Stage0_0.json"
+dialogue_file = "res://resources/Dialogues/en/DialogueBlock_Stage0_0.json"
 
 [node name="Sprite2D" type="Sprite2D" parent="Entities/DialogueBlock"]
 position = Vector2(0, 25)

@@ -6,7 +6,7 @@ extends CanvasLayer
 @onready var hide_timer: Timer = $HideTimer
 @onready var ui_root: Control = $Control
 @onready var gold_label: Label = $Control/GoldLabel
-@onready var interact_label: Label = $Control/InteractLabel
+@onready var interact_label: Control = $Control/InteractPrompt # 키 아이콘 + 번역 문구(HUD_INTERACT)
 @onready var save_panel: HBoxContainer = $Control/SavePanel
 @onready var minimap_container = $Control/MinimapContainer
 @onready var damage_vignette: ColorRect = get_node_or_null("DamageVignette") as ColorRect

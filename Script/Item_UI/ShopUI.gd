@@ -12,7 +12,7 @@ signal shop_closed(bought_something: bool)
 var bought_something: bool = false
 
 var current_shop_id: String = "" # 현재 말 건 상인의 이름
-var current_stock_list: Array = [] # 현재 띄울 아이템 목록 참조용
+var current_stock_list: Array = [] # [{"item": ItemData, "stock": 남은 수량}]
 
 var selected_index: int = 0
 var is_open: bool = false
@@ -28,11 +28,8 @@ func _ready():
 func open_shop(shop_id: String = "Stage1"): # 인자 받기
 	current_shop_id = shop_id
 	
-	# GameManager의 장부에 이 상인 데이터가 있는지 확인
-	if GameManager.merchant_stocks.has(shop_id):
-		current_stock_list = GameManager.merchant_stocks[shop_id]
-	else:
-		current_stock_list = [] # 데이터 없으면 빈 상점
+	# resources/shops/의 ShopStock과 판매 기록으로 남은 재고를 만든다. 없으면 빈 상점.
+	current_stock_list = GameManager.get_shop_stock(shop_id)
 		
 	bought_something = false
 	is_open = true
@@ -117,11 +114,8 @@ func _input(event):
 func _create_item_slots():
 	for i in range(current_stock_list.size()):
 		var item_data = current_stock_list[i]
-		var item_id = item_data["id"]
 		var stock = item_data["stock"] # 남은 수량
-		
-		var item_resource = GameManager.get_item_by_id(item_id)
-		if item_resource == null: continue
+		var item_resource: ItemData = item_data["item"]
 			
 		var slot = ColorRect.new()
 		slot.custom_minimum_size = Vector2(300, 40)
@@ -180,8 +174,7 @@ func _update_selection_ui():
 			
 	if current_stock_list.is_empty(): return
 	
-	var item_id = current_stock_list[selected_index]["id"]
-	var item_resource = GameManager.get_item_by_id(item_id)
+	var item_resource: ItemData = current_stock_list[selected_index]["item"]
 	
 	if item_resource:
 		name_label.text = tr(item_resource.name)
@@ -204,9 +197,7 @@ func _update_confirm_message() -> void:
 		return
 
 	var item_data = current_stock_list[selected_index]
-	var item_resource = GameManager.get_item_by_id(item_data["id"])
-	if item_resource == null:
-		return
+	var item_resource: ItemData = item_data["item"]
 
 	var item_name := tr(item_resource.name)
 	
@@ -232,9 +223,7 @@ func buy_item():
 		close_confirm_panel()
 		return
 		
-	var item_resource = GameManager.get_item_by_id(item_data["id"])
-	if item_resource == null: return
-	
+	var item_resource: ItemData = item_data["item"]
 	var price = item_resource.price
 
 	if GameManager.gold >= price:
@@ -242,8 +231,9 @@ func buy_item():
 		
 		if is_added:
 			GameManager.update_gold(-price)
-			# 재고 1개 감소
-			item_data["stock"] -= 1 
+			# 재고 1개 감소 (저장되는 판매 기록도 함께 갱신)
+			item_data["stock"] -= 1
+			GameManager.record_shop_purchase(current_shop_id, item_resource.id)
 			bought_something = true 
 			
 			close_confirm_panel()

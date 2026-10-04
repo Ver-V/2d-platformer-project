@@ -4,7 +4,7 @@ extends Node
 const SAVE_PATH = "user://save_game.json"
 const SETTINGS_PATH = "user://settings.json"
 const DEFAULT_LOCALE: String = "en"
-const SAVE_VERSION: int = 2
+const SAVE_VERSION: int = 3 # 3: 상점 재고를 판매 수량(shop_sold)으로 저장
 
 func save_game(data: Dictionary, path: String = SAVE_PATH) -> bool:
 	if not _is_valid_game(data):
@@ -145,6 +145,7 @@ func _is_valid_game(data: Variant) -> bool:
 			return false
 		if slot.has("key_uses") and (not _is_integer(slot.key_uses) or slot.key_uses < 0):
 			return false
+	# 버전 2 이하: 상점별 남은 재고 (불러올 때 shop_sold로 변환)
 	if not data.get("merchant_stocks", {}) is Dictionary:
 		return false
 	for shop in data.get("merchant_stocks", {}):
@@ -154,6 +155,16 @@ func _is_valid_game(data: Variant) -> bool:
 			if not item is Dictionary or not item.get("id") is String or not _is_integer(item.get("stock")):
 				return false
 			if item.stock < 0:
+				return false
+	# 버전 3: 상점별 아이템 판매 수량
+	if not data.get("shop_sold", {}) is Dictionary:
+		return false
+	for shop in data.get("shop_sold", {}):
+		if not shop is String or not data.shop_sold[shop] is Dictionary:
+			return false
+		for item_id in data.shop_sold[shop]:
+			var sold: Variant = data.shop_sold[shop][item_id]
+			if not item_id is String or not _is_integer(sold) or sold < 0:
 				return false
 	if data.has("visited_rooms") and not _valid_rooms(data.visited_rooms):
 		return false

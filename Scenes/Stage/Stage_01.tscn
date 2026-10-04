@@ -525,7 +525,7 @@ gold_amount = 250
 position = Vector2(1305, 325)
 collision_mask = 2
 script = ExtResource("10_asn4q")
-dialogue_file = "res://resources/Dialogues/DialogueBlock_Stage1_0.json"
+dialogue_file = "res://resources/Dialogues/en/DialogueBlock_Stage1_0.json"
 
 [node name="Sprite2D" type="Sprite2D" parent="Entities/DialogueBlock"]
 position = Vector2(16.50002, 25)
@@ -547,7 +547,7 @@ shape = SubResource("RectangleShape2D_22r6i")
 position = Vector2(1297, 1038)
 collision_mask = 2
 script = ExtResource("10_asn4q")
-dialogue_file = "res://resources/Dialogues/DialogueBlock_Stage1_1.json"
+dialogue_file = "res://resources/Dialogues/en/DialogueBlock_Stage1_1.json"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Entities/DialogueBlock2"]
 position = Vector2(18, 16)
@@ -557,7 +557,7 @@ shape = SubResource("RectangleShape2D_22r6i")
 position = Vector2(137, 21)
 collision_mask = 2
 script = ExtResource("10_asn4q")
-dialogue_file = "res://resources/Dialogues/DialogueBlock_Stage1_begin.json"
+dialogue_file = "res://resources/Dialogues/en/DialogueBlock_Stage1_begin.json"
 
 [node name="Sprite2D" type="Sprite2D" parent="Entities/DialogueBlock3"]
 position = Vector2(0, 25)
@@ -584,7 +584,7 @@ position = Vector2(5023, 472)
 collision_mask = 2
 script = ExtResource("15_udna4")
 required_item_id = "pink_key"
-dialogue_file = "res://resources/Dialogues/item_conditional_example.json"
+dialogue_file = "res://resources/Dialogues/en/item_conditional_example.json"
 
 [node name="Sprite2D" type="Sprite2D" parent="Entities/DialogueBlock4"]
 position = Vector2(26.499908, 14.499994)
@@ -606,7 +606,7 @@ shape = SubResource("RectangleShape2D_22r6i")
 position = Vector2(4913, 449)
 collision_mask = 2
 script = ExtResource("18_22r6i")
-dialogue_file = "res://resources/Dialogues/elevator_block.json"
+dialogue_file = "res://resources/Dialogues/en/elevator_block.json"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Entities/ElevatorBlock"]
 shape = SubResource("RectangleShape2D_orfdu")
@@ -732,8 +732,8 @@ disabled = true
 
 [node name="Boss_stage1" parent="Boss" instance=ExtResource("15_v4g68")]
 position = Vector2(3520, 474)
-dialogue_file = "res://resources/Dialogues/boss_Stage1_0.json"
-outro_dialogue_file = "res://resources/Dialogues/boss_Stage1_1.json"
+dialogue_file = "res://resources/Dialogues/en/boss_Stage1_0.json"
+outro_dialogue_file = "res://resources/Dialogues/en/boss_Stage1_1.json"
 
 [node name="BossTeleportPoints" type="Node2D" parent="Boss" groups=["teleport_points_stage1"]]
 position = Vector2(3520, 463)

@@ -37,7 +37,6 @@ var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
 var _was_on_floor: bool = false
 var _menu_exit_cooldown: float = 0.0
-var context_interactable: Node = null
 @export_group("Visuals")
 @export var dust_particles_scene: PackedScene = preload("res://Scenes/System/DustParticles.tscn")
 
@@ -67,6 +66,7 @@ var guard_cooldown_timer: float = 0.0
 
 const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
 const GUARD_COOLDOWN_TIME: float = 1.5      # 가드 재사용 대기 시간
+const CORNER_CORRECTION_PX: int = 4         # 모서리 보정 최대 픽셀 거리 (몸 폭 10px의 40%)
 
 var has_perfect_guard_bonus: bool = false
 
@@ -457,10 +457,10 @@ func _physics_process(delta: float) -> void:
 
 	match current_state:
 		State.IDLE, State.RUN, State.JUMP, State.FALL:
-			_handle_corner_correction() # 천장 보정 적용
+			_handle_corner_correction(delta) # 천장 보정 적용
 			_process_movement(delta)
 		State.ATTACK:
-			_handle_corner_correction()
+			_handle_corner_correction(delta)
 			_process_attack(delta)
 		State.GUARD:
 			_process_guard(delta)
@@ -502,10 +502,7 @@ func _process_movement(delta: float) -> void:
 
 	# 점프 선입력
 	if Input.is_action_just_pressed("jump") and _menu_exit_cooldown <= 0.0:
-		if _try_context_interaction():
-			_jump_buffer_timer = 0.0
-		else:
-			_jump_buffer_timer = jump_buffer_time
+		_jump_buffer_timer = jump_buffer_time
 
 	# 점프 실행
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
@@ -543,10 +540,7 @@ func _process_attack(delta: float) -> void:
 
 	# 인터럽트: 점프 (즉시 캔슬 후 점프)
 	if Input.is_action_just_pressed("jump") and _menu_exit_cooldown <= 0.0:
-		if _try_context_interaction():
-			_jump_buffer_timer = 0.0
-		else:
-			_jump_buffer_timer = jump_buffer_time
+		_jump_buffer_timer = jump_buffer_time
 
 	# 공격 중 점프 캔슬 (바닥에 있거나 코요테 타임이 남아있을 때만)
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
@@ -584,11 +578,6 @@ func _process_guard(delta: float) -> void:
 		
 	move_with_knockback(delta)
 
-func _try_context_interaction() -> bool:
-	if is_instance_valid(context_interactable) and context_interactable.has_method("try_interact"):
-		return context_interactable.try_interact(self)
-	return false
-
 # 먼지 파티클 소환 함수
 func spawn_dust(offset: Vector2 = Vector2.ZERO, scale_mult: float = 1.0) -> void:
 	if dust_particles_scene:
@@ -618,25 +607,20 @@ func apply_squash(x: float, y: float) -> void:
 	_squash_tween.tween_property(sprite, "scale", _base_sprite_scale, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 #모서리 보정 
-func _handle_corner_correction() -> void:
+func _handle_corner_correction(delta: float) -> void:
 	if velocity.y >= 0: return # 상승 중일 때만 작동
-	
-	# 캐릭터 위쪽 판정을 위해 약간 위쪽 위치에서 테스트
-	var step := 2.0
-	var check_dist := 4.0 # 보정해줄 최대 픽셀 거리 (보통 4~8픽셀)
-	
-	# 머리 바로 위가 막혀있는지 확인
-	if test_move(global_transform, Vector2(0, -step)):
-		# 왼쪽으로 살짝 옮기면 비어있는지 확인
-		for i in range(1, int(check_dist) + 1):
-			if not test_move(global_transform.translated(Vector2(-i, -step)), Vector2(0, 0)):
-				global_position.x -= 1.2 # 살짝 밀어줌
-				return
-		
-		# 오른쪽으로 살짝 옮기면 비어있는지 확인
-		for i in range(1, int(check_dist) + 1):
-			if not test_move(global_transform.translated(Vector2(i, -step)), Vector2(0, 0)):
-				global_position.x += 1.2 # 살짝 밀어줌
+
+	# 이번 프레임에 실제로 올라갈 거리만큼 검사한다 (고정 2px이면 빠른 상승 중에 놓친다)
+	var motion := Vector2(0, velocity.y * delta)
+	if not test_move(global_transform, motion): return
+
+	# 가까운 거리부터 좌우를 번갈아 보고, 찾은 거리만큼 한 번에 옮긴다
+	for i in range(1, CORNER_CORRECTION_PX + 1):
+		for dir in [-1, 1]:
+			var offset := Vector2(dir * i, 0)
+			if test_move(global_transform, offset): continue # 옆이 벽이면 옮길 수 없음
+			if not test_move(global_transform.translated(offset), motion):
+				global_position.x += offset.x
 				return
 
 func get_knockback_cooldown() -> float:

@@ -78,7 +78,7 @@ scale = Vector2(0.8, 0.8)
 texture = SubResource("AtlasTexture_m424g")
 stretch_mode = 5
 
-[node name="InteractLabel" type="Label" parent="Control"]
+[node name="InteractPrompt" type="HBoxContainer" parent="Control"]
 visible = false
 layout_mode = 1
 anchors_preset = 7
@@ -87,21 +87,26 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -138.0
-offset_top = -32.5
+offset_top = -43.5
 offset_right = 146.0
-offset_bottom = -16.5
+offset_bottom = -3.5
 grow_horizontal = 2
 grow_vertical = 0
-text = "'Press       to Interact'"
-label_settings = SubResource("LabelSettings_8tqey")
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 1
 
-[node name="TextureRect" type="TextureRect" parent="Control/InteractLabel"]
-layout_mode = 0
-offset_left = 89.0
-offset_top = -11.0
-offset_right = 129.0
-offset_bottom = 29.0
+[node name="KeyIcon" type="TextureRect" parent="Control/InteractPrompt"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
 texture = SubResource("AtlasTexture_2lupt")
+expand_mode = 1
+
+[node name="InteractLabel" type="Label" parent="Control/InteractPrompt"]
+layout_mode = 2
+text = "HUD_INTERACT"
+label_settings = SubResource("LabelSettings_8tqey")
+vertical_alignment = 1
 
 [node name="SavePanel" type="HBoxContainer" parent="Control"]
 visible = false
@@ -111,38 +116,47 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -87.5
-offset_top = -34.0
-offset_right = 126.5
-offset_bottom = -11.0
+offset_left = -138.0
+offset_top = -46.0
+offset_right = 146.0
+offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 16
+alignment = 1
 
-[node name="SaveLabel" type="Label" parent="Control/SavePanel"]
+[node name="SaveGroup" type="HBoxContainer" parent="Control/SavePanel"]
 layout_mode = 2
-text = " : Save"
-label_settings = SubResource("LabelSettings_vqpqm")
+theme_override_constants/separation = 2
 
-[node name="TextureRect" type="TextureRect" parent="Control/SavePanel/SaveLabel"]
-layout_mode = 0
-offset_left = -31.0
-offset_top = -12.0
-offset_right = 9.0
-offset_bottom = 28.0
+[node name="SaveIcon" type="TextureRect" parent="Control/SavePanel/SaveGroup"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
 texture = SubResource("AtlasTexture_vqpqm")
+expand_mode = 1
 
-[node name="RestLabel" type="Label" parent="Control/SavePanel"]
+[node name="SaveLabel" type="Label" parent="Control/SavePanel/SaveGroup"]
 layout_mode = 2
-text = "       : Rest"
-label_settings = SubResource("LabelSettings_765yc")
+text = "HUD_SAVE"
+label_settings = SubResource("LabelSettings_vqpqm")
+vertical_alignment = 1
 
-[node name="TextureRect" type="TextureRect" parent="Control/SavePanel/RestLabel"]
-layout_mode = 0
-offset_left = 17.0
-offset_top = -12.0
-offset_right = 57.0
-offset_bottom = 28.0
+[node name="RestGroup" type="HBoxContainer" parent="Control/SavePanel"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="RestIcon" type="TextureRect" parent="Control/SavePanel/RestGroup"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
 texture = SubResource("AtlasTexture_1emjh")
+expand_mode = 1
+
+[node name="RestLabel" type="Label" parent="Control/SavePanel/RestGroup"]
+layout_mode = 2
+text = "HUD_REST"
+label_settings = SubResource("LabelSettings_765yc")
+vertical_alignment = 1
 
 [node name="HeartContainer" type="HBoxContainer" parent="Control"]
 custom_minimum_size = Vector2(16, 16)

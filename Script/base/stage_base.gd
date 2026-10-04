@@ -9,6 +9,7 @@ var is_waiting_respawn: bool = false
 @export var room_size: Vector2 = Vector2(640.0, 360.0)
 @export var grid_size: Vector2i = Vector2i(12, 3)
 @export var grid_origin: Vector2 = Vector2(0.0, 0.0)
+@export var vision_radius_tiles: float = 0.0 # 0보다 크면 플레이어 주변 이 반지름(타일 수)만 보인다
 
 # 방 이동 관련 설정
 @export var reset_enemies_on_room_enter: bool = true # 재진입 시 위치·전투 상태 초기화, HP 유지
@@ -42,6 +43,7 @@ func _ready() -> void:
 	_cleanup_triggered_dialogues() # [추가] 이미 실행된 대화 블록 제거
 	
 	spawn_player()
+	_setup_vision_limit()
 
 	if stage_title_key != &"":
 		_show_stage_title()
@@ -55,6 +57,15 @@ func _ready() -> void:
 	
 	Engine.time_scale = 1.0
 	HUD.visible = true
+
+func _setup_vision_limit() -> void:
+	if vision_radius_tiles <= 0.0:
+		return
+	var vision := VisionLimit.new()
+	vision.name = "VisionLimit"
+	vision.radius_tiles = vision_radius_tiles
+	vision.target = player
+	add_child(vision)
 
 func _process(delta: float) -> void:
 	# 흔들림이 남아있을 때만 작동

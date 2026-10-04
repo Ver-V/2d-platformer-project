@@ -46,6 +46,7 @@ func run_checks() -> void:
 	await check_shooter_settings()
 	await check_popup_queue()
 	await check_player_guard()
+	await check_corner_correction()
 	await check_save_point_input()
 	await check_hitstop_overlap()
 	fixture.queue_free()
@@ -254,6 +255,46 @@ func check_player_guard() -> void:
 			check(player.has_perfect_guard_bonus == perfect, "Perfect guard bonus regression")
 	player.queue_free()
 	print("Guard: cooldown state, bar placement, zero-damage guard and English/Korean feedback checked")
+
+# 점프 상승 중 머리가 천장 모서리에 살짝 걸리면 옆으로 비켜준다.
+# 플레이어 몸 판정: x -6~4, 위끝 y -20.225 (원점 기준)
+func check_corner_correction() -> void:
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	fixture.add_child(player)
+	player.set_physics_process(false)
+	player.anim_player.stop()
+	var origin := Vector2(3000, 3000)
+	var delta := 1.0 / 60.0
+	var head_y := origin.y - 20.225
+	# [천장 왼끝 x, 오른끝 x (원점 기준), 머리와의 간격, 상승 속도, 기대 x 이동 최소, 최대]
+	var cases := [
+		[1.0, 41.0, 4.0, -350.0, -4.0, -3.0, "right corner 3px overlap, 4px gap"],
+		[-41.0, -3.0, 4.0, -350.0, 3.0, 4.0, "left corner 3px overlap, 4px gap"],
+		[1.0, 41.0, 1.0, -60.0, -4.0, -3.0, "slow rise near apex"],
+		[-4.0, 36.0, 4.0, -350.0, 0.0, 0.0, "8px overlap is a real ceiling"],
+		[1.0, 41.0, 20.0, -350.0, 0.0, 0.0, "ceiling out of this frame's reach"],
+		[1.0, 41.0, 4.0, 100.0, 0.0, 0.0, "falling never corrects"],
+	]
+	for c in cases:
+		var ceiling := StaticBody2D.new()
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(c[1] - c[0], 16)
+		shape.shape = rect
+		ceiling.add_child(shape)
+		fixture.add_child(ceiling)
+		ceiling.global_position = Vector2(origin.x + (c[0] + c[1]) / 2.0, head_y - c[2] - 8.0)
+		player.global_position = origin
+		player.velocity = Vector2(0, c[3])
+		await physics_frame
+		player._handle_corner_correction(delta)
+		var moved: float = player.global_position.x - origin.x
+		check(moved >= c[4] - 0.01 and moved <= c[5] + 0.01, "Corner correction (%s): moved %.2fpx" % [c[6], moved])
+		if c[5] != 0.0:
+			check(not player.test_move(player.global_transform, Vector2(0, c[3] * delta)), "Corner correction (%s): head still blocked" % c[6])
+		ceiling.free()
+	player.queue_free()
+	print("Corner correction: 1~4px overlaps cleared in one frame, real ceilings and falls untouched")
 
 func press_action(node: Node, action: StringName) -> void:
 	var event := InputEventAction.new()

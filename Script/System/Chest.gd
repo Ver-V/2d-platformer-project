@@ -1,4 +1,4 @@
-extends Area2D
+extends Interactable
 class_name Chest
 
 @export var locked: bool = false
@@ -15,12 +15,10 @@ class_name Chest
 @onready var open_sound: AudioStreamPlayer2D = $OpenSound
 
 var _opened: bool = false
-var _player: Player = null
 
 func _ready() -> void:
+	super()
 	add_to_group("object")
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(_on_body_exited)
 	_opened = GameManager.collected_items.has(_save_id())
 	_update_visual()
 
@@ -38,39 +36,30 @@ func _update_visual() -> void:
 	if _opened:
 		set_deferred("monitoring", false)
 
-func _on_body_entered(body: Node2D) -> void:
-	if _opened or not body is Player:
-		return
-	_player = body
-	_player.context_interactable = self
-	_player.show_popup(tr(&"CHEST_OPEN_PROMPT"), Color.YELLOW)
+# 열린 상자는 안내를 띄우지 않고 상호작용도 받지 않는다.
+func _show_prompt() -> void:
+	if not _opened:
+		super()
 
-func _on_body_exited(body: Node2D) -> void:
-	if body == _player:
-		if is_instance_valid(_player) and _player.context_interactable == self:
-			_player.context_interactable = null
-		_player = null
+func _can_interact() -> bool:
+	return not _opened and current_player is Player
 
-func try_interact(player: Player) -> bool:
-	if _opened or player != _player:
-		return false
+func _on_interact() -> void:
+	var player := current_player as Player
 	if locked and not GameManager.has_item(item_key):
 		if DialogueManager.has_dialogue_file(dialogue_file):
 			DialogueManager.start_dialogue(dialogue_file, block_without_item)
 		else:
 			player.show_popup(tr(&"KEY_REQUIRED"), Color.YELLOW)
-		return true
+		return
 	if reward_item != null and not GameManager.add_item(reward_item):
 		player.show_status("full")
-		return true
+		return
 
 	if reward_gold > 0:
 		GameManager.update_gold(reward_gold)
 	_opened = true
 	GameManager.add_collected_item(_save_id())
-	if player.context_interactable == self:
-		player.context_interactable = null
-	_player = null
+	_hide_prompt()
 	_update_visual()
 	open_sound.play()
-	return true

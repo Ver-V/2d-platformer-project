@@ -45,6 +45,7 @@ var _ui_sfx_player: AudioStreamPlayer
 const SND_UI_CLICK = preload("res://Assets/sounds/UIC.wav")
 
 func _ready() -> void:
+	_load_databases()
 	display_mode = _detect_display_mode()
 	if display_mode == 0:
 		var current_size := DisplayServer.window_get_size()
@@ -187,16 +188,80 @@ var has_checkpoint: bool = false
 var last_checkpoint_pos: Vector2
 var last_scene_path: String = ""
 
-var merchant_stocks: Dictionary = {
-	"Stage1": [
-		{"id": "health_potion", "stock": 3},
-		{"id": "Parry_increase_potion", "stock": 1}
-	],
-	"Stage2": [
-		{"id": "health_potion", "stock": 5},
-		# {"id": "bomb", "stock": 2}
-	]
-}
+# --- 아이템·상점 데이터 ---
+# 아이템(ItemData)과 상점(ShopStock) .tres를 폴더에서 자동으로 읽는다. 코드에 목록을 적지 않는다.
+const ITEM_DIR: String = "res://resources/items/"
+const SHOP_DIR: String = "res://resources/shops/"
+var item_database: Dictionary = {} # id -> ItemData
+var shop_database: Dictionary = {} # shop_id -> ShopStock
+# 상점별 판매 수량만 저장한다. 남은 재고 = ShopStock의 처음 재고 - 판매 수량
+var shop_sold: Dictionary = {} # shop_id -> {item_id: 판매 수량}
+
+func _load_databases() -> void:
+	item_database.clear()
+	for res in _load_resources_in(ITEM_DIR):
+		var item := res as ItemData
+		if item == null:
+			continue
+		if item.id.is_empty() or item_database.has(item.id):
+			push_warning("GameManager: 아이템 id가 비었거나 중복됩니다: %s (%s)" % [item.id, item.resource_path])
+			continue
+		item_database[item.id] = item
+	shop_database.clear()
+	for res in _load_resources_in(SHOP_DIR):
+		var shop := res as ShopStock
+		if shop == null:
+			continue
+		if shop.shop_id.is_empty() or shop_database.has(shop.shop_id):
+			push_warning("GameManager: 상점 id가 비었거나 중복됩니다: %s (%s)" % [shop.shop_id, shop.resource_path])
+			continue
+		shop_database[shop.shop_id] = shop
+
+# 익스포트 빌드에서는 .tres가 변환되므로 DirAccess 대신 ResourceLoader.list_directory를 쓴다.
+func _load_resources_in(dir: String) -> Array[Resource]:
+	var result: Array[Resource] = []
+	for file in ResourceLoader.list_directory(dir):
+		if file.ends_with(".tres") or file.ends_with(".res"):
+			var res := load(dir + file)
+			if res != null:
+				result.append(res)
+	return result
+
+# 상점 UI용 목록: [{"item": ItemData, "stock": 남은 수량}]
+func get_shop_stock(shop_id: String) -> Array:
+	var result: Array = []
+	var shop: ShopStock = shop_database.get(shop_id)
+	if shop == null:
+		return result
+	var sold: Dictionary = shop_sold.get(shop_id, {})
+	for entry in shop.entries:
+		if entry == null or entry.item == null:
+			continue
+		var remaining := maxi(0, entry.stock - int(sold.get(entry.item.id, 0)))
+		result.append({"item": entry.item, "stock": remaining})
+	return result
+
+func record_shop_purchase(shop_id: String, item_id: String) -> void:
+	if not shop_sold.has(shop_id):
+		shop_sold[shop_id] = {}
+	shop_sold[shop_id][item_id] = int(shop_sold[shop_id].get(item_id, 0)) + 1
+
+# 버전 2 저장의 남은 재고(merchant_stocks)를 현재 상점 기준 판매 수량으로 바꾼다.
+func _shop_sold_from_legacy(merchant_stocks: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for shop_id in merchant_stocks:
+		var shop: ShopStock = shop_database.get(shop_id)
+		if shop == null:
+			continue
+		for saved in merchant_stocks[shop_id]:
+			for entry in shop.entries:
+				if entry != null and entry.item != null and entry.item.id == saved["id"]:
+					var sold := entry.stock - int(saved["stock"])
+					if sold > 0:
+						if not result.has(shop_id):
+							result[shop_id] = {}
+						result[shop_id][entry.item.id] = sold
+	return result
 
 func use_flask() -> bool:
 	# 1. 플라스크 확인
@@ -421,7 +486,7 @@ func get_data_for_save() -> Dictionary:
 		"pos_y": last_checkpoint_pos.y,
 		"inventory": inventory_save_data,
 		"collected_items": collected_items,
-		"merchant_stocks": merchant_stocks,
+		"shop_sold": shop_sold,
 		"visited_rooms_by_scene": _visited_rooms_for_save(),
 		"flask_max": flask_max_charges,
 		"flask_current": flask_current_charges
@@ -448,7 +513,10 @@ func load_data_from_save(data: Dictionary) -> void:
 		last_scene_path = loaded_path
 	
 	collected_items = data.get("collected_items", [])
-	merchant_stocks = data.get("merchant_stocks", {})
+	if data.has("shop_sold"):
+		shop_sold = data["shop_sold"].duplicate(true)
+	else:
+		shop_sold = _shop_sold_from_legacy(data.get("merchant_stocks", {}))
 	flask_max_charges = data.get("flask_max", 1)
 	flask_current_charges = data.get("flask_current", 1)
 	
@@ -500,21 +568,8 @@ func apply_hitstop(time_scale: float, duration: float):
 		_hitstop_end_ms = 0
 		Engine.time_scale = 1.0
 
-var item_database: Dictionary = {
-	"health_potion": "res://resources/items/health_potion.tres",
-	"health_flask": "res://resources/items/health_flask.tres",
-	"Parry_increase_potion": "res://resources/items/Parry_increase_potion.tres",
-	"pink_key": "res://resources/items/pink_key.tres"
-}
-
 func get_item_by_id(item_id: String) -> ItemData:
-	if item_database.has(item_id):
-		var path = item_database[item_id]
-		if ResourceLoader.exists(path):
-			return load(path)
-		else:
-			print ("Not found Item")
-	return null
+	return item_database.get(item_id)
 	
 func reset_data() -> void:
 	print("[GameManager] Resetting all game data for New Game...")
@@ -542,16 +597,7 @@ func reset_data() -> void:
 	flask_max_charges = 1
 	flask_current_charges = 1
 	
-	# 상점 재고 초기화
-	merchant_stocks = {
-		"Stage1": [
-			{"id": "health_potion", "stock": 3},
-			{"id": "Parry_increase_potion", "stock": 1}
-		],
-		"Stage2": [
-			{"id": "health_potion", "stock": 5},
-		]
-	}
+	shop_sold.clear()
 	
 	_ui_owners.clear()
 	_refresh_ui_state()

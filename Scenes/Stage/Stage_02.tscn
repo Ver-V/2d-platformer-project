@@ -10,6 +10,7 @@
 [node name="Stage_02" type="Node2D"]
 script = ExtResource("1_joehr")
 stage_title_key = &"STAGE_02_TITLE"
+vision_radius_tiles = 4.0
 stage_prefix = "Floor1"
 player_scene = ExtResource("2_3j8uf")
 
