@@ -6,6 +6,7 @@ class_name VisionLimit
 # BaseStage.vision_radius_tiles > 0 이면 스테이지가 자동으로 붙인다.
 
 const SHADER: Shader = preload("res://resources/Shaders/vision_limit.gdshader")
+const Z_INDEX: int = RenderingServer.CANVAS_ITEM_Z_MAX - 1
 
 @export var radius_tiles: float = 4.0
 @export var tile_size: float = 16.0
@@ -18,7 +19,8 @@ var _rect: ColorRect
 var _material: ShaderMaterial
 
 func _ready() -> void:
-	z_index = RenderingServer.CANVAS_ITEM_Z_MAX
+	# 맨 위 한 칸(Z_MAX)은 어둠 위에 보여야 하는 것(GlowEyes 등)용으로 비워둔다
+	z_index = Z_INDEX
 	z_as_relative = false
 	process_priority = 100 # 플레이어·카메라가 움직인 뒤에 따라간다
 	_material = ShaderMaterial.new()

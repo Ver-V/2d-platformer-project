@@ -21,7 +21,7 @@ signal died(enemy: EnemyBase)
 @export_group("Enemy Combat")
 @export var invuln_time: float = 0.7
 @export var blink_interval: float = 0.05
-@export var knockback_resist: float = 0.0
+@export var knockback_resist: float = 0.0 # 1 = 안 밀림, 0.5 = 절반, 0 = 그대로, 음수 = 더 멀리 (-1이면 2배)
 @export var knockback_cooldown: float = 0.7
 @export var knockback_decay: float = 2600.0
 @export var contact_tick: float = 1.0
@@ -34,6 +34,24 @@ signal died(enemy: EnemyBase)
 
 @export_group("Behavior")
 @export var disable_when_inactive: bool = true
+
+@export_group("Hit / Death Motion")
+# 보스는 자체 연출이 있으므로 둘 다 적용하지 않는다
+@export var hit_squash_enabled: bool = true
+@export var hit_squash_scale: Vector2 = Vector2(1.2, 0.8) # 맞은 순간 납작해지는 배율 (기본 크기 대비)
+@export var hit_squash_time: float = 0.18 # 납작 → 살짝 늘어남 → 원래 크기까지 걸리는 시간
+@export var death_flip_enabled: bool = true
+@export var death_bounce_height: float = 14.0 # 죽을 때 튀어오르는 높이(px)
+@export var death_flip_time: float = 0.4 # 튀어올라 뒤집혀 떨어지기까지 걸리는 시간
+
+@export_group("Patrol Idle")
+# 순찰(타겟 없음) 중 가끔 멈춰서 idle 동작을 취한다
+@export var patrol_idle_enabled: bool = true
+@export var patrol_walk_time: Vector2 = Vector2(2.0, 5.0) # 걷는 시간 범위(초)
+@export var patrol_idle_time: Vector2 = Vector2(1.0, 2.5) # 멈춰 있는 시간 범위(초)
+@export_range(0.0, 1.0) var patrol_turn_chance: float = 0.35 # 멈춤이 끝날 때 뒤돌아설 확률
+@export var walk_animation: StringName = &"walk" # 없으면 걸을 때도 idle_animation 재생
+@export var idle_animation: StringName = &"idle"
 
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
@@ -53,6 +71,14 @@ var room_rect: Rect2 = Rect2() # 내가 속한 방의 영역
 var _active: bool = true
 var target: Node2D = null
 
+var _patrol_idling: bool = false
+var _patrol_timer: float = 0.0
+
+# 스쿼시·뒤집기 연출용 스프라이트 기본 변형
+var _sprite_base_scale: Vector2 = Vector2.ONE
+var _sprite_base_pos: Vector2 = Vector2.ZERO
+var _motion_tween: Tween
+
 func _ready() -> void:
 	add_to_group("enemies")
 	
@@ -67,6 +93,10 @@ func _ready() -> void:
 	if GameManager.defeated_mobs.has(persist_id):
 		queue_free()
 		return
+
+	if sprite:
+		_sprite_base_scale = sprite.scale
+		_sprite_base_pos = sprite.position
 		
 	# 태어난 위치를 집으로 기억
 	home_position = global_position
@@ -95,6 +125,7 @@ func _ready() -> void:
 	# 시작 시 비활성 상태 (Stage가 알아서 켜줌)
 	set_active(false)
 	if sprite: sprite.play()
+	_reset_patrol_idle()
 
 # --- Overrides (CombatBody2D) ---
 func get_invuln_time() -> float: return invuln_time
@@ -140,6 +171,7 @@ func _get_health_bar_center() -> Vector2:
 
 func _on_death() -> void:
 	queue_redraw()
+	_play_death_flip()
 	# 죽음 신호를 보내야 Stage가 장부에 기록
 	died.emit(self)
 	spawn_gold()
@@ -158,9 +190,10 @@ func _on_death() -> void:
 	if not anim_sprite and "boss_sprite" in self:
 		anim_sprite = get("boss_sprite")
 		
-	if anim_sprite and anim_sprite.sprite_frames.has_animation("dead"):
-		anim_sprite.play("dead")
-		if not anim_sprite.sprite_frames.get_animation_loop("dead"):
+	var death_anim := death_animation(anim_sprite)
+	if death_anim != &"":
+		anim_sprite.play(death_anim)
+		if not anim_sprite.sprite_frames.get_animation_loop(death_anim):
 			await anim_sprite.animation_finished
 
 	# [추가] 쉐이더 디졸브 효과 (서서히 증발)
@@ -182,6 +215,79 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 		hit_sound.pitch_scale = randf_range(0.9, 1.1)
 		hit_sound.play()
 	return took_damage
+
+func _play_hit_effects() -> void:
+	super._play_hit_effects()
+	_play_hit_squash()
+
+# -------------------------------------------------------------------------
+# 피격 스쿼시 / 사망 뒤집기 — 프레임 없이 스프라이트 변형으로 연출한다
+# -------------------------------------------------------------------------
+
+func _can_play_sprite_motion() -> bool:
+	return sprite != null and not is_in_group("bosses")
+
+# 스프라이트 원본 텍스처 기준 세로 범위 (scale 적용 전, 스프라이트 로컬 y)
+func _sprite_v_extent() -> Vector2:
+	var h := 0.0
+	if sprite.sprite_frames != null:
+		var tex := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+		if tex != null:
+			h = tex.get_size().y
+	var top := sprite.offset.y - (h * 0.5 if sprite.centered else 0.0)
+	return Vector2(top, top + h)
+
+# 세로 배율 k(1=원래, 음수=뒤집힘)에서 발끝이 원래 바닥에 붙어 있도록 하는 y 위치
+# 사망 애니메이션으로 바뀌어도 맞도록 매번 현재 프레임 크기로 계산한다
+func _grounded_sprite_y(k: float) -> float:
+	var extent := _sprite_v_extent()
+	var s := _sprite_base_scale.y
+	var base_bottom := maxf(extent.x * s, extent.y * s)
+	var bottom_now := maxf(extent.x * s * k, extent.y * s * k)
+	return _sprite_base_pos.y + base_bottom - bottom_now
+
+func _kill_motion_tween() -> void:
+	if _motion_tween != null and _motion_tween.is_valid():
+		_motion_tween.kill()
+	_motion_tween = null
+
+func _reset_sprite_motion() -> void:
+	_kill_motion_tween()
+	if sprite:
+		sprite.scale = _sprite_base_scale
+		sprite.position = _sprite_base_pos
+
+func _play_hit_squash() -> void:
+	if not hit_squash_enabled or not _can_play_sprite_motion() or hp <= 0:
+		return
+	_kill_motion_tween()
+	var stretch := Vector2(2.0, 2.0) - hit_squash_scale # 납작의 반대로 살짝 늘어남
+	stretch = Vector2.ONE + (stretch - Vector2.ONE) * 0.4
+	_motion_tween = create_tween()
+	_motion_tween.tween_method(_apply_squash, hit_squash_scale, stretch, hit_squash_time * 0.45) 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_motion_tween.tween_method(_apply_squash, stretch, Vector2.ONE, hit_squash_time * 0.55) 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func _apply_squash(factor: Vector2) -> void:
+	if sprite == null:
+		return
+	sprite.scale = _sprite_base_scale * factor
+	sprite.position = Vector2(_sprite_base_pos.x, _grounded_sprite_y(factor.y))
+
+func _play_death_flip() -> void:
+	if not death_flip_enabled or not _can_play_sprite_motion():
+		return
+	_reset_sprite_motion()
+	_motion_tween = create_tween()
+	_motion_tween.tween_method(_apply_death_flip, 0.0, 1.0, death_flip_time)
+
+# t: 0 → 1. 세로 배율이 1 → -1로 넘어가며 뒤집히고, 그동안 포물선으로 튀었다 떨어진다.
+func _apply_death_flip(t: float) -> void:
+	if sprite == null:
+		return
+	var k := cos(t * PI)
+	sprite.scale = Vector2(_sprite_base_scale.x, _sprite_base_scale.y * k)
+	var y := _grounded_sprite_y(k) - death_bounce_height * sin(t * PI)
+	sprite.position = Vector2(_sprite_base_pos.x, y)
 
 # --- Logic ---
 func _process(delta: float) -> void:
@@ -212,6 +318,10 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 		
+	move_in_room(delta)
+
+# 넉백을 더해 이동하고, 방 경계 밖으로 나가지 못하게 막는다. (중력은 호출하는 쪽에서 처리)
+func move_in_room(delta: float) -> void:
 	move_with_knockback(delta)
 	
 	# [추가] 방 경계 밖으로 절대 나가지 못하게 강제로 위치 고정 (Hard Clamp)
@@ -225,38 +335,34 @@ func _physics_process(delta: float) -> void:
 			if "dir" in self:
 				set("dir", -get("dir"))
 
+# 사망 애니메이션 이름: dead → died 순서로 있는 것. 없으면 &""
+func death_animation(anim_sprite: AnimatedSprite2D = null) -> StringName:
+	if anim_sprite == null:
+		anim_sprite = sprite
+	if anim_sprite == null or anim_sprite.sprite_frames == null:
+		return &""
+	for anim_name in [&"dead", &"died"]:
+		if anim_sprite.sprite_frames.has_animation(anim_name):
+			return anim_name
+	return &""
+
 func spawn_gold():
 	# 코인 씬이 연결되어 있고, 드랍 금액이 0보다 클 때만 생성
 	if not coin_scene or drop_gold_amount <= 0:
 		return
-		
-	var remaining_gold = drop_gold_amount
-	
-	# 1. 금화 (1000원 단위) 계산
-	var gold_count = remaining_gold / 1000  # 2500 / 1000 = 2개
-	remaining_gold %= 1000  # 나머지 500원
-	
-	# 2. 은화 (100원 단위) 계산
-	var silver_count = remaining_gold / 100 # 500 / 100 = 5개
-	remaining_gold %= 100   # 나머지 0원
-	
-	# 3. 동화 (10원 단위) 계산 (나머지 전부)
-	var bronze_count = remaining_gold / 10
-	
-	# --- 실제 생성 루프 ---
-	
-	# 금화 생성
-	for i in range(gold_count):
-		create_one_coin(1000)
-		
-	# 은화 생성
-	for i in range(silver_count):
-		create_one_coin(100)
-		
-	# 동화 생성
-	for i in range(bronze_count):
-		create_one_coin(10)
-			
+	for amount in split_gold_into_coins(drop_gold_amount):
+		create_one_coin(amount)
+
+# 금액을 금화(1000)·은화(100)·동화(10) 단위로 나눈다. 10 미만 나머지는 버린다. (박스 드롭도 사용)
+static func split_gold_into_coins(total: int) -> Array[int]:
+	var coins: Array[int] = []
+	if total <= 0:
+		return coins
+	for unit in [1000, 100, 10]:
+		for i in range(total / unit):
+			coins.append(unit)
+		total %= unit
+	return coins
 		
 func create_one_coin(amount: int):
 	var coin = coin_scene.instantiate()
@@ -342,7 +448,9 @@ func reset_to_home(reset_hp: bool = true) -> void:
 	reset_combat_state()            # 넉백/무적 초기화
 	
 	target = null # 추격하던 타겟 잊어버리기
+	_reset_patrol_idle()
 	
+	_reset_sprite_motion()
 	if reset_hp: 
 		hp = max_hp
 		queue_redraw()
@@ -379,3 +487,44 @@ func is_ledge_ahead(move_dir: int, offset: float = 12.0) -> bool:
 				return true
 				
 	return false
+
+# -------------------------------------------------------------------------
+# 순찰 중 멈춤(idle) — 하위 클래스의 _physics_process에서 호출
+# -------------------------------------------------------------------------
+
+# 순찰 중 지금 멈춰 있어야 하면 true. 타겟이 있으면 멈춤을 풀고 걷기 상태로 되돌린다.
+func update_patrol_idle(delta: float) -> bool:
+	if not patrol_idle_enabled:
+		return false
+	if target != null:
+		if _patrol_idling:
+			_reset_patrol_idle()
+		return false
+	_patrol_timer -= delta
+	if _patrol_timer <= 0.0:
+		if _patrol_idling:
+			_patrol_idling = false
+			_patrol_timer = randf_range(patrol_walk_time.x, patrol_walk_time.y)
+			if "dir" in self and randf() < patrol_turn_chance:
+				set("dir", -int(get("dir")))
+		else:
+			_patrol_idling = true
+			_patrol_timer = randf_range(patrol_idle_time.x, patrol_idle_time.y)
+	return _patrol_idling
+
+func is_patrol_idling() -> bool:
+	return _patrol_idling
+
+func _reset_patrol_idle() -> void:
+	_patrol_idling = false
+	_patrol_timer = randf_range(patrol_walk_time.x, patrol_walk_time.y)
+
+# 걷기/서기 애니메이션 재생. walk_animation이 없으면 idle_animation으로 대체.
+func play_move_animation(moving: bool) -> void:
+	if sprite == null or sprite.sprite_frames == null:
+		return
+	var anim := idle_animation
+	if moving and sprite.sprite_frames.has_animation(walk_animation):
+		anim = walk_animation
+	if sprite.sprite_frames.has_animation(anim) and sprite.animation != anim:
+		sprite.play(anim)

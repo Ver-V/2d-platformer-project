@@ -334,17 +334,19 @@ collection_tutorial_key = &"TUTORIAL_HEALTH_FLASK"
 [node name="Entities" type="Node" parent="."]
 
 [node name="Slime1" parent="Entities" instance=ExtResource("8_fvirs")]
+persist_id = "M-3c6c0ed7"
 position = Vector2(1216, 701)
-slime_max_hp = 10
-slime_contact_damage = 0
-slime_move_speed = 0.0
+max_hp_base = 10
+contact_damage_base = 0
+move_speed_base = 0.0
 drop_gold_amount = 0
 
 [node name="Slime2" parent="Entities" instance=ExtResource("8_fvirs")]
+persist_id = "M-dee01e4f"
 position = Vector2(1790, 698)
-slime_max_hp = 10
-slime_contact_damage = 0
-slime_move_speed = 0.0
+max_hp_base = 10
+contact_damage_base = 0
+move_speed_base = 0.0
 detect_radius = 400.0
 drop_gold_amount = 0
 
@@ -357,10 +359,11 @@ fire_rate = 1.0
 attack_range = 5000.0
 
 [node name="Slime3" parent="Entities" instance=ExtResource("8_fvirs")]
+persist_id = "M-a065ec27"
 position = Vector2(2448, 698)
-slime_max_hp = 10
-slime_contact_damage = 0
-slime_move_speed = 0.0
+max_hp_base = 10
+contact_damage_base = 0
+move_speed_base = 0.0
 detect_radius = 400.0
 drop_gold_amount = 0
 
@@ -374,10 +377,11 @@ fire_rate = 1.0
 attack_range = 5000.0
 
 [node name="Slime4" parent="Entities" instance=ExtResource("8_fvirs")]
+persist_id = "M-30aa6755"
 position = Vector2(3030, 698)
-slime_max_hp = 10
-slime_contact_damage = 0
-slime_move_speed = 0.0
+max_hp_base = 10
+contact_damage_base = 0
+move_speed_base = 0.0
 
 [node name="TutorialTrigger" parent="Entities" instance=ExtResource("11_o1nv7")]
 position = Vector2(73, 698)

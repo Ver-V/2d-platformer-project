@@ -623,95 +623,122 @@ position = Vector2(0, -0.5)
 shape = SubResource("RectangleShape2D_udna4")
 
 [node name="Slime1" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-dd4530df"
 position = Vector2(377, 58)
 
 [node name="Slime2" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-6fb3832f"
 position = Vector2(468, 58)
 
 [node name="Slime3" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-23b8684f"
 position = Vector2(264, 57)
 
 [node name="Slime4" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-329186d8"
 position = Vector2(128, 281)
 
 [node name="Slime5" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-6a4a0b67"
 position = Vector2(302, 410)
 
 [node name="Slime6" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-5f18475c"
 position = Vector2(478, 522)
 
 [node name="Slime7" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-f725535d"
 position = Vector2(451, 602)
 
 [node name="Slime8" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-a510f4bb"
 position = Vector2(483, 874)
 
 [node name="Slime9" parent="Entities" instance=ExtResource("13_lg3tr")]
+persist_id = "M-32997534"
 position = Vector2(273, 874)
 
 [node name="Esnake" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-4ab45448"
 position = Vector2(2303, 892)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Esnake2" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-56182aa7"
 position = Vector2(2188, 892)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Esnake3" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-711a1e83"
 position = Vector2(2457, 908)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="EMushroom" parent="Entities" instance=ExtResource("18_qsy5d")]
+persist_id = "M-bf3bdd1a"
 position = Vector2(197, 1044)
 
 [node name="EMushroom2" parent="Entities" instance=ExtResource("18_qsy5d")]
+persist_id = "M-ebb2e747"
 position = Vector2(295, 1044)
 
 [node name="EMushroom3" parent="Entities" instance=ExtResource("18_qsy5d")]
+persist_id = "M-713048df"
 position = Vector2(886, 1011)
 
 [node name="EMushroom4" parent="Entities" instance=ExtResource("18_qsy5d")]
+persist_id = "M-912dcf9e"
 position = Vector2(752, 612)
 
 [node name="EMushroom5" parent="Entities" instance=ExtResource("18_qsy5d")]
+persist_id = "M-e4efcb5b"
 position = Vector2(949, 643)
 
 [node name="EMushroom6" parent="Entities" instance=ExtResource("18_qsy5d")]
+persist_id = "M-487bb503"
 position = Vector2(874, 322)
 
 [node name="EMushroom7" parent="Entities" instance=ExtResource("18_qsy5d")]
+persist_id = "M-216b53c7"
 position = Vector2(1102, 322)
 
 [node name="EMushroom8" parent="Entities" instance=ExtResource("18_qsy5d")]
+persist_id = "M-d60f8220"
 position = Vector2(1648, 1044)
 
 [node name="Esnake4" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-95d7399e"
 position = Vector2(1827, 1051)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Esnake5" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-3c1b3faf"
 position = Vector2(2978, 940)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Esnake6" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-b0b3c79c"
 position = Vector2(2774, 940)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Esnake7" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-453b5572"
 position = Vector2(2758, 620)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Esnake8" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-304e1003"
 position = Vector2(2921, 573)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Esnake9" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-f1dfda5a"
 position = Vector2(2526, 908)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Esnake10" parent="Entities" instance=ExtResource("14_eveut")]
+persist_id = "M-c96ec750"
 position = Vector2(2802, 574)
-snake_max_hp = 20
+max_hp_base = 20
 
 [node name="Boss" type="Node" parent="."]
 

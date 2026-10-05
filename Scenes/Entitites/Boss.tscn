@@ -10,5 +10,5 @@ outro_dialogue_file = ""
 boss_door_group = "boss_doors"
 coin_scene = null
 
-[node name="BGMPlayer" type="AudioStreamPlayer" parent="." index="8"]
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="." index="6"]
 bus = &"BGM"

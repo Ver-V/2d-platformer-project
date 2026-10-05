@@ -233,6 +233,9 @@ func _check_condition(cond: Dictionary) -> bool:
 
 func _on_choice_selected(choice_data: Dictionary):
 	_clear_choices()
+	# 선택지에 "event"가 있으면 고른 순간 알린다 (문 열기 예/아니오, 루트 분기 등에서 사용)
+	if choice_data.has("event") and str(choice_data["event"]) != "":
+		dialogue_event.emit(str(choice_data["event"]))
 	if choice_data.has("scene_path"):
 		_start_scene_choice_transition(str(choice_data["scene_path"]))
 		return

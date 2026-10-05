@@ -1,36 +1,29 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3 uid="uid://d2qf7f3rpxa10"]
 
-[ext_resource type="Script" path="res://Script/System/KeyDoor.gd" id="1_script"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_blocker"]
-size = Vector2(22, 48)
+[ext_resource type="Script" uid="uid://dxj6vp7utm4an" path="res://Script/System/KeyDoor.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bo8gqr0jkgec3" path="res://Assets/door_closed.png" id="2_8mlkq"]
+[ext_resource type="Texture2D" uid="uid://u5ul0lc6v0jy" path="res://Assets/door_open.png" id="3_ro7ys"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
-size = Vector2(58, 52)
+size = Vector2(16, 26)
 
 [node name="KeyDoor" type="Node2D"]
 script = ExtResource("1_script")
 
-[node name="Visual" type="Polygon2D" parent="."]
-color = Color(0.43, 0.25, 0.38, 1)
-polygon = PackedVector2Array(-11, -48, 11, -48, 11, 0, -11, 0)
+[node name="ClosedSprite" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_8mlkq")
 
-[node name="Keyhole" type="Polygon2D" parent="Visual"]
-color = Color(0.96, 0.56, 0.78, 1)
-polygon = PackedVector2Array(-2, -28, 2, -28, 2, -20, -2, -20)
-
-[node name="Blocker" type="StaticBody2D" parent="."]
-collision_layer = 1
-collision_mask = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Blocker"]
-position = Vector2(0, -24)
-shape = SubResource("RectangleShape2D_blocker")
+[node name="OpenedSprite" type="Sprite2D" parent="."]
+visible = false
+texture_filter = 1
+texture = ExtResource("3_ro7ys")
 
 [node name="Trigger" type="Area2D" parent="."]
+position = Vector2(0, 24)
 collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Trigger"]
-position = Vector2(0, -24)
+position = Vector2(0, -20)
 shape = SubResource("RectangleShape2D_trigger")

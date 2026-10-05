@@ -382,21 +382,21 @@ shape = SubResource("RectangleShape2D_hy2bf")
 position = Vector2(-3, 1)
 shape = SubResource("RectangleShape2D_q4xqk")
 
-[node name="DetectArea" parent="." index="6"]
+[node name="DetectArea" parent="." index="5"]
 position = Vector2(2, 0)
 
 [node name="CollisionShape2D" parent="DetectArea" index="0"]
 position = Vector2(-6, 2)
 shape = SubResource("CircleShape2D_sxivi")
 
-[node name="BGMPlayer" parent="." index="8"]
+[node name="BGMPlayer" parent="." index="6"]
 stream = ExtResource("6_hy2bf")
 volume_db = -15.127
 parameters/looping = true
 
-[node name="ActionSFX" type="AudioStreamPlayer2D" parent="." index="9"]
+[node name="ActionSFX" type="AudioStreamPlayer2D" parent="." index="7"]
 bus = &"SFX"
 
-[node name="ShooterComponent" parent="." index="10" instance=ExtResource("2_nrtuv")]
+[node name="ShooterComponent" parent="." index="8" instance=ExtResource("2_nrtuv")]
 projectile_scene = ExtResource("9_q4xqk")
 parry_cue_color = Color(0.9363318, 0.00017404079, 0.788607, 1)

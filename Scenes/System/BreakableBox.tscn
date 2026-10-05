@@ -1,23 +1,25 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=7 format=3 uid="uid://bbt58hel8rsjj"]
 
-[ext_resource type="Script" path="res://Script/System/BreakableBox.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://crmi6w5h5t12f" path="res://Script/System/BreakableBox.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cw1r3av5go77n" path="res://Assets/sprites/box_2/box_2_1.png" id="2_nkhyl"]
+[ext_resource type="Texture2D" uid="uid://o8xqbp6037wa" path="res://Assets/sprites/box_2/box_2_2.png" id="3_box22"]
+[ext_resource type="Texture2D" uid="uid://c7g6tcw7fjlk1" path="res://Assets/sprites/box_2/box_2_3.png" id="4_box23"]
+[ext_resource type="Texture2D" uid="uid://cfcvnidv23yfa" path="res://Assets/sprites/box_2/box_2_4.png" id="5_box24"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
-size = Vector2(24, 24)
+size = Vector2(12, 12)
 
 [node name="BreakableBox" type="StaticBody2D"]
 collision_layer = 5
 collision_mask = 0
 script = ExtResource("1_script")
+damage_textures = Array[Texture2D]([ExtResource("2_nkhyl"), ExtResource("3_box22"), ExtResource("4_box23"), ExtResource("5_box24")])
 
-[node name="Body" type="Polygon2D" parent="."]
-color = Color(0.48, 0.29, 0.14, 1)
-polygon = PackedVector2Array(-12, -24, 12, -24, 12, 0, -12, 0)
-
-[node name="Plank" type="Polygon2D" parent="."]
-color = Color(0.67, 0.43, 0.22, 1)
-polygon = PackedVector2Array(-12, -15, 12, -15, 12, -11, -12, -11)
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, -8)
+texture = ExtResource("2_nkhyl")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -12)
+position = Vector2(0, -8)
 shape = SubResource("RectangleShape2D_box")

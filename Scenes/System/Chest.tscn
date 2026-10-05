@@ -1,47 +1,28 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=7 format=3 uid="uid://6oty7bk6i7q0"]
 
-[ext_resource type="Script" path="res://Script/System/Chest.gd" id="1_script"]
-[ext_resource type="AudioStream" path="res://Assets/sounds/power_up.wav" id="2_sound"]
+[ext_resource type="Script" uid="uid://c67xdaf2nau8b" path="res://Script/System/Chest.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dp3qapkpl4031" path="res://Assets/sprites/chest/chest_4.png" id="2_5pbly"]
+[ext_resource type="AudioStream" uid="uid://1dfib3v3ns1w" path="res://Assets/sounds/power_up.wav" id="2_sound"]
+[ext_resource type="Texture2D" uid="uid://kdeym03bocto" path="res://Assets/sprites/chest/chest_open_4.png" id="3_fiofr"]
+[ext_resource type="Texture2D" uid="uid://bnu7s108tk5b1" path="res://Assets/sprites/chest/lockedchest_4.png" id="4_7x7e7"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_range"]
-size = Vector2(48, 38)
+size = Vector2(14, 12)
 
 [node name="Chest" type="Area2D"]
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_script")
+closed_texture = ExtResource("2_5pbly")
+opened_texture = ExtResource("3_fiofr")
+locked_texture = ExtResource("4_7x7e7")
 
-[node name="ClosedVisual" type="Node2D" parent="."]
-
-[node name="Body" type="Polygon2D" parent="ClosedVisual"]
-color = Color(0.42, 0.22, 0.09, 1)
-polygon = PackedVector2Array(-14, -16, 14, -16, 14, 0, -14, 0)
-
-[node name="Lid" type="Polygon2D" parent="ClosedVisual"]
-color = Color(0.62, 0.36, 0.15, 1)
-polygon = PackedVector2Array(-16, -22, 16, -22, 16, -14, -16, -14)
-
-[node name="Keyhole" type="Polygon2D" parent="ClosedVisual"]
-color = Color(1, 0.78, 0.2, 1)
-polygon = PackedVector2Array(-2, -12, 2, -12, 2, -6, -2, -6)
-
-[node name="OpenedVisual" type="Node2D" parent="."]
-visible = false
-
-[node name="Body" type="Polygon2D" parent="OpenedVisual"]
-color = Color(0.42, 0.22, 0.09, 1)
-polygon = PackedVector2Array(-14, -14, 14, -14, 14, 0, -14, 0)
-
-[node name="Inside" type="Polygon2D" parent="OpenedVisual"]
-color = Color(0.16, 0.09, 0.04, 1)
-polygon = PackedVector2Array(-11, -12, 11, -12, 11, -5, -11, -5)
-
-[node name="Lid" type="Polygon2D" parent="OpenedVisual"]
-color = Color(0.62, 0.36, 0.15, 1)
-polygon = PackedVector2Array(-16, -29, 16, -29, 16, -22, -16, -22)
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_5pbly")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -11)
+position = Vector2(0, -1)
 shape = SubResource("RectangleShape2D_range")
 
 [node name="OpenSound" type="AudioStreamPlayer2D" parent="."]

@@ -26,11 +26,7 @@ func set_item(item: ItemData, inventory_index: int = -1):
 			$AmountLabel.show()
 		else:
 			$AmountLabel.hide()
-			 
-		# 툴팁(마우스 올리면 이름 뜨기)도 아주 쉽게 가능
-		tooltip_text = "%s\n%s" % [tr(item.name), tr(item.description)]
 	else:
 		icon.texture = null
 		icon.visible = false
 		$AmountLabel.hide()
-		tooltip_text = ""

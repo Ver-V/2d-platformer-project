@@ -331,18 +331,16 @@ radius = 58.00862
 
 [node name="EMushroom" instance=ExtResource("1_fkyq0")]
 script = ExtResource("2_ge0j4")
-gravity = 980.0
-max_fall_speed = 280.0
-mushroom_max_hp = 50
-mushroom_contact_damage = 15
-mushroom_move_speed = 50.0
-mushroom_knockback_res = 0.0
-turn_on_wall = true
-turn_on_ledge = true
-floor_ray_x = 14.0
-floor_ray_y = 24.0
-attack_distance = 20.0
 drop_gold_amount = 20
+max_hp_base = 50
+contact_damage_base = 15
+move_speed_base = 50.0
+sprite_faces_left = false
+attack_distance = 20.0
+attack_vertical_range = 32.0
+attack_animations = Array[StringName]([&"attack1", &"attack2"])
+attack_active_frames = Vector2i(3, 6)
+attack_hitbox_grow = 3.5
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 scale = Vector2(1.2, 1.2)

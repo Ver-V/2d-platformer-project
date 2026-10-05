@@ -13,6 +13,6 @@ gravity = 980.0
 
 [node name="ShooterComponent" parent="." index="0" instance=ExtResource("3_n26m6")]
 
-[node name="LineOfSight" type="RayCast2D" parent="." index="8"]
+[node name="LineOfSight" type="RayCast2D" parent="." index="7"]
 
-[node name="Muzzle" type="Marker2D" parent="." index="9"]
+[node name="Muzzle" type="Marker2D" parent="." index="8"]

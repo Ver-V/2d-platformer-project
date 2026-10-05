@@ -5,7 +5,20 @@
 	  "left_image": "",
 	  "right_image": "HeroBunny_idle",
 	  "name": "Pink Bunny",
-	  "text": "It's locked. I'll need something to get in - like a key, maybe?"
+	  "text": "I don't have a key that fits this lock..."
+	}
+  ],
+	"ask_open": [
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "",
+	  "name": "",
+	  "text": "Open the door?",
+	  "choices": [
+		{ "text": "Yes", "event": "door_unlock" },
+		{ "text": "No" }
+	  ]
 	}
   ],
 	"with_item": [

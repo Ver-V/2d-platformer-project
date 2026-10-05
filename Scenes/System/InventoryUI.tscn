@@ -172,6 +172,31 @@ layout_mode = 2
 text = "INVENTORY_PARRY_LABEL"
 label_settings = SubResource("LabelSettings_p7xya")
 
+[node name="ItemInfo" type="Panel" parent="Control/TextureRect"]
+layout_mode = 0
+offset_left = -140.0
+offset_top = 122.0
+offset_right = 206.5
+offset_bottom = 172.0
+mouse_filter = 2
+
+[node name="NameLabel" type="Label" parent="Control/TextureRect/ItemInfo"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 4.0
+offset_right = 340.0
+offset_bottom = 14.0
+label_settings = SubResource("LabelSettings_nwg6v")
+
+[node name="DescLabel" type="Label" parent="Control/TextureRect/ItemInfo"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 16.0
+offset_right = 340.0
+offset_bottom = 47.0
+label_settings = SubResource("LabelSettings_jos1c")
+autowrap_mode = 3
+
 [node name="Button" type="Button" parent="Control"]
 process_mode = 3
 z_index = 100

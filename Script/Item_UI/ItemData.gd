@@ -14,6 +14,9 @@ enum ItemType { GENERIC, CONSUMABLE, EQUIPMENT }
 
 @export_group("Key Setting")
 @export_range(0, 99, 1) var key_uses: int = 0 # 0이면 열쇠가 아님; 문에서 요구하는 일반 아이템은 1회 사용
+# 이 열쇠로 여는 문에 뜨는 자물쇠 그림. 같은 열쇠를 쓰는 문은 모두 같은 자물쇠가 뜬다.
+# 애니메이션: "locked" = 열쇠 없이 열려고 할 때, "unlock" = 열쇠로 풀릴 때 (반복 끄기)
+@export var lock_sprite_frames: SpriteFrames
 
 @export_group("Consumable Setting")
 @export var heal_amount: int = 0  # 포션 아니면 그냥 0으로 두면 됨

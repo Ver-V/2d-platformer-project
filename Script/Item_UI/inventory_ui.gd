@@ -6,6 +6,10 @@ extends CanvasLayer
 @onready var atk_label: Label = $Control/TextureRect/Panel/HBoxContainer/VBoxContainer/AtkLabel
 @onready var pd_label: Label = $Control/TextureRect/Panel/HBoxContainer/VBoxContainer/ParryDmgLabel
 
+# 아이템 설명 패널 (상점처럼 고정 위치). 마우스를 올린 아이템, 없으면 클릭해서 고른 아이템을 보여준다
+@onready var info_name_label: Label = $Control/TextureRect/ItemInfo/NameLabel
+@onready var info_desc_label: Label = $Control/TextureRect/ItemInfo/DescLabel
+
 # [새로 추가] 액션 메뉴 관련 노드 연결
 @onready var action_menu: PanelContainer = $ActionMenu
 @onready var btn_use: Button = $ActionMenu/VBoxContainer/BtnUse
@@ -13,6 +17,7 @@ extends CanvasLayer
 
 var is_open: bool = false
 var selected_index: int = -1 # [새로 추가] 클릭한 슬롯 번호 기억용
+var hovered_index: int = -1 # 마우스가 올라가 있는 슬롯 번호
 
 func _ready():
 	var slots = grid.get_children()
@@ -21,6 +26,8 @@ func _ready():
 		var slot = slots[i]
 		if not slot.slot_clicked.is_connected(_on_slot_clicked):
 			slot.slot_clicked.connect(_on_slot_clicked.bind(i))
+		slot.mouse_entered.connect(_on_slot_mouse_entered.bind(i))
+		slot.mouse_exited.connect(_on_slot_mouse_exited.bind(i))
 
 	btn_use.pressed.connect(GameManager.play_ui_click)
 	btn_use.pressed.connect(_on_use_pressed)
@@ -68,6 +75,7 @@ func open():
 	visible = true
 	is_open = true
 	selected_index = -1 # 열 때 선택 초기화
+	hovered_index = -1
 	action_menu.hide()  # 열 때 팝업 무조건 숨김
 	
 	update_ui()
@@ -104,20 +112,43 @@ func update_ui():
 			slots[i].set_item(GameManager.inventory[i], i)
 		else:
 			slots[i].set_item(null)
+	_update_item_info()
+
+# --- 아이템 설명 패널 ---
+func _item_at(index: int) -> ItemData:
+	if index < 0 or index >= GameManager.inventory.size():
+		return null
+	return GameManager.inventory[index]
+
+func _update_item_info() -> void:
+	var item := _item_at(hovered_index)
+	if item == null:
+		item = _item_at(selected_index)
+	if item == null:
+		info_name_label.text = ""
+		info_desc_label.text = ""
+		return
+	info_name_label.text = tr(item.name)
+	info_desc_label.text = tr(item.description)
+
+func _on_slot_mouse_entered(index: int) -> void:
+	hovered_index = index
+	_update_item_info()
+
+func _on_slot_mouse_exited(index: int) -> void:
+	if hovered_index == index:
+		hovered_index = -1
+		_update_item_info()
 
 # --- [수정됨] 슬롯 클릭 시 팝업 띄우기 ---
 func _on_slot_clicked(index):
-	print("클릭된 슬롯 번호: ", index)
-	
 	if index >= GameManager.inventory.size(): return
 
 	var item = GameManager.inventory[index]
 	
-	# 디버그용: 아이템이 정말 들어있는지 콘솔에 출력해 봅니다.
-	print("슬롯에 있는 아이템 데이터: ", item) 
-	
 	if item != null:
 		selected_index = index
+		_update_item_info()
 		
 		# [수정 1] 마우스 좌표 대신, 클릭한 슬롯 노드의 위치를 기준으로 띄웁니다.
 		# (해상도/카메라 스케일 때문에 마우스 좌표가 엉뚱한 곳을 가리키는 현상 방지)
@@ -130,6 +161,8 @@ func _on_slot_clicked(index):
 		action_menu.show()
 	else:
 		action_menu.hide()
+		selected_index = -1
+		_update_item_info()
 
 # --- [새로 추가] '사용' 버튼 눌렀을 때 ---
 func _on_use_pressed():
@@ -158,6 +191,7 @@ func _on_use_pressed():
 		# 플라스크는 사용 후 절대 삭제하지 않음
 		action_menu.hide()
 		selected_index = -1
+		_update_item_info()
 		return
 
 	# [2] 일반 아이템 타입별 처리
@@ -177,15 +211,16 @@ func _on_use_pressed():
 			# 잡동사니 등은 그냥 use만 실행 (보통 아무 일 없음)
 			item.use(player)
 
-	# 공통 마무리: UI 업데이트 및 메뉴 닫기
-	update_ui()
+	# 공통 마무리: 메뉴 닫기 및 UI 업데이트
 	action_menu.hide()
 	selected_index = -1
+	update_ui()
 
 # --- [새로 추가] '닫기' 버튼 눌렀을 때 ---
 func _on_close_pressed():
 	action_menu.hide()
 	selected_index = -1
+	_update_item_info()
 
 func _on_button_pressed() -> void:
 	close()

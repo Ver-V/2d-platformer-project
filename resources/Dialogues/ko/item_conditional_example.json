@@ -5,7 +5,20 @@
 	  "left_image": "",
 	  "right_image": "HeroBunny_idle",
 	  "name": "분홍 토끼",
-	  "text": "잠겨 있네. 안으로 들어가려면... 열쇠 같은 게 필요하겠지?"
+	  "text": "이 자물쇠에 맞는 열쇠가 없어..."
+	}
+  ],
+	"ask_open": [
+	{
+	  "speaker": "right",
+	  "left_image": "",
+	  "right_image": "",
+	  "name": "",
+	  "text": "문을 열겠습니까?",
+	  "choices": [
+		{ "text": "예", "event": "door_unlock" },
+		{ "text": "아니오" }
+	  ]
 	}
   ],
 	"with_item": [

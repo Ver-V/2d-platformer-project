@@ -88,7 +88,8 @@ func apply_knockback_vec(kb: Vector2, ignore_cooldown: bool = false, cooldown: f
 	if reset_y and is_on_floor():
 		velocity.y = 0.0
 
-	var resist: float = clamp(get_knockback_resist(), 0.0, 1.0)
+	# 1 = 안 밀림, 0 = 그대로, 음수 = 더 멀리 밀림 (-1이면 2배)
+	var resist: float = minf(get_knockback_resist(), 1.0)
 	knockback_vel = kb * (1.0 - resist)
 
 # 편의를 위한 방향+힘 버전
