@@ -154,7 +154,7 @@ func _on_mode_selected(index: int):
 	GameManager.apply_display_mode()
 	_init_graphics_ui()
 	GameManager.save_settings()
-	print("Display mode changed: ", index)
+	DebugLog.info(str("Display mode changed: ", index))
 
 func _on_resolution_selected(index: int):
 	if index < 0 or index >= btn_res.item_count or GameManager.display_mode != 0:
@@ -180,7 +180,7 @@ func _on_resolution_selected(index: int):
 		GameManager.windowed_resolution = applied_size
 	_init_graphics_ui()
 	GameManager.save_settings()
-	print("Resolution changed: ", GameManager.windowed_resolution)
+	DebugLog.info(str("Resolution changed: ", GameManager.windowed_resolution))
 
 func _on_fps_selected(index: int):
 	if index < 0 or index >= FPS_OPTIONS.size():
@@ -191,7 +191,7 @@ func _on_fps_selected(index: int):
 	Engine.max_fps = limit
 	_init_graphics_ui()
 	GameManager.save_settings()
-	print("FPS limit changed: ", limit)
+	DebugLog.info(str("FPS limit changed: ", limit))
 
 # (옵션) 닫기 버튼용
 func _on_close_button_pressed():

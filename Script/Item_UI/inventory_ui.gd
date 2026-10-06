@@ -39,6 +39,7 @@ func _ready():
 	GameManager.hp_changed.connect(_on_hp_changed)
 	GameManager.stats_changed.connect(_on_stats_changed)
 	GameManager.locale_changed.connect(_on_locale_changed)
+	GameManager.inventory_changed.connect(_on_inventory_changed)
 
 	action_menu.hide()
 	close()
@@ -47,6 +48,9 @@ func _on_gold_changed(_amount: int) -> void:
 	if is_open: update_ui()
 
 func _on_hp_changed(_cur: int, _max: int) -> void:
+	if is_open: update_ui()
+
+func _on_inventory_changed() -> void:
 	if is_open: update_ui()
 
 func _on_stats_changed() -> void:
@@ -186,7 +190,7 @@ func _on_use_pressed():
 			if success:
 				update_ui()
 		else:
-			print("GameManager에 use_flask 함수가 구현되지 않았습니다.")
+			push_error("GameManager에 use_flask 함수가 구현되지 않았습니다.")
 		
 		# 플라스크는 사용 후 절대 삭제하지 않음
 		action_menu.hide()
@@ -199,13 +203,13 @@ func _on_use_pressed():
 		ItemData.ItemType.CONSUMABLE:
 			# 일반 소모품(포션 등)은 사용 후 삭제
 			item.use(player)
-			GameManager.inventory[selected_index] = null
-			print("%s를 사용하고 소모했습니다." % item.name)
+			GameManager.remove_item_at(selected_index)
+			DebugLog.info("%s를 사용하고 소모했습니다." % item.name)
 			
 		ItemData.ItemType.EQUIPMENT:
 			# 장비템은 사용(장착)해도 삭제하지 않음
 			item.use(player)
-			print("%s를 장착/해제했습니다." % item.name)
+			DebugLog.info("%s를 장착/해제했습니다." % item.name)
 			
 		_:
 			# 잡동사니 등은 그냥 use만 실행 (보통 아무 일 없음)

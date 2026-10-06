@@ -13,12 +13,20 @@ const Z_INDEX: int = RenderingServer.CANVAS_ITEM_Z_MAX - 1
 @export var edge_softness: float = 12.0
 @export var darkness: Color = Color.BLACK
 @export var center_offset: Vector2 = Vector2(0, -10) # 발밑 원점 → 몸 중앙
+@export var radius_change_speed: float = 48.0 # 랜턴을 얻거나 잃을 때 반지름이 바뀌는 속도 (px/초)
 
 var target: Node2D = null
 var _rect: ColorRect
 var _material: ShaderMaterial
+var _shown_radius: float = -1.0 # 실제로 그리는 반지름. 목표값(get_radius)을 부드럽게 따라간다
+var _bonus_tiles: float = 0.0 # 갖고 있는 아이템의 시야 보너스 (인벤토리가 바뀔 때만 다시 계산)
 
 func _ready() -> void:
+	# GameManager를 이름으로 직접 쓰지 않는다 — 테스트 스크립트가 autoload보다 먼저 이 클래스를 컴파일함
+	var manager := get_node_or_null("/root/GameManager")
+	if manager != null:
+		manager.inventory_changed.connect(_on_inventory_changed)
+		_on_inventory_changed()
 	# 맨 위 한 칸(Z_MAX)은 어둠 위에 보여야 하는 것(GlowEyes 등)용으로 비워둔다
 	z_index = Z_INDEX
 	z_as_relative = false
@@ -29,13 +37,19 @@ func _ready() -> void:
 	_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_rect.material = _material
 	add_child(_rect)
+	_shown_radius = get_radius() # 시작할 때는 바로 맞춘다 (랜턴을 갖고 입장해도 넓어지는 연출 없이)
 	_update()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_shown_radius = move_toward(_shown_radius, get_radius(), radius_change_speed * delta)
 	_update()
 
+func _on_inventory_changed() -> void:
+	_bonus_tiles = get_node("/root/GameManager").get_vision_bonus_tiles()
+
+# 목표 반지름(px): 기본 반지름 + 갖고 있는 아이템의 시야 보너스(랜턴 등)
 func get_radius() -> float:
-	return radius_tiles * tile_size
+	return (radius_tiles + _bonus_tiles) * tile_size
 
 func _update() -> void:
 	if not is_instance_valid(target):
@@ -56,6 +70,6 @@ func _update() -> void:
 
 	var eye := target.global_position + center_offset if is_instance_valid(target) else center
 	_material.set_shader_parameter("center", eye)
-	_material.set_shader_parameter("radius", get_radius())
+	_material.set_shader_parameter("radius", _shown_radius)
 	_material.set_shader_parameter("softness", edge_softness)
 	_material.set_shader_parameter("darkness", darkness)

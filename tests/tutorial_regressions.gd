@@ -231,6 +231,32 @@ func check_player_guard() -> void:
 	check(player._get_guard_bar_center().y > 0.0, "Guard bar is not below the player")
 	player.guard_cooldown_timer = 0.0
 	check(is_equal_approx(player.get_guard_recharge_ratio(), 1.0), "Ready guard bar not full")
+	# 가드 후딜 캔슬: 누르고 있던 방향키로는 안 풀리고, 새로 누른 이동 입력에 풀린다
+	player._menu_exit_cooldown = 0.0
+	for action in ["left", "right"]:
+		player.guard_cooldown_timer = 0.0
+		player.velocity = Vector2.ZERO
+		player.change_state(player.State.GUARD)
+		await process_frame
+		Input.action_press(action)
+		await process_frame
+		await process_frame
+		player._process_guard(1.0 / 60.0)
+		check(player.current_state == player.State.GUARD, "Held direction cancelled the guard (%s)" % action)
+		var expected_guard_walk: float = (-1.0 if action == "left" else 1.0) * player.movespeed * player.guard_move_speed_ratio
+		check(is_equal_approx(player.velocity.x, expected_guard_walk), "Held direction should walk slowly while guarding (%s)" % action)
+		Input.action_release(action)
+		await process_frame
+		Input.action_press(action)
+		player._process_guard(1.0 / 60.0)
+		# 테스트에는 바닥이 없어 RUN 대신 공중 이동으로 처리된다 — 가드가 풀리고 그 프레임에 누른 쪽으로 움직이는지만 본다
+		var expected_sign := -1.0 if action == "left" else 1.0
+		check(player.current_state != player.State.GUARD and signf(player.velocity.x) == expected_sign, "Fresh move input did not cancel the guard (%s)" % action)
+		check(not player.is_guarding, "Guard flag left on after cancel (%s)" % action)
+		Input.action_release(action)
+		await process_frame
+		check(player.guard_shape.disabled, "Guard hitbox left on after cancel (%s)" % action)
+	player.guard_cooldown_timer = 0.0
 	var manager = root.get_node("GameManager")
 	for locale in ["en", "ko"]:
 		manager.set_locale(locale)

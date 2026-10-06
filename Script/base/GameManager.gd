@@ -16,6 +16,8 @@ var pending_status: String = ""
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 var key_uses_remaining: Array[int] = [] # inventory와 같은 인덱스의 열쇠 잔여 사용 횟수
 var collected_items: Array = []
+var loot_seed: int = 0 # 세이브마다 정해지는 랜덤 보상 시드 (새 게임 때 생성, 세이브에 저장)
+var current_slot: int = 1 # 지금 플레이 중인 세이브 슬롯 (메인 메뉴에서 고름). 저장·불러오기는 이 슬롯 파일로
 var visited_rooms_by_scene: Dictionary = {} # 씬 경로별 미니맵 방문 기록
 var active_ui_count: int = 0
 var _ui_owners: Dictionary = {}
@@ -36,6 +38,9 @@ signal hp_changed(current_hp, max_hp) # [추가] 체력 변화 신호
 signal interact_msg_requested(msg)    # [추가] 상호작용 텍스트 띄우기 요청
 signal interact_msg_hidden()          # [추가] 상호작용 텍스트 숨기기 요청
 signal locale_changed(new_locale: String)
+# 인벤토리 칸이 바뀜 (획득·사용·열쇠 소모·불러오기·새 게임). inventory를 직접 바꾸지 말고
+# add_item / remove_item_at 등 GameManager 함수를 거쳐야 이 신호가 나간다.
+signal inventory_changed
 
 # 리스폰 중복 방지 플래그
 var is_respawning: bool = false
@@ -45,6 +50,7 @@ var _ui_sfx_player: AudioStreamPlayer
 const SND_UI_CLICK = preload("res://Assets/sounds/UIC.wav")
 
 func _ready() -> void:
+	loot_seed = new_loot_seed() # 세이브 없이 바로 시작해도 시드가 있도록. 불러오면 세이브 값으로 덮어씀
 	_load_databases()
 	display_mode = _detect_display_mode()
 	if display_mode == 0:
@@ -293,7 +299,7 @@ func try_use_healing_potion() -> bool:
 			
 			var player = get_tree().get_first_node_in_group("player")
 			if player:
-				inventory[i] = null # 사용 후 소모 처리를 먼저 해서 UI 갱신 시 빈칸이 되도록 함
+				remove_item_at(i) # 사용 후 소모 처리를 먼저 해서 UI 갱신 시 빈칸이 되도록 함
 				item.use(player)
 				return true
 	return false
@@ -337,9 +343,21 @@ func add_item(item: ItemData) -> bool:
 		if inventory[i] == null:
 			inventory[i] = item # 리소스 파일 자체를 저장!
 			key_uses_remaining[i] = maxi(1, item.key_uses)
-			return true 
-			
+			inventory_changed.emit()
+			return true
+
 	return false
+
+# 해당 칸을 비운다 (사용·버리기). 비운 아이템을 돌려준다. 빈 칸·범위 밖이면 null.
+func remove_item_at(index: int) -> ItemData:
+	_ensure_key_use_slots()
+	if index < 0 or index >= inventory.size() or inventory[index] == null:
+		return null
+	var item := inventory[index]
+	inventory[index] = null
+	key_uses_remaining[index] = 0
+	inventory_changed.emit()
+	return item
 
 func has_item(item_id: String) -> bool:
 	if item_id.is_empty():
@@ -348,6 +366,14 @@ func has_item(item_id: String) -> bool:
 		if item != null and item.id == item_id:
 			return true
 	return false
+
+# 갖고 있는 아이템 중 가장 큰 시야 보너스 (랜턴 등). 겹쳐서 더하지 않는다.
+func get_vision_bonus_tiles() -> float:
+	var bonus := 0.0
+	for item in inventory:
+		if item != null:
+			bonus = maxf(bonus, item.vision_bonus_tiles)
+	return bonus
 
 func _ensure_key_use_slots() -> void:
 	key_uses_remaining.resize(inventory.size())
@@ -372,7 +398,9 @@ func consume_key_use(item_id: String) -> int:
 		key_uses_remaining[i] -= 1
 		var remaining := key_uses_remaining[i]
 		if remaining == 0:
-			inventory[i] = null
+			remove_item_at(i)
+		else:
+			inventory_changed.emit() # 남은 횟수 표시 갱신
 		return remaining
 	return -1
 	
@@ -395,13 +423,13 @@ func respawn_player() -> void:
 	
 	# [4] 씬 전환 시도
 	if load_result and has_checkpoint and last_scene_path != "" and ResourceLoader.exists(last_scene_path):
-		print("[Respawn] 세이브 로드 성공. 체크포인트로 이동: ", last_scene_path)
+		DebugLog.info(str("[Respawn] 세이브 로드 성공. 체크포인트로 이동: ", last_scene_path))
 		call_deferred("_change_scene_safe", last_scene_path)
 	else:
 		# 세이브가 없거나 경로가 잘못된 경우: 1스테이지 강제 이동
 		player_current_hp = player_max_hp
 		var stage1_path = get_stage_path(1)
-		print("[Respawn] 세이브 없음/오류. 1스테이지로 시작: ", stage1_path)
+		DebugLog.info(str("[Respawn] 세이브 없음/오류. 1스테이지로 시작: ", stage1_path))
 		call_deferred("_change_scene_safe", stage1_path)
 		
 
@@ -448,10 +476,10 @@ func _visited_rooms_for_save() -> Dictionary:
 func save_game() -> bool:
 	if player_current_hp <= 0: return false
 	var data = get_data_for_save()
-	return SaveManager.save_game(data)
+	return SaveManager.save_game(data, current_save_path())
 
 func load_game() -> bool:
-	var data = SaveManager.load_game()
+	var data = SaveManager.load_game(current_save_path())
 	if data.is_empty(): return false
 	
 	load_data_from_save(data)
@@ -482,10 +510,12 @@ func get_data_for_save() -> Dictionary:
 		"defeated_mobs": defeated_mobs,
 		"has_checkpoint": has_checkpoint,
 		"scene_path": last_scene_path,
+		"stage_title_key": _current_stage_title_key(), # 슬롯 선택 화면 표시용
 		"pos_x": last_checkpoint_pos.x,
 		"pos_y": last_checkpoint_pos.y,
 		"inventory": inventory_save_data,
 		"collected_items": collected_items,
+		"loot_seed": loot_seed,
 		"shop_sold": shop_sold,
 		"visited_rooms_by_scene": _visited_rooms_for_save(),
 		"flask_max": flask_max_charges,
@@ -513,6 +543,8 @@ func load_data_from_save(data: Dictionary) -> void:
 		last_scene_path = loaded_path
 	
 	collected_items = data.get("collected_items", [])
+	# 시드가 없는 옛 세이브는 새로 만든다 (다음 저장부터 고정)
+	loot_seed = int(data["loot_seed"]) if data.has("loot_seed") else new_loot_seed()
 	if data.has("shop_sold"):
 		shop_sold = data["shop_sold"].duplicate(true)
 	else:
@@ -541,6 +573,7 @@ func load_data_from_save(data: Dictionary) -> void:
 			inventory[i] = get_item_by_id(slot["id"])
 			if inventory[i] != null:
 				key_uses_remaining[i] = maxi(1, int(slot.get("key_uses", inventory[i].key_uses)))
+	inventory_changed.emit()
 	
 	last_checkpoint_pos = Vector2(data.get("pos_x", 0.0), data.get("pos_y", 0.0))
 	is_respawning = false
@@ -570,9 +603,31 @@ func apply_hitstop(time_scale: float, duration: float):
 
 func get_item_by_id(item_id: String) -> ItemData:
 	return item_database.get(item_id)
+
+func current_save_path() -> String:
+	return SaveManager.slot_path(current_slot)
+
+func _current_stage_title_key() -> String:
+	var scene := get_tree().current_scene if is_inside_tree() else null
+	if scene != null and "stage_title_key" in scene:
+		return str(scene.stage_title_key)
+	return ""
+
+# --- 랜덤 보상 시드 ---
+# 상자·박스 보상은 (세이브 시드 + 보상 출처 id)로 굴린다.
+# 같은 세이브에서는 다시 불러와도 같은 상자에서 같은 결과가 나오고(리셋 노가다 방지), 새 게임마다 바뀐다.
+func new_loot_seed() -> int:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	return rng.randi() # 0 ~ 2^32-1: JSON 숫자(double)로 정확히 저장된다
+
+func make_loot_rng(source_id: String) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = ("%d:%s" % [loot_seed, source_id]).hash()
+	return rng
 	
 func reset_data() -> void:
-	print("[GameManager] Resetting all game data for New Game...")
+	DebugLog.info("[GameManager] Resetting all game data for New Game...")
 	gold = 0
 	player_current_hp = 100
 	player_max_hp = 100
@@ -589,11 +644,13 @@ func reset_data() -> void:
 	defeated_mobs.clear()
 	collected_items.clear()
 	visited_rooms_by_scene.clear()
-	
+	loot_seed = new_loot_seed()
+
 	inventory.fill(null)
 	_ensure_key_use_slots()
 	key_uses_remaining.fill(0)
-	
+	inventory_changed.emit()
+
 	flask_max_charges = 1
 	flask_current_charges = 1
 	
@@ -635,7 +692,7 @@ func _change_scene_safe(path: String) -> void:
 	
 	var error = get_tree().change_scene_to_file(path)
 	if error != OK:
-		print("Error Changing Scene: ", error)
+		push_error("Error changing scene: " + str(error))
 	# 변경 완료 후 리스폰 플래그 해제
 	is_respawning = false
 

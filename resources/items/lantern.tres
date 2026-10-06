@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cd32vg31dc8ri" path="res://Assets/sprites/torch/candlestick_1_1.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+id = "lantern"
+name = "ITEM_LANTERN_NAME"
+icon = ExtResource("2_icon")
+price = 500
+description = "ITEM_LANTERN_DESCRIPTION"
+vision_bonus_tiles = 4.0

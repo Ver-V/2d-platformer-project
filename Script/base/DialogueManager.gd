@@ -76,7 +76,7 @@ func _ready():
 	choice_container.add_theme_constant_override("separation", 10)
 	scroll_container.add_child(choice_container)
 	
-	print("[DialogueManager] ChoiceUI 노드가 생성되었습니다.")
+	DebugLog.info("[DialogueManager] ChoiceUI 노드가 생성되었습니다.")
 
 func _input(event):
 	if not is_dialogue_active or is_waiting_choice or _is_ending:
@@ -101,9 +101,9 @@ func start_dialogue(json_file_path: String, start_block: String = "start") -> bo
 	if is_dialogue_active:
 		return false
 	json_file_path = _get_localized_dialogue_path(json_file_path)
-	print("[DialogueManager] Loading dialogue: ", json_file_path)
+	DebugLog.info(str("[DialogueManager] Loading dialogue: ", json_file_path))
 	if not FileAccess.file_exists(json_file_path):
-		print("[DialogueManager] Error: File not found at ", json_file_path)
+		push_error("[DialogueManager] File not found: " + str(json_file_path))
 		return false
 	var file = FileAccess.open(json_file_path, FileAccess.READ)
 	if file == null:
@@ -126,7 +126,7 @@ func start_dialogue(json_file_path: String, start_block: String = "start") -> bo
 		_jump_to_block(start_block)
 		return true
 	else:
-		print("[DialogueManager] JSON Parse Error: ", json.get_error_message(), " at line ", json.get_error_line())
+		push_error("[DialogueManager] JSON parse error in %s: %s (line %d)" % [json_file_path, json.get_error_message(), json.get_error_line()])
 	return false
 
 func has_dialogue_file(json_file_path: String) -> bool:

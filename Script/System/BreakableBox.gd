@@ -54,13 +54,14 @@ func _save_id() -> String:
 	var scene_path := scene.scene_file_path if scene != null else ""
 	return "box:%s:%s" % [scene_path, get_path()]
 
-# 지정 아이템이 있으면 그것, 없으면 랜덤 목록에서 한 줄(아이템 또는 골드)을 뽑는다. 아무것도 없으면 빈 LootEntry.
-func _roll_reward() -> LootEntry:
+# 지정 아이템이 있으면 그것, 없으면 랜덤 목록에서 한 줄(아이템 또는 골드)을 뽑는다.
+# rng를 주면 그걸로 뽑는다 (세이브 시드로 결과 고정). 아무것도 없으면 빈 LootEntry.
+func _roll_reward(rng: RandomNumberGenerator = null) -> LootEntry:
 	if reward_item != null:
 		var fixed := LootEntry.new()
 		fixed.item = reward_item
 		return fixed
-	var picked: LootEntry = loot_table.pick() if loot_table != null else null
+	var picked: LootEntry = loot_table.pick(rng) if loot_table != null else null
 	return picked if picked != null else LootEntry.new()
 
 # 부서질 때 보상을 바닥에 떨어뜨린다.
@@ -69,7 +70,8 @@ func _roll_reward() -> LootEntry:
 # 골드만: 코인을 뿌리고 박스는 바로 '부순 상태'로 저장한다.
 func _drop_reward() -> void:
 	var save_id := _save_id()
-	var reward := _roll_reward()
+	var rng := GameManager.make_loot_rng(_save_id()) # 같은 세이브에서는 같은 상자 = 같은 결과
+	var reward := _roll_reward(rng)
 	var scene := get_tree().current_scene
 	var parent: Node = scene if scene != null else get_parent()
 	if parent == null:
@@ -83,7 +85,7 @@ func _drop_reward() -> void:
 		parent.call_deferred("add_child", drop)
 	else:
 		GameManager.add_collected_item(save_id)
-	for amount in EnemyBase.split_gold_into_coins(reward.roll_gold()):
+	for amount in EnemyBase.split_gold_into_coins(reward.roll_gold(rng)):
 		var coin = COIN_SCENE.instantiate()
 		coin.position = drop_pos
 		parent.call_deferred("add_child", coin)

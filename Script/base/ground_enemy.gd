@@ -58,10 +58,17 @@ func _ready() -> void:
 	_update_facing()
 
 func _physics_process(delta: float) -> void:
-	if not _active or hp <= 0:
+	if not _active:
 		return
 
 	velocity.y = minf(velocity.y + gravity * delta, max_fall_speed)
+
+	# 죽은 뒤에도 시체는 계속 떨어진다 (공중에서 죽으면 그 자리에 멈춰 있던 문제)
+	if hp <= 0:
+		var drag := acceleration if is_on_floor() else air_drag
+		velocity.x = move_toward(velocity.x, 0.0, drag * delta)
+		move_in_room(delta)
+		return
 
 	var idling := false
 	var blocked := false

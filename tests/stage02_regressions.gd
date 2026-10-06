@@ -48,15 +48,36 @@ func check_vision_limit() -> void:
 	var vision := VisionLimit.new()
 	vision.radius_tiles = 4.0
 	check(is_equal_approx(vision.get_radius(), 64.0), "Vision radius should be 4 tiles = 64px")
+
+	# 랜턴: 갖고 있으면 반지름이 넓어지고, 그리는 반지름은 서서히 따라간다. 잃으면 원래대로.
+	var manager = root.get_node("GameManager")
+	var lantern = manager.get_item_by_id("lantern")
+	check(lantern != null and lantern.vision_bonus_tiles > 0.0, "Lantern item missing or has no vision bonus")
+	var stock2 = load("res://resources/shops/Stage2.tres")
+	check(stock2.entries.any(func(e): return e.item != null and e.item.id == "lantern"), "Stage2 merchant should sell the lantern")
+	fixture.add_child(vision)
+	if lantern != null:
+		manager.add_item(lantern)
+		manager.add_item(lantern) # 여러 개 있어도 겹쳐서 더하지 않는다
+		var goal: float = (4.0 + lantern.vision_bonus_tiles) * 16.0
+		check(is_equal_approx(vision.get_radius(), goal), "Lantern should widen the vision radius (not stacking)")
+		vision._process(0.1)
+		check(vision._shown_radius > 64.0 and vision._shown_radius < goal, "Vision radius should grow gradually")
+		vision._process(10.0)
+		check(is_equal_approx(vision._shown_radius, goal), "Vision radius should reach the lantern radius")
+	for i in manager.inventory.size(): # 테스트로 넣은 랜턴만 치운다 (신호로 시야도 갱신)
+		if manager.inventory[i] != null and manager.inventory[i] == lantern:
+			manager.remove_item_at(i)
+	check(is_equal_approx(vision.get_radius(), 64.0), "Vision radius should shrink back without the lantern")
 	vision.free()
 
 	var stage02 = load("res://Scenes/Stage/Stage_02.tscn").instantiate()
-	check(is_equal_approx(stage02.vision_radius_tiles, 4.0), "Stage_02 should limit vision to 4 tiles")
+	check(is_equal_approx(stage02.vision_radius_tiles, 5.0), "Stage_02 should limit vision to 5 tiles")
 	stage02.free()
 	var stage01 = load("res://Scenes/Stage/Stage_01.tscn").instantiate()
 	check(stage01.vision_radius_tiles <= 0.0, "Stage_01 should not limit vision")
 	stage01.free()
-	print("Vision: 4-tile radius on Stage_02 only")
+	print("Vision: 5-tile radius on Stage_02 only, lantern widens it gradually")
 
 const BLOCK_SCENE := preload("res://Scenes/System/CrumblingBlock.tscn")
 

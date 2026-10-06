@@ -23,6 +23,10 @@ enum ItemType { GENERIC, CONSUMABLE, EQUIPMENT }
 @export var damage_amount: int = 0
 @export var parry_multifactor: float = 0.0
 
+@export_group("Passive Setting")
+# 인벤토리에 갖고만 있어도 시야 제한(VisionLimit) 반지름이 이 타일 수만큼 넓어진다. 여러 개면 가장 큰 값만 적용.
+@export var vision_bonus_tiles: float = 0.0
+
 @export_group("Equipment Setting")
 @export var attack_damage: int = 0 # 무기 아니면 0으로 두면 됨
 @export var parrymul: float = 0.0
@@ -36,7 +40,7 @@ func use(player) -> void:
 		ItemType.EQUIPMENT:
 			_use_equipment(player)
 		_:
-			print("이 아이템은 사용할 수 없습니다. (재료/열쇠 등)")
+			DebugLog.info("이 아이템은 사용할 수 없습니다. (재료/열쇠 등)")
 
 # 소모품일 때 실행될 로직
 func _use_consumable(player) -> void:
@@ -52,5 +56,5 @@ func _use_consumable(player) -> void:
 
 # 장비일 때 실행될 로직 (나중에 구현)
 func _use_equipment(player) -> void:
-	print("%s 장착함! 공격력 +%d" % [name, attack_damage])
+	DebugLog.info("%s 장착함! 공격력 +%d" % [name, attack_damage])
 	# 여기에 장착 로직 넣으면 됨 (GameManager.equip_item(self) 등)

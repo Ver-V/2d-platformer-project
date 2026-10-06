@@ -27,7 +27,7 @@ func _on_shop_closed(bought: bool):
 		if DialogueManager.has_dialogue_file(bought_file):
 			DialogueManager.start_dialogue(bought_file)
 		else:
-			print("구매 후 대사 파일이 없습니다: ", bought_file)
+			push_warning("구매 후 대사 파일이 없습니다: " + str(bought_file))
 			
 # 메뉴 잠금은 Interactable이 확인한다. 대화·상점 상태도 한 번 더 확인.
 func _can_interact() -> bool:

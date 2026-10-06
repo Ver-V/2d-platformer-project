@@ -24,9 +24,152 @@ func run_checks() -> void:
 	await check_chest_rewards(manager)
 	await check_inventory_item_info(manager)
 	await check_door_lock(manager)
+	check_loot_seed(manager, saver)
+	check_save_slots(manager, saver)
+	check_inventory_signal(manager)
 	manager.reset_data()
 	print("Item/shop regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
 	quit(0 if failures == 0 else 1)
+
+# 랜덤 보상 시드: 같은 세이브(시드) + 같은 상자 = 같은 결과, 상자나 시드가 다르면 달라질 수 있음
+func check_loot_seed(manager, saver) -> void:
+	manager.reset_data()
+	var LootTableScript = load("res://Script/Item_UI/LootTable.gd")
+	var LootEntryScript = load("res://Script/Item_UI/LootEntry.gd")
+	var table = LootTableScript.new()
+	for i in 20:
+		var entry = LootEntryScript.new()
+		entry.gold_amount = 10
+		entry.gold_max = 1000
+		entry.weight = 1
+		entry.item = manager.get_item_by_id("health_potion") if i == 0 else null
+		table.entries.append(entry)
+
+	# 상자 하나의 결과 = (뽑힌 줄, 골드)
+	var roll := func(source_id: String) -> Array:
+		var rng = manager.make_loot_rng(source_id)
+		var picked = table.pick(rng)
+		return [table.entries.find(picked), picked.roll_gold(rng)]
+
+	var first: Array = roll.call("chest:A")
+	check(roll.call("chest:A") == first, "Same seed and chest should give the same loot")
+	var differs_by_source := false
+	for i in 20:
+		differs_by_source = differs_by_source or roll.call("chest:B%d" % i) != first
+	check(differs_by_source, "Different chests should be able to give different loot")
+
+	# 저장 → 불러오기 해도 시드가 유지되어 같은 결과
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data), "Save with loot_seed rejected by validator")
+	var saved_seed: int = manager.loot_seed
+	manager.reset_data()
+	manager.load_data_from_save(data)
+	check(manager.loot_seed == saved_seed, "loot_seed should survive save/load")
+	check(roll.call("chest:A") == first, "Reloaded save should give the same loot")
+
+	# 새 게임마다 시드가 바뀐다 (몇 번 해서 한 번이라도 다르면 통과)
+	var changed := false
+	for i in 5:
+		manager.reset_data()
+		changed = changed or manager.loot_seed != saved_seed
+	check(changed, "New game should pick a new loot seed")
+
+	# 옛 세이브(시드 없음)도 통과하고 시드가 생긴다
+	data.erase("loot_seed")
+	check(saver._is_valid_game(data), "Save without loot_seed should still be valid")
+	var bad := data.duplicate(true)
+	bad["loot_seed"] = -1
+	check(not saver._is_valid_game(bad), "Negative loot_seed accepted")
+	bad["loot_seed"] = "abc"
+	check(not saver._is_valid_game(bad), "Non-number loot_seed accepted")
+	print("Loot seed: same save + same chest = same loot, survives save/load, new per game")
+
+# 인벤토리가 바뀌는 모든 경로에서 inventory_changed가 나가야 UI·시야 등이 따라온다
+func check_inventory_signal(manager) -> void:
+	manager.reset_data()
+	var count := [0]
+	var on_changed := func(): count[0] += 1
+	manager.inventory_changed.connect(on_changed)
+	var potion = manager.get_item_by_id("health_potion")
+	var key = manager.get_item_by_id("pink_key")
+
+	manager.add_item(potion)
+	check(count[0] == 1, "add_item should emit inventory_changed")
+	var removed = manager.remove_item_at(0)
+	check(removed == potion and manager.inventory[0] == null and count[0] == 2, "remove_item_at should clear the slot and emit")
+	check(manager.remove_item_at(0) == null and count[0] == 2, "Removing an empty slot should do nothing")
+	check(manager.remove_item_at(99) == null and count[0] == 2, "Removing out of range should do nothing")
+
+	manager.add_item(key)
+	var before: int = count[0]
+	manager.consume_key_use("pink_key")
+	check(count[0] == before + 1 and not manager.has_item("pink_key"), "Using up a key should remove it and emit")
+
+	manager.add_item(potion)
+	var data: Dictionary = manager.get_data_for_save()
+	before = count[0]
+	manager.reset_data()
+	check(count[0] == before + 1, "New game should emit inventory_changed")
+	manager.load_data_from_save(data)
+	check(count[0] == before + 2 and manager.has_item("health_potion"), "Loading a save should emit inventory_changed")
+
+	manager.inventory_changed.disconnect(on_changed)
+	manager.reset_data()
+	print("Inventory signal: add, remove, key use-up, new game and load all emit inventory_changed")
+
+# 세이브 슬롯: 슬롯별 경로, 요약, 옛 단일 세이브 이전, 슬롯 버튼 글자.
+# 실제 슬롯 파일(user://save_slot_N.json)은 건드리지 않고 테스트 전용 경로만 쓴다.
+func check_save_slots(manager, saver) -> void:
+	check(saver.SLOT_COUNT == 3, "There should be 3 save slots")
+	var paths := {}
+	for slot in range(1, 4):
+		paths[saver.slot_path(slot)] = true
+	check(paths.size() == 3 and not paths.has(saver.SAVE_PATH), "Each slot should have its own save file")
+	manager.current_slot = 2
+	check(manager.current_save_path() == saver.slot_path(2), "GameManager should save to the chosen slot")
+	manager.current_slot = 1
+
+	var legacy := "user://test_legacy_save.json"
+	var target := "user://test_slot_target.json"
+	saver.delete_save(legacy)
+	saver.delete_save(target)
+	check(saver.slot_summary(target).is_empty(), "Empty slot should have no summary")
+
+	manager.reset_data()
+	manager.gold = 345
+	manager.last_scene_path = "res://Scenes/Stage/Stage_02.tscn"
+	var data: Dictionary = manager.get_data_for_save()
+	data["stage_title_key"] = "" # 옛 세이브처럼 제목 키 없음
+	check(saver.save_game(data, legacy), "Writing the test legacy save failed")
+	check(saver.migrate_legacy_save(legacy, target), "Legacy save should move to slot 1")
+	check(not saver.has_save(legacy) and saver.has_save(target), "Legacy save file should be gone after moving")
+	check(not saver.migrate_legacy_save(legacy, target), "Nothing left to migrate the second time")
+
+	var summary: Dictionary = saver.slot_summary(target)
+	check(summary.get("gold") == 345 and summary.get("saved_unix", 0) > 0, "Slot summary should show gold and save time")
+
+	# 슬롯이 이미 있으면 옛 세이브로 덮어쓰지 않는다
+	check(saver.save_game(data, legacy), "Writing the test legacy save failed")
+	check(not saver.migrate_legacy_save(legacy, target) and saver.has_save(legacy), "Legacy save must not overwrite an existing slot")
+
+	var SlotMenu = load("res://Script/System/save_slot_menu.gd")
+	var manager_locale: String = TranslationServer.get_locale()
+	for locale in ["en", "ko"]:
+		manager.set_locale(locale)
+		var text: String = SlotMenu.slot_text(2, summary)
+		check(text.contains(TranslationServer.translate(&"STAGE_02_TITLE")) and text.contains("345"),
+			"Old save without a title key should still show the stage name from its scene path (%s)" % locale)
+		check(not text.contains("SAVE_SLOT_") and not text.contains("{"), "Slot text left a raw key/placeholder (%s)" % locale)
+		var empty_text: String = SlotMenu.slot_text(1, {})
+		check(empty_text.contains(TranslationServer.translate(&"SAVE_SLOT_EMPTY")), "Empty slot text missing (%s)" % locale)
+		var unknown: String = SlotMenu.stage_title({"scene_path": "res://Scenes/Other.tscn"})
+		check(unknown == TranslationServer.translate(&"SAVE_SLOT_UNKNOWN_STAGE"), "Unknown scene should show a fallback name")
+	manager.set_locale(manager_locale)
+
+	saver.delete_save(legacy)
+	saver.delete_save(target)
+	manager.reset_data()
+	print("Save slots: 3 separate files, legacy save moves to slot 1, slot summary and labels")
 
 func stock_of(manager, shop_id: String, item_id: String) -> int:
 	for row in manager.get_shop_stock(shop_id):

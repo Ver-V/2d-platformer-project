@@ -12,8 +12,8 @@ class_name LootEntry
 func is_empty() -> bool:
 	return item == null and gold_amount <= 0 and gold_max <= 0
 
-# 실제로 줄 골드. 범위가 없으면 gold_amount 그대로.
-func roll_gold() -> int:
+# 실제로 줄 골드. 범위가 없으면 gold_amount 그대로. rng를 주면 그걸로 굴린다.
+func roll_gold(rng: RandomNumberGenerator = null) -> int:
 	if gold_max <= gold_amount:
 		return maxi(0, gold_amount)
 	var step := maxi(1, gold_step)
@@ -21,4 +21,4 @@ func roll_gold() -> int:
 	var high := floori(float(gold_max) / step)
 	if high < low:
 		return maxi(0, gold_amount)
-	return randi_range(low, high) * step
+	return (rng.randi_range(low, high) if rng != null else randi_range(low, high)) * step

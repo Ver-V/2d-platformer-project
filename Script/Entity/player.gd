@@ -64,6 +64,8 @@ var guard_cooldown_timer: float = 0.0
 @export var guard_bar_gap: float = 4.0
 @export var guard_bar_x_offset: float = 0.0
 
+@export_range(0.0, 1.0) var guard_move_speed_ratio: float = 0.2 # 가드 중 이동속도 배율
+
 const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
 const GUARD_COOLDOWN_TIME: float = 1.5      # 가드 재사용 대기 시간
 const CORNER_CORRECTION_PX: int = 4         # 모서리 보정 최대 픽셀 거리 (몸 폭 10px의 40%)
@@ -140,7 +142,6 @@ func change_state(new_state: State) -> void:
 		State.ATTACK:
 			is_attacking = true
 			is_parry_success = false 
-			print("Playing Attack Animation...")
 			anim_player.play("Attack")
 			sword_shape.disabled = false
 			_cooldown_left = attack_cooldown
@@ -569,8 +570,17 @@ func _process_attack(delta: float) -> void:
 	move_with_knockback(delta)
 
 func _process_guard(delta: float) -> void:
+	# 가드 후딜 캔슬: 가드 중 이동/점프를 새로 누르면 즉시 풀고 그 입력을 이번 프레임에 처리한다
+	# (누르고 있던 방향키는 캔슬하지 않고 아래에서 느리게 걷기로 처리 — 달리다 가드해도 바로 풀리지 않게)
+	if _menu_exit_cooldown <= 0.0 and (Input.is_action_just_pressed("left") \
+			or Input.is_action_just_pressed("right") or Input.is_action_just_pressed("jump")):
+		change_state(State.IDLE)
+		_process_movement(delta)
+		return
+
 	apply_gravity(delta)
-	velocity.x = 0 # 가드 중 이동 불가
+	# 가드 전부터 누르던 방향키로는 느리게 걷는다 (바라보는 방향은 그대로 — 뒤로 걸으면 뒷걸음질)
+	velocity.x = Input.get_axis("left", "right") * movespeed * guard_move_speed_ratio
 	
 	guard_timer += delta # 퍼펙트 가드 판정을 위해 시간 측정은 계속 함
 	

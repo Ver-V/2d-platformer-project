@@ -19,7 +19,7 @@ func _on_body_entered(body: Node) -> void:
 		if p == null: return
 		
 		# [디버그] 어떤 상태로 부딪혔는지 확인
-		print("ElevatorBlock 접촉! 플레이어 Y 속도: ", p.velocity.y)
+		DebugLog.info(str("ElevatorBlock 접촉! 플레이어 Y 속도: ", p.velocity.y))
 		
 		# 1. 플레이어가 위로 상승 중이거나, 거의 정지 상태(박은 직후)인 경우
 		# 2. 플레이어의 위치가 블록의 중심보다 아래에 있는 경우 (아래에서 위로 박음)
@@ -31,7 +31,7 @@ func _on_body_entered(body: Node) -> void:
 				_hit_block()
 
 func _hit_block() -> void:
-	print("ElevatorBlock 작동!")
+	DebugLog.info("ElevatorBlock 작동!")
 	# 블록 튕김 연출
 	var tween = create_tween()
 	# ... rest of the code

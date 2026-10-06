@@ -49,13 +49,13 @@ func _update_visual() -> void:
 		set_deferred("monitoring", false)
 
 # 지정 아이템이 있으면 그것, 없으면 랜덤 목록에서 한 줄(아이템 또는 골드)을 뽑는다.
-# 열 때마다 새로 뽑지만 열린 상자는 다시 열리지 않는다. 아무것도 없으면 빈 LootEntry.
-func _roll_reward() -> LootEntry:
+# rng를 주면 그걸로 뽑는다 (세이브 시드로 결과 고정). 아무것도 없으면 빈 LootEntry.
+func _roll_reward(rng: RandomNumberGenerator = null) -> LootEntry:
 	if reward_item != null:
 		var fixed := LootEntry.new()
 		fixed.item = reward_item
 		return fixed
-	var picked: LootEntry = loot_table.pick() if loot_table != null else null
+	var picked: LootEntry = loot_table.pick(rng) if loot_table != null else null
 	return picked if picked != null else LootEntry.new()
 
 # 열린 상자는 안내를 띄우지 않고 상호작용도 받지 않는다.
@@ -74,12 +74,13 @@ func _on_interact() -> void:
 		else:
 			player.show_popup(tr(&"KEY_REQUIRED"), Color.YELLOW)
 		return
-	var reward := _roll_reward()
+	var rng := GameManager.make_loot_rng(_save_id()) # 같은 세이브에서는 같은 상자 = 같은 결과
+	var reward := _roll_reward(rng)
 	if reward.item != null and not GameManager.add_item(reward.item):
 		player.show_status("full")
 		return
 
-	var gold := reward_gold + reward.roll_gold()
+	var gold := reward_gold + reward.roll_gold(rng)
 	if gold > 0:
 		GameManager.update_gold(gold)
 	_opened = true

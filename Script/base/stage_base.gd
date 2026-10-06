@@ -114,14 +114,14 @@ func spawn_player() -> void:
 	# [핵심] 1. 체크포인트가 있고 & 2. 그 체크포인트가 이 맵에서 찍힌 거라면?
 	if GameManager.has_checkpoint and GameManager.last_scene_path == scene_file_path:
 		p.global_position = GameManager.last_checkpoint_pos
-		print("[Spawn] 세이브 포인트 위치에서 시작: ", p.global_position)
+		DebugLog.info(str("[Spawn] 세이브 포인트 위치에서 시작: ", p.global_position))
 	else:
 		# 아니면 맵에 배치된 SpawnPoint 마커 위치 사용
 		if spawn_point:
 			p.global_position = spawn_point.global_position
-			print("[Spawn] 기본 SpawnPoint에서 시작: ", p.global_position)
+			DebugLog.info(str("[Spawn] 기본 SpawnPoint에서 시작: ", p.global_position))
 		else:
-			print("[Spawn] 경고: SpawnPoint가 없습니다! (0,0)에 배치됩니다.")
+			push_warning("[Spawn] SpawnPoint가 없습니다! (0,0)에 배치됩니다.")
 		
 	player = p
 
@@ -191,12 +191,12 @@ func _on_enemy_died(e: EnemyBase) -> void:
 	# [중요] 보스 그룹이거나 Boss 클래스인 경우 잡몹 리스트에서 제외
 	if not e.is_in_group("bosses") and not (e is Boss):
 		GameManager.add_defeated_mob(id)
-		print("잡몹 처치됨: ", id)
+		DebugLog.info(str("잡몹 처치됨: ", id))
 	else:
 		# 2. [추가] 만약 이 녀석이 '보스'라면 GameManager에 영구 저장!
 		GameManager.defeated_bosses[id] = true
 		GameManager.save_game()
-		print("보스 처치됨 (영구 저장): ", id)
+		DebugLog.info(str("보스 처치됨 (영구 저장): ", id))
 	
 func apply_room_rules(current_player_room: Vector2i) -> void:
 	_cached_enemies = _cached_enemies.filter(func(n) : return is_instance_valid(n))

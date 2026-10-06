@@ -29,8 +29,8 @@ signal died(enemy: EnemyBase)
 @export_group("Enemy Health Bar")
 @export var show_health_bar: bool = true
 @export var health_bar_x_offset: float = 0.0
-@export var health_bar_gap: float = 4.0
-@export var health_bar_size: Vector2 = Vector2(34.0, 5.0)
+@export var health_bar_gap: float = 3.0 # 보이는 몸 맨 위와 체력바 사이 간격
+@export var health_bar_size: Vector2 = Vector2(24.0, 4.0)
 
 @export_group("Behavior")
 @export var disable_when_inactive: bool = true
@@ -78,6 +78,7 @@ var _patrol_timer: float = 0.0
 var _sprite_base_scale: Vector2 = Vector2.ONE
 var _sprite_base_pos: Vector2 = Vector2.ZERO
 var _motion_tween: Tween
+var _health_bar_top_y: float = NAN # 체력바 기준 y (처음 그릴 때 계산)
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -152,22 +153,35 @@ func _draw() -> void:
 	draw_rect(fill_rect, Color(0.1, 0.9, 0.2, 1.0))
 
 func _get_health_bar_center() -> Vector2:
-	if sprite == null or sprite.sprite_frames == null:
+	if sprite == null:
 		return Vector2(health_bar_x_offset, -health_bar_gap - health_bar_size.y * 0.5)
-	
-	var frame_texture := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
-	if frame_texture == null:
-		return Vector2(health_bar_x_offset, -health_bar_gap - health_bar_size.y * 0.5)
-	
-	var frame_size := frame_texture.get_size() * sprite.scale.abs()
-	var sprite_top_y := sprite.position.y + sprite.offset.y
-	if sprite.centered:
-		sprite_top_y -= frame_size.y * 0.5
-	
+	if is_nan(_health_bar_top_y):
+		_health_bar_top_y = _visible_sprite_top_y()
 	return Vector2(
-		sprite.position.x + sprite.offset.x + health_bar_x_offset,
-		sprite_top_y - health_bar_gap - health_bar_size.y * 0.5
+		_sprite_base_pos.x + sprite.offset.x + health_bar_x_offset,
+		_health_bar_top_y - health_bar_gap - health_bar_size.y * 0.5
 	)
+
+# 기본 자세(idle 첫 프레임)에서 실제로 보이는 픽셀의 맨 위 y (몸 로컬 좌표)
+# 프레임 캔버스의 투명 여백 위가 아니라 몸 바로 위에 체력바를 붙이기 위해 한 번만 계산한다
+func _visible_sprite_top_y() -> float:
+	var top := 0.0
+	if sprite.sprite_frames == null:
+		return top
+	var anim := idle_animation if sprite.sprite_frames.has_animation(idle_animation) else sprite.animation
+	var tex := sprite.sprite_frames.get_frame_texture(anim, 0)
+	if tex == null:
+		return top
+	var canvas_top := sprite.offset.y - (tex.get_size().y * 0.5 if sprite.centered else 0.0)
+	var used_top := 0.0
+	var img := tex.get_image()
+	if img != null and not img.is_empty():
+		if img.is_compressed():
+			img.decompress()
+		var used := img.get_used_rect()
+		if used.size.y > 0:
+			used_top = used.position.y
+	return _sprite_base_pos.y + (canvas_top + used_top) * absf(_sprite_base_scale.y)
 
 func _on_death() -> void:
 	queue_redraw()

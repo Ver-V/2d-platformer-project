@@ -1,7 +1,8 @@
 # SaveManager.gd
 extends Node
 
-const SAVE_PATH = "user://save_game.json"
+const SAVE_PATH = "user://save_game.json" # 슬롯 도입 전 단일 세이브 (첫 실행 때 1번 슬롯으로 옮긴다)
+const SLOT_COUNT: int = 3
 const SETTINGS_PATH = "user://settings.json"
 const DEFAULT_LOCALE: String = "en"
 const SAVE_VERSION: int = 3 # 3: 상점 재고를 판매 수량(shop_sold)으로 저장
@@ -37,6 +38,42 @@ func delete_save(path: String = SAVE_PATH) -> void:
 	for suffix in ["", ".bak", ".tmp", ".bak.tmp"]:
 		if FileAccess.file_exists(path + suffix):
 			DirAccess.remove_absolute(path + suffix)
+
+# --- 세이브 슬롯 (1 ~ SLOT_COUNT) ---
+func slot_path(slot: int) -> String:
+	return "user://save_slot_%d.json" % slot
+
+func has_any_slot_save() -> bool:
+	for slot in range(1, SLOT_COUNT + 1):
+		if has_save(slot_path(slot)):
+			return true
+	return false
+
+# 슬롯 선택 화면에 보여줄 요약. 빈 슬롯이면 {}.
+# stage_title_key: 저장한 스테이지 제목 번역 키(옛 세이브는 없음), scene_path, gold, saved_unix: 파일 수정 시각
+func slot_summary(path: String) -> Dictionary:
+	var data := load_game(path)
+	if data.is_empty():
+		return {}
+	var file_path := path if FileAccess.file_exists(path) else path + ".bak"
+	return {
+		"stage_title_key": str(data.get("stage_title_key", "")),
+		"scene_path": str(data.get("scene_path", "")),
+		"gold": int(data.get("gold", 0)),
+		"saved_unix": FileAccess.get_modified_time(file_path),
+	}
+
+# 슬롯 도입 전 세이브(legacy_path)를 1번 슬롯으로 옮긴다. 1번 슬롯이 비어 있을 때만. 옮겼으면 true.
+func migrate_legacy_save(legacy_path: String = SAVE_PATH, target_path: String = "") -> bool:
+	if target_path.is_empty():
+		target_path = slot_path(1)
+	if not has_save(legacy_path) or has_save(target_path):
+		return false
+	var data := load_game(legacy_path)
+	if not _write_json_atomic(target_path, data):
+		return false
+	delete_save(legacy_path)
+	return true
 
 func _read_valid_game(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
@@ -109,6 +146,8 @@ func _is_valid_game(data: Variant) -> bool:
 			return false
 	if data.get("flask_current", 1) > data.get("flask_max", 1):
 		return false
+	if data.has("loot_seed") and (not _is_integer(data.loot_seed) or data.loot_seed < 0):
+		return false
 	for key in ["parrydamage", "pos_x", "pos_y"]:
 		if data.has(key) and not _is_number(data[key]):
 			return false
@@ -117,6 +156,8 @@ func _is_valid_game(data: Variant) -> bool:
 	if data.has("has_checkpoint") and not data.has_checkpoint is bool:
 		return false
 	if data.has("scene_path") and not data.scene_path is String:
+		return false
+	if data.has("stage_title_key") and not data.stage_title_key is String:
 		return false
 	for key in ["defeated_mobs", "triggered_dialogues", "collected_items"]:
 		if not data.get(key, []) is Array:
@@ -190,7 +231,7 @@ func load_settings() -> Dictionary:
 	if typeof(data) == TYPE_DICTIONARY:
 		if not data.has("locale"):
 			data["locale"] = DEFAULT_LOCALE
-		print("SaveManager: 설정 로드 성공")
+		DebugLog.info("SaveManager: 설정 로드 성공")
 		return data
 	push_warning("SaveManager: 설정 파일 형식이 잘못되어 기본값을 사용합니다: " + SETTINGS_PATH)
 	return {"locale": DEFAULT_LOCALE}
