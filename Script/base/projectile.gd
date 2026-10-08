@@ -41,8 +41,8 @@ func _ready() -> void:
 	if anim_sprite:
 		anim_sprite.play("default")
 	
-	# 벽이나 바닥에 닿으면 사라짐 (Body Entered)
-	body_entered.connect(_on_body_entered)
+	# 상대 Hurtbox에 닿으면 명중 (적 탄: 플레이어 Hurtbox, 반사탄: 적 Hurtbox)
+	area_entered.connect(_on_area_entered)
 	
 	var notifier = get_node_or_null("VisibleOnScreenNotifier2D")
 	if notifier:
@@ -89,7 +89,7 @@ func _physics_process(delta: float) -> void:
 	if _reflected and _is_homing and _has_live_homing_target():
 		var target_pos := _homing_target.global_position + Vector2(0, -10)
 		if global_position.distance_squared_to(target_pos) <= 0.0001:
-			_on_body_entered(_homing_target)
+			hit_target(_homing_target)
 
 	# 수명 체크
 	_current_life -= delta
@@ -106,35 +106,41 @@ func _on_screen_exited() -> void:
 		return
 	if _reflected and is_instance_valid(shooter):
 		# 패링된 투사체가 화면 밖으로 나갈 때, 쏜 적이 살아있다면 즉시 데미지 적용
-		if shooter is CombatBody2D:
-			shooter.apply_damage(_get_impact_damage(shooter), Vector2.ZERO, false, -1.0, true)
-		elif shooter.has_method("apply_damage"):
-			shooter.call("apply_damage", damage, Vector2.ZERO)
-		elif shooter.has_method("take_damage"):
-			shooter.call("take_damage", damage, global_position)
+		HitData.deliver(shooter, _make_hit(shooter, Vector2.ZERO))
 	queue_free()
 
-func _on_body_entered(body: Node) -> void:
-	if is_queued_for_deletion():
-		return
-	if body is CombatBody2D:
-		# 같은 팀이면 통과 (예: 적이 쏜 게 적을 맞추지 않음)
-		if _is_same_team(body):
-			return
-			
-		# 데미지 적용
-		var knock_dir = velocity.normalized()
-		# 넉백값은 투사체 설정에 따라 조절 가능. 일단 하드코딩 혹은 export 변수 사용
-		var applied = body.apply_damage(_get_impact_damage(body), knock_dir * 150.0, false, -1.0, true)
-		
-		if applied:
-			_destroy_projectile()
-	
+func _on_area_entered(area: Area2D) -> void:
+	if area is Hurtbox:
+		hit_target(area)
 
-func _get_impact_damage(body: CombatBody2D) -> int:
+# target: 상대의 Hurtbox 또는 몸(CombatBody2D). 유도 도착·테스트에서는 몸을 직접 준다.
+func hit_target(target: Node) -> void:
+	if is_queued_for_deletion() or not is_instance_valid(target):
+		return
+	var body: Node = target.receiver if target is Hurtbox else target
+	if not body is CombatBody2D:
+		return
+	# 같은 팀이면 통과 (예: 적이 쏜 게 적을 맞추지 않음)
+	if _is_same_team(body):
+		return
+	var result := HitData.deliver(target, _make_hit(body, velocity.normalized() * 150.0))
+	if not HitData.blocks_projectile(result):
+		return
+	# 반사탄은 적이 무적이면 사라지지 않고 무적이 끝날 때 명중한다 (패링이 헛되지 않도록).
+	# 적 탄은 무적인 플레이어에게 흡수된다 (무적이 끝나자마자 겹쳐 있던 탄에 맞지 않도록).
+	if result == HitData.Result.INVULNERABLE and _reflected:
+		return
+	_destroy_projectile()
+
+func _make_hit(body: Node, knockback: Vector2) -> HitData:
+	var hit := HitData.new(_get_impact_damage(body), knockback, self)
+	hit.is_projectile = true
+	return hit
+
+func _get_impact_damage(body: Node) -> int:
 	# 연습용 무해 탄환만, 반사 후 발사자에게 명중했을 때 처치한다.
-	# apply_damage를 통해 기존 사망 연출·드롭·기록 처리를 유지한다.
-	if _practice_parried and is_instance_valid(shooter) and body == shooter:
+	# receive_hit을 통해 기존 사망 연출·드롭·기록 처리를 유지한다.
+	if _practice_parried and is_instance_valid(shooter) and body == shooter and body is CombatBody2D:
 		return maxi(body.hp, 0)
 	return damage
 
@@ -188,12 +194,10 @@ func attempt_parry(source_pos: Vector2, extra_damage: int = 0, damage_multiplier
 
 	modulate = Color.CYAN
 
-	# [핵심] 신분 세탁 (Layer & Mask 실시간 변경)
-	call_deferred("set_collision_layer_value", 7, false) 
-	call_deferred("set_collision_layer_value", 6, true) 
-	call_deferred("set_collision_mask_value", 2, false)
-	call_deferred("set_collision_mask_value", 1, false)
-	call_deferred("set_collision_mask_value", 3, true)
-	call_deferred("set_collision_mask_value", 4, true)
+	# 반사: 적 투사체(7) → 플레이어 투사체(6), 플레이어 Hurtbox(9) 대신 적 Hurtbox(10)를 감지
+	call_deferred("set_collision_layer_value", 7, false)
+	call_deferred("set_collision_layer_value", 6, true)
+	call_deferred("set_collision_mask_value", 9, false)
+	call_deferred("set_collision_mask_value", 10, true)
 	
 	return true

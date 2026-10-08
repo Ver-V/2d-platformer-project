@@ -43,5 +43,5 @@ func _hit_block() -> void:
 	
 	# 필요하다면 일정 시간 쿨다운
 	is_active = false
-	await get_tree().create_timer(1.0).timeout
+	await Wait.seconds(self, 1.0)
 	is_active = true

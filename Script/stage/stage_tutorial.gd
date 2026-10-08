@@ -21,7 +21,7 @@ func start_tutorial_intro() -> void:
 		return
 		
 	# 약간의 지연 후 대화 시작
-	await get_tree().create_timer(intro_delay).timeout
+	await Wait.seconds(self, intro_delay)
 	
 	if DialogueManager:
 		DialogueManager.start_dialogue(intro_dialogue_path)

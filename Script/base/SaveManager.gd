@@ -247,15 +247,16 @@ func _is_valid_game(data: Variant) -> bool:
 	return true
 
 # --- 설정(옵션) 저장 및 불러오기 ---
-func save_settings(data: Dictionary) -> bool:
-	return _write_json_atomic(SETTINGS_PATH, data)
+# path는 테스트용 (기본: 실제 설정 파일)
+func save_settings(data: Dictionary, path: String = SETTINGS_PATH) -> bool:
+	return _write_json_atomic(path, data)
 
-func load_settings() -> Dictionary:
-	if not FileAccess.file_exists(SETTINGS_PATH):
+func load_settings(path: String = SETTINGS_PATH) -> Dictionary:
+	if not FileAccess.file_exists(path):
 		return {"locale": DEFAULT_LOCALE}
-	var file = FileAccess.open(SETTINGS_PATH, FileAccess.READ)
+	var file = FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		push_error("SaveManager: 설정 파일을 읽지 못했습니다: %s (오류 %s)" % [SETTINGS_PATH, FileAccess.get_open_error()])
+		push_error("SaveManager: 설정 파일을 읽지 못했습니다: %s (오류 %s)" % [path, FileAccess.get_open_error()])
 		return {"locale": DEFAULT_LOCALE}
 	var data = JSON.parse_string(file.get_as_text())
 	if typeof(data) == TYPE_DICTIONARY:
@@ -263,5 +264,5 @@ func load_settings() -> Dictionary:
 			data["locale"] = DEFAULT_LOCALE
 		DebugLog.info("SaveManager: 설정 로드 성공")
 		return data
-	push_warning("SaveManager: 설정 파일 형식이 잘못되어 기본값을 사용합니다: " + SETTINGS_PATH)
+	push_warning("SaveManager: 설정 파일 형식이 잘못되어 기본값을 사용합니다: " + path)
 	return {"locale": DEFAULT_LOCALE}

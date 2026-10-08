@@ -63,6 +63,10 @@ func _teleport_state(delta:float) -> void:
 		teleport_timer = 0.0
 		_execute_teleport_sequence()
 
+# 대기 중에 보스가 쓰러지면(사망 연출 중) 남은 패턴을 이어가지 않는다
+func _still_fighting() -> bool:
+	return hp > 0 and current_state != State.DEAD
+
 func _execute_teleport_sequence() -> void:
 	is_attacking = true
 	
@@ -73,8 +77,8 @@ func _execute_teleport_sequence() -> void:
 	if boss_sprite and boss_sprite.material:
 		var tween = create_tween()
 		tween.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 1.0, 0.15)
-		# await 대신 타이머를 사용하여 혹시 모를 멈춤 방지
-		await get_tree().create_timer(0.2).timeout
+		await Wait.seconds(self, 0.2)
+		if not _still_fighting(): return
 		
 	var candidate_markers: Array[Node] = []
 	for marker in teleport_markers:
@@ -91,7 +95,8 @@ func _execute_teleport_sequence() -> void:
 	if boss_sprite and boss_sprite.material:
 		var tween2 = create_tween()
 		tween2.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 0.0, 0.15)
-		await get_tree().create_timer(0.2).timeout
+		await Wait.seconds(self, 0.2)
+		if not _still_fighting(): return
 
 	is_attacking = false
 	current_state1 = CombatState.ATTACK
@@ -120,6 +125,8 @@ func _attack_state(_delta:float) -> void:
 			await _attack_pattern_3()
 		3:
 			await _attack_pattern_4()
+	if not _still_fighting():
+		return
 	
 	if boss_sprite and boss_sprite.animation == "attack":
 		boss_sprite.play("idle")
@@ -140,7 +147,8 @@ func _attack_pattern_1() -> void:
 				else:
 					p.set_parryable_mode(false)
 					
-		await get_tree().create_timer(0.5).timeout
+		await Wait.seconds(self, 0.5)
+		if not _still_fighting(): return
 
 func _attack_pattern_2() -> void:
 	if not shooter: return
@@ -152,7 +160,8 @@ func _attack_pattern_2() -> void:
 			p.scale = Vector2(2.5, 2.5)
 			if "damage" in p:
 				p.damage = 35
-	await get_tree().create_timer(0.5).timeout
+	await Wait.seconds(self, 0.5)
+	if not _still_fighting(): return
 	
 func _attack_pattern_3() -> void:
 	if not shooter: return
@@ -164,7 +173,8 @@ func _attack_pattern_3() -> void:
 			var dir = Vector2.RIGHT.rotated(deg_to_rad(angle_deg))
 			shooter.shoot_dir(self, dir, global_position)
 		
-		await get_tree().create_timer(0.8).timeout
+		await Wait.seconds(self, 0.8)
+		if not _still_fighting(): return
 
 	# 2. 22.5도를 틀어서 8방향으로 2번 발사 (간격 0.8초)
 	for i in range(2):
@@ -172,7 +182,8 @@ func _attack_pattern_3() -> void:
 			var dir = Vector2.RIGHT.rotated(deg_to_rad(angle_deg + 22.5))
 			shooter.shoot_dir(self, dir, global_position)
 		
-		await get_tree().create_timer(0.8).timeout
+		await Wait.seconds(self, 0.8)
+		if not _still_fighting(): return
 	
 func _attack_pattern_4() -> void:
 	if not shooter or target == null: return
@@ -182,7 +193,8 @@ func _attack_pattern_4() -> void:
 	if p1:
 		p1.set_parryable_mode(false)
 	
-	await get_tree().create_timer(0.5).timeout
+	await Wait.seconds(self, 0.5)
+	if not _still_fighting(): return
 	
 	var p2_list: Array[Node] = []
 	if is_instance_valid(p1) :
@@ -203,8 +215,8 @@ func _attack_pattern_4() -> void:
 					p2_list.append(p)
 				idx1 += 1
 	
-	await get_tree().create_timer(0.6).timeout
-	if not is_instance_valid(self): return
+	await Wait.seconds(self, 0.6)
+	if not _still_fighting(): return
 	
 	for p2 in p2_list:
 		if is_instance_valid(p2):

@@ -81,7 +81,7 @@ func _process(delta: float) -> void:
 		var shake_offset = Vector2(
 			randf_range(-current_shake_strength, current_shake_strength),
 			randf_range(-current_shake_strength, current_shake_strength)
-		) * GameManager.screenshake_intensity
+		) * SettingsManager.screenshake_intensity
 		
 		# 4. 카메라 위치 갱신 = [방의 중앙] + [흔들림]
 		# 주의: current_room이 유효한지(-1이 아닌지) 확인 필요

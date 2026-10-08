@@ -40,7 +40,7 @@ func _ready() -> void:
 	add_child(lock_overlay)
 	trigger.body_entered.connect(_on_body_entered)
 	trigger.body_exited.connect(_on_body_exited)
-	GameManager.locale_changed.connect(_on_locale_changed)
+	SettingsManager.locale_changed.connect(_on_locale_changed)
 	_opened = GameManager.collected_items.has(_save_id())
 	_apply_texture(closed_sprite, closed_texture)
 	_apply_texture(opened_sprite, opened_texture)
@@ -126,7 +126,7 @@ func _try_use_door(body: Player) -> void:
 
 	# 열쇠가 없으면: 자물쇠를 띄우고 "맞는 열쇠가 없어" 대사
 	_show_lock(&"locked")
-	if not GameManager.has_item(item_key):
+	if not Inventory.has_item(item_key):
 		if await _run_dialogue(block_without_item):
 			_hide_lock()
 		else:
@@ -144,7 +144,7 @@ func _try_use_door(body: Player) -> void:
 		_show_prompt()
 		return
 
-	var remaining_uses := GameManager.consume_key_use(item_key)
+	var remaining_uses := Inventory.consume_key_use(item_key)
 	if remaining_uses < 0:
 		_hide_lock()
 		_busy = false
@@ -187,7 +187,7 @@ func _ask_open() -> bool:
 # --- 자물쇠 ---
 
 func _lock_frames() -> SpriteFrames:
-	var key_item := GameManager.get_item_by_id(item_key)
+	var key_item := Database.get_item_by_id(item_key)
 	return key_item.lock_sprite_frames if key_item != null else null
 
 func _show_lock(anim_name: StringName) -> bool:

@@ -38,8 +38,8 @@ func _ready():
 	GameManager.gold_changed.connect(_on_gold_changed)
 	GameManager.hp_changed.connect(_on_hp_changed)
 	GameManager.stats_changed.connect(_on_stats_changed)
-	GameManager.locale_changed.connect(_on_locale_changed)
-	GameManager.inventory_changed.connect(_on_inventory_changed)
+	SettingsManager.locale_changed.connect(_on_locale_changed)
+	Inventory.inventory_changed.connect(_on_inventory_changed)
 
 	action_menu.hide()
 	close()
@@ -112,17 +112,17 @@ func update_ui():
 	# --- 아이템 슬롯 갱신 ---
 	var slots = grid.get_children()
 	for i in range(slots.size()):
-		if i < GameManager.inventory.size():
-			slots[i].set_item(GameManager.inventory[i], i)
+		if i < Inventory.inventory.size():
+			slots[i].set_item(Inventory.inventory[i], i)
 		else:
 			slots[i].set_item(null)
 	_update_item_info()
 
 # --- 아이템 설명 패널 ---
 func _item_at(index: int) -> ItemData:
-	if index < 0 or index >= GameManager.inventory.size():
+	if index < 0 or index >= Inventory.inventory.size():
 		return null
-	return GameManager.inventory[index]
+	return Inventory.inventory[index]
 
 func _update_item_info() -> void:
 	var item := _item_at(hovered_index)
@@ -146,9 +146,9 @@ func _on_slot_mouse_exited(index: int) -> void:
 
 # --- [수정됨] 슬롯 클릭 시 팝업 띄우기 ---
 func _on_slot_clicked(index):
-	if index >= GameManager.inventory.size(): return
+	if index >= Inventory.inventory.size(): return
 
-	var item = GameManager.inventory[index]
+	var item = Inventory.inventory[index]
 	
 	if item != null:
 		selected_index = index
@@ -170,10 +170,10 @@ func _on_slot_clicked(index):
 
 # --- [새로 추가] '사용' 버튼 눌렀을 때 ---
 func _on_use_pressed():
-	if selected_index < 0 or selected_index >= GameManager.inventory.size():
+	if selected_index < 0 or selected_index >= Inventory.inventory.size():
 		return
 	
-	var item = GameManager.inventory[selected_index]
+	var item = Inventory.inventory[selected_index]
 	
 	# [추가됨] 빈 슬롯 예외 처리 (크래시 방지)
 	if item == null:
@@ -203,7 +203,7 @@ func _on_use_pressed():
 		ItemData.ItemType.CONSUMABLE:
 			# 일반 소모품(포션 등)은 사용 후 삭제
 			item.use(player)
-			GameManager.remove_item_at(selected_index)
+			Inventory.remove_item_at(selected_index)
 			DebugLog.info("%s를 사용하고 소모했습니다." % item.name)
 			
 		ItemData.ItemType.EQUIPMENT:

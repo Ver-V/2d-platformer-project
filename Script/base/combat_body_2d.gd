@@ -10,8 +10,12 @@ var hp: int = 1
 var hit_spark_scene: PackedScene = preload("res://Scenes/System/HitSpark.tscn")
 var outline_shader: Shader = preload("res://resources/Shaders/outline.gdshader")
 
+# 무적 종류: 피격 후 무적은 적 투사체를 흡수하고, 회피 무적(대시 등)은 통과시킨다
+enum InvulnKind { HURT, DODGE }
+
 # 상태 변수
 var _invuln_left: float = 0.0
+var _invuln_kind: InvulnKind = InvulnKind.HURT
 var _knockback_left: float = 0.0
 var _blink_accum: float = 0.0
 var knockback_vel: Vector2 = Vector2.ZERO
@@ -50,9 +54,10 @@ func _setup_outline_material() -> void:
 func is_invulnerable() -> bool:
 	return _invuln_left > 0.0
 
-func start_invuln(duration: float = -1.0) -> void:
+func start_invuln(duration: float = -1.0, kind: InvulnKind = InvulnKind.HURT) -> void:
 	var t: float = duration if duration >= 0.0 else get_invuln_time()
 	_invuln_left = t
+	_invuln_kind = kind
 	_blink_accum = 0.0
 	_update_blink_visibility(true) # 무적 시작 시 바로 보이게(혹은 설정에 따라)
 
@@ -136,34 +141,37 @@ func apply_knockback(knock_dir: Vector2, kb_x: float, kb_y: float = 0.0, ignore_
 	var final_vec := Vector2(d.x * kb_x, kb_y)
 	apply_knockback_vec(final_vec, ignore_cooldown, cooldown, reset_y)
 
-# --- 데미지 처리 (핵심) ---
-# CombatBody2D.gd
+# --- 피격 처리 ---
+# 모든 타격은 HitData.deliver(대상, hit) → receive_hit(hit)로 들어온다.
+# 하위 클래스는 receive_hit을 오버라이드해 앞뒤 처리(가드, 비활성, 효과음 등)를 붙이고 super를 부른다.
+func receive_hit(hit: HitData) -> HitData.Result:
+	var result := _take_hit(hit)
+	if result == HitData.Result.HIT:
+		for effect in hit.status_effects:
+			apply_status_effect(effect)
+	return result
 
-# 기존 함수: func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_knockback_cooldown: bool = false) -> bool:
-# [수정된 함수] 맨 뒤에 'override_invuln_time' 추가 (기본값 -1.0)
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
-	if amount <= 0: return false
-	if hp <= 0: return false
-	if is_invulnerable(): return false
+# 피해·무적·넉백만 처리한다 (상태이상 제외). 가드로 깎인 피해처럼 결과를 따로 정할 때 직접 쓴다.
+func _take_hit(hit: HitData) -> HitData.Result:
+	if hit.amount <= 0 or hp <= 0:
+		return HitData.Result.IGNORED
+	if is_invulnerable():
+		return HitData.Result.EVADED if _invuln_kind == InvulnKind.DODGE else HitData.Result.INVULNERABLE
 
-	# [핵심 수정] 데미지 계산 및 사망 처리(hp <= 0) 전에 효과를 먼저 실행
-	# 이렇게 해야 플레이어가 적을 죽이는 순간에도 피격 효과(스파크, 번쩍임)가 보입니다.
+	# 사망 처리 전에 효과를 먼저 실행해야 쓰러뜨리는 타격에도 스파크·번쩍임이 보인다
 	_play_hit_effects()
 
-	hp -= amount
+	hp -= hit.amount
 	if hp <= 0:
 		hp = 0
 		velocity.x = 0
 		_on_death()
-		return true
+		return HitData.Result.KILLED
 
-	# 무적 시간 적용
-	start_invuln(or_invuln_time)
-	
-	if knockback != Vector2.ZERO:
-		apply_knockback_vec(knockback, ignore_cd, -1.0, true)
-	
-	return true
+	start_invuln(hit.invuln_time)
+	if hit.knockback != Vector2.ZERO:
+		apply_knockback_vec(hit.knockback, hit.ignore_knockback_cooldown, -1.0, true)
+	return HitData.Result.HIT
 
 # [추가] 피격 시 시각 효과 처리
 func _play_hit_effects() -> void:
@@ -175,11 +183,8 @@ func _play_hit_effects() -> void:
 			target_parent = get_tree().current_scene
 			
 		if target_parent:
-			target_parent.add_child(spark)
-			spark.global_position = global_position
 			spark.z_index = 100 # 다른 오브젝트보다 앞에 보이도록 설정
-			spark.emitting = true
-			get_tree().create_timer(spark.lifetime).timeout.connect(func(): if is_instance_valid(spark): spark.queue_free())
+			Effects.emit_once(spark, target_parent, global_position)
 
 	# 2. 쉐이더 플래시 효과 (하얗게 번쩍임)
 	var node = get_blink_node()

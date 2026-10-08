@@ -62,7 +62,7 @@ func _on_body_entered(body: Node):
 			
 		# [분기 2] 아이템일 경우
 		elif item_resource != null:
-			if GameManager.add_item(item_resource):
+			if Inventory.add_item(item_resource):
 				collected_success = true
 			else:
 				if body.has_method("show_status"):

@@ -18,6 +18,9 @@ config/icon="res://icon.svg"
 [autoload]
 
 SaveManager="*res://Script/base/SaveManager.gd"
+SettingsManager="*res://Script/base/SettingsManager.gd"
+Database="*res://Script/base/Database.gd"
+Inventory="*res://Script/base/Inventory.gd"
 GameManager="*res://Script/base/GameManager.gd"
 HUD="*res://Scenes/System/HUD.tscn"
 SceneTransition="*res://Scenes/Stage/SceneTransition.tscn"
@@ -132,6 +135,8 @@ locale/translations=PackedStringArray("res://resources/i18n/ui.en.translation", 
 2d_physics/layer_6="player_projectile"
 2d_physics/layer_7="enemy_projectile"
 2d_physics/layer_8="item"
+2d_physics/layer_9="player_hurtbox"
+2d_physics/layer_10="enemy_hurtbox"
 
 [rendering]
 

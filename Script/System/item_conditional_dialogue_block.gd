@@ -56,7 +56,7 @@ func _has_required_item() -> bool:
 		push_warning("ItemConditionalDialogueBlock: Required Item Id is empty.")
 		return false
 
-	for item: ItemData in GameManager.inventory:
+	for item: ItemData in Inventory.inventory:
 		if item != null and item.id == required_item_id:
 			return true
 

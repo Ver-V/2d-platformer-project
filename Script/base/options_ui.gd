@@ -48,7 +48,7 @@ func _ready():
 	_add_items_to_ui()
 	_connect_signals()
 	visibility_changed.connect(_on_visibility_changed)
-	GameManager.locale_changed.connect(_on_locale_changed)
+	SettingsManager.locale_changed.connect(_on_locale_changed)
 	
 	# 모든 버튼 및 옵션 버튼에 클릭 소리 연결
 	for btn in find_children("*", "BaseButton", true):
@@ -71,15 +71,15 @@ func _ready():
 
 func _init_graphics_ui():
 	# 전체 화면에서는 Godot이 borderless 플래그도 켜므로 선택 상태를 따로 보관한다.
-	btn_mode.select(GameManager.display_mode)
-	btn_res.disabled = GameManager.display_mode != 0
+	btn_mode.select(SettingsManager.display_mode)
+	btn_res.disabled = SettingsManager.display_mode != 0
 		
 	# 전체 화면에서도 마지막 창 모드 해상도를 표시한다.
 	var res_found = false
 	for i in range(btn_res.item_count):
 		var res_name = btn_res.get_item_text(i)
-		btn_res.set_item_disabled(i, not GameManager.is_windowed_resolution_supported(RESOLUTIONS[res_name]))
-		if RESOLUTIONS.has(res_name) and RESOLUTIONS[res_name] == GameManager.windowed_resolution:
+		btn_res.set_item_disabled(i, not SettingsManager.is_windowed_resolution_supported(RESOLUTIONS[res_name]))
+		if RESOLUTIONS.has(res_name) and RESOLUTIONS[res_name] == SettingsManager.windowed_resolution:
 			btn_res.select(i)
 			res_found = true
 	if not res_found:
@@ -118,7 +118,7 @@ func _connect_signals():
 	btn_language.item_selected.connect(_on_language_selected)
 
 func _init_language_ui() -> void:
-	var current_locale := GameManager.locale
+	var current_locale := SettingsManager.locale
 	var selected_index := LANGUAGE_CODES.find(current_locale)
 	btn_language.select(selected_index if selected_index >= 0 else 0)
 
@@ -126,8 +126,8 @@ func _on_language_selected(index: int) -> void:
 	if index < 0 or index >= LANGUAGE_CODES.size():
 		return
 
-	GameManager.set_locale(LANGUAGE_CODES[index])
-	GameManager.save_settings()
+	SettingsManager.set_locale(LANGUAGE_CODES[index])
+	SettingsManager.save_settings()
 
 func _on_locale_changed(_new_locale: String) -> void:
 	_refresh_translated_texts()
@@ -150,14 +150,14 @@ func _refresh_translated_texts() -> void:
 func _on_mode_selected(index: int):
 	if index < 0 or index >= WINDOW_MODE_KEYS.size():
 		return
-	GameManager.display_mode = index
-	GameManager.apply_display_mode()
+	SettingsManager.display_mode = index
+	SettingsManager.apply_display_mode()
 	_init_graphics_ui()
-	GameManager.save_settings()
+	SettingsManager.save_settings()
 	DebugLog.info(str("Display mode changed: ", index))
 
 func _on_resolution_selected(index: int):
-	if index < 0 or index >= btn_res.item_count or GameManager.display_mode != 0:
+	if index < 0 or index >= btn_res.item_count or SettingsManager.display_mode != 0:
 		_init_graphics_ui()
 		return
 	var key = btn_res.get_item_text(index)
@@ -165,22 +165,22 @@ func _on_resolution_selected(index: int):
 		_init_graphics_ui()
 		return
 	var target_size: Vector2i = RESOLUTIONS[key]
-	if not GameManager.is_windowed_resolution_supported(target_size):
+	if not SettingsManager.is_windowed_resolution_supported(target_size):
 		_init_graphics_ui()
 		return
 
-	GameManager.windowed_resolution = target_size
+	SettingsManager.windowed_resolution = target_size
 	DisplayServer.window_set_size(target_size)
-	GameManager.center_window()
+	SettingsManager.center_window()
 	await get_tree().process_frame
-	if not is_inside_tree() or GameManager.display_mode != 0:
+	if not is_inside_tree() or SettingsManager.display_mode != 0:
 		return
 	var applied_size := DisplayServer.window_get_size()
 	if applied_size.x > 0 and applied_size.y > 0:
-		GameManager.windowed_resolution = applied_size
+		SettingsManager.windowed_resolution = applied_size
 	_init_graphics_ui()
-	GameManager.save_settings()
-	DebugLog.info(str("Resolution changed: ", GameManager.windowed_resolution))
+	SettingsManager.save_settings()
+	DebugLog.info(str("Resolution changed: ", SettingsManager.windowed_resolution))
 
 func _on_fps_selected(index: int):
 	if index < 0 or index >= FPS_OPTIONS.size():
@@ -190,7 +190,7 @@ func _on_fps_selected(index: int):
 	# 엔진의 최대 FPS 설정
 	Engine.max_fps = limit
 	_init_graphics_ui()
-	GameManager.save_settings()
+	SettingsManager.save_settings()
 	DebugLog.info(str("FPS limit changed: ", limit))
 
 # (옵션) 닫기 버튼용
@@ -210,9 +210,9 @@ func _on_exit_button_pressed() -> void:
 
 # --- [기능 1: 마우스 감도] ---
 func _on_sens_changed(value: float):
-	GameManager.mouse_sensitivity = value
+	SettingsManager.mouse_sensitivity = value
 	_update_sens_label(value)
-	GameManager.save_settings()
+	SettingsManager.save_settings()
 
 func _update_sens_label(value: float):
 	# 0.5 -> "50%" 처럼 보기 좋게 변환
@@ -222,11 +222,11 @@ func _update_sens_label(value: float):
 
 func _init_game_settings():
 	# 1. 마우스 감도 초기화 (저장된 값 불러오기)
-	slider_sens.set_value_no_signal(GameManager.mouse_sensitivity)
-	_update_sens_label(GameManager.mouse_sensitivity)
+	slider_sens.set_value_no_signal(SettingsManager.mouse_sensitivity)
+	_update_sens_label(SettingsManager.mouse_sensitivity)
 	
-	slider_shake.set_value_no_signal(GameManager.screenshake_intensity)
-	_update_shake_label(GameManager.screenshake_intensity)
+	slider_shake.set_value_no_signal(SettingsManager.screenshake_intensity)
+	_update_shake_label(SettingsManager.screenshake_intensity)
 	
 	# 2. 연결
 	slider_sens.value_changed.connect(_on_sens_changed)
@@ -234,26 +234,26 @@ func _init_game_settings():
 	
 func _init_audio_sliders():
 	# 음소거된 버스는 실제 볼륨 값과 무관하게 0%로 표시한다.
-	slider_master.set_value_no_signal(GameManager.get_audio_volume(&"Master"))
-	slider_bgm.set_value_no_signal(GameManager.get_audio_volume(&"BGM"))
-	slider_sfx.set_value_no_signal(GameManager.get_audio_volume(&"SFX"))
+	slider_master.set_value_no_signal(SettingsManager.get_audio_volume(&"Master"))
+	slider_bgm.set_value_no_signal(SettingsManager.get_audio_volume(&"BGM"))
+	slider_sfx.set_value_no_signal(SettingsManager.get_audio_volume(&"SFX"))
 	
 func _on_master_volume_changed(value: float):
-	GameManager.set_audio_volume(&"Master", value)
-	GameManager.save_settings()
+	SettingsManager.set_audio_volume(&"Master", value)
+	SettingsManager.save_settings()
 
 func _on_bgm_volume_changed(value: float):
-	GameManager.set_audio_volume(&"BGM", value)
-	GameManager.save_settings()
+	SettingsManager.set_audio_volume(&"BGM", value)
+	SettingsManager.save_settings()
 
 func _on_sfx_volume_changed(value: float):
-	GameManager.set_audio_volume(&"SFX", value)
-	GameManager.save_settings()
+	SettingsManager.set_audio_volume(&"SFX", value)
+	SettingsManager.save_settings()
 	
 func _on_shake_changed(value: float):
-	GameManager.screenshake_intensity = value
+	SettingsManager.screenshake_intensity = value
 	_update_shake_label(value)
-	GameManager.save_settings()
+	SettingsManager.save_settings()
 
 func _update_shake_label(value: float):
 	lbl_shake_value.text = tr(&"OPTIONS_SHAKE_VALUE").format({

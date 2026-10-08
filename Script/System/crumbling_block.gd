@@ -142,7 +142,7 @@ func _crumble(group: Array[int]) -> void:
 	for i in group:
 		tile_states[i] = State.SHAKING
 	set_process(true)
-	await get_tree().create_timer(crumble_delay, false).timeout
+	await Wait.seconds(self, crumble_delay)
 	if gen != _generation or not is_inside_tree():
 		return
 	for i in group:
@@ -152,12 +152,12 @@ func _crumble(group: Array[int]) -> void:
 	_update_shaking()
 	queue_redraw()
 
-	await get_tree().create_timer(respawn_delay, false).timeout
+	await Wait.seconds(self, respawn_delay)
 	if gen != _generation or not is_inside_tree():
 		return
 	# 그 자리에 무언가 끼어 있으면 비켜날 때까지 기다린다 (플레이어가 블록 안에 갇히지 않게)
 	while _is_occupied(group):
-		await get_tree().create_timer(0.2, false).timeout
+		await Wait.seconds(self, 0.2)
 		if gen != _generation or not is_inside_tree():
 			return
 	for i in group:

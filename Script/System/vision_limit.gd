@@ -22,10 +22,10 @@ var _shown_radius: float = -1.0 # 실제로 그리는 반지름. 목표값(get_r
 var _bonus_tiles: float = 0.0 # 갖고 있는 아이템의 시야 보너스 (인벤토리가 바뀔 때만 다시 계산)
 
 func _ready() -> void:
-	# GameManager를 이름으로 직접 쓰지 않는다 — 테스트 스크립트가 autoload보다 먼저 이 클래스를 컴파일함
-	var manager := get_node_or_null("/root/GameManager")
-	if manager != null:
-		manager.inventory_changed.connect(_on_inventory_changed)
+	# Inventory를 이름으로 직접 쓰지 않는다 — 테스트 스크립트가 autoload보다 먼저 이 클래스를 컴파일함
+	var inventory := get_node_or_null("/root/Inventory")
+	if inventory != null:
+		inventory.inventory_changed.connect(_on_inventory_changed)
 		_on_inventory_changed()
 	# 맨 위 한 칸(Z_MAX)은 어둠 위에 보여야 하는 것(GlowEyes 등)용으로 비워둔다
 	z_index = Z_INDEX
@@ -45,7 +45,7 @@ func _process(delta: float) -> void:
 	_update()
 
 func _on_inventory_changed() -> void:
-	_bonus_tiles = get_node("/root/GameManager").get_vision_bonus_tiles()
+	_bonus_tiles = get_node("/root/Inventory").get_vision_bonus_tiles()
 
 # 목표 반지름(px): 기본 반지름 + 갖고 있는 아이템의 시야 보너스(랜턴 등)
 func get_radius() -> float:

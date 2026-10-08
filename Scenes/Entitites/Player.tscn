@@ -1,11 +1,14 @@
-[gd_scene load_steps=44 format=3 uid="uid://qfh6su8aeoy7"]
+[gd_scene load_steps=47 format=3 uid="uid://qfh6su8aeoy7"]
 
 [ext_resource type="Script" uid="uid://co2x5ujbjpd62" path="res://Script/Entity/player.gd" id="1_kpjcp"]
 [ext_resource type="PackedScene" uid="uid://b1tnix67gbct2" path="res://Scenes/System/InventoryUI.tscn" id="2_0kmp4"]
 [ext_resource type="Texture2D" uid="uid://csl0f5u6us4gn" path="res://Assets/sprites/SpriteSheet.png" id="3_6roe8"]
-[ext_resource type="Script" uid="uid://b00spr31wmhci" path="res://Script/System/sword_hitbox.gd" id="6_yu0nx"]
 [ext_resource type="Script" uid="uid://dleqtylnlbedr" path="res://Script/System/hazard_sensor.gd" id="7_im3yb"]
 [ext_resource type="Script" uid="uid://c82fbbhmso0k0" path="res://Script/System/SFXplayer.gd" id="10_3at2a"]
+[ext_resource type="Script" path="res://Script/base/combat/hurtbox.gd" id="11_hurtbox"]
+[ext_resource type="Script" path="res://Script/Entity/player/player_combat.gd" id="12_combat"]
+[ext_resource type="Script" path="res://Script/Entity/player/player_guard.gd" id="13_guard"]
+[ext_resource type="Script" path="res://Script/Entity/player/player_visuals.gd" id="14_visuals"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hqcmm"]
 atlas = ExtResource("3_6roe8")
@@ -508,8 +511,7 @@ position = Vector2(-1.4000015, -14.300001)
 [node name="SwordArea" type="Area2D" parent="AttackPivot"]
 position = Vector2(1.4000015, 4.300001)
 collision_layer = 16
-collision_mask = 76
-script = ExtResource("6_yu0nx")
+collision_mask = 576
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackPivot/SwordArea"]
 position = Vector2(11.000001, -2.124999)
@@ -569,4 +571,21 @@ disabled = true
 bus = &"SFX"
 script = ExtResource("10_3at2a")
 
-[connection signal="area_entered" from="MagnetArea" to="." method="_on_magnet_area_area_entered"]
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 256
+collision_mask = 0
+monitoring = false
+script = ExtResource("11_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(-1, -10.1125)
+shape = SubResource("RectangleShape2D_73fnb")
+
+[node name="Combat" type="Node" parent="."]
+script = ExtResource("12_combat")
+
+[node name="Guard" type="Node" parent="."]
+script = ExtResource("13_guard")
+
+[node name="Visuals" type="Node2D" parent="."]
+script = ExtResource("14_visuals")

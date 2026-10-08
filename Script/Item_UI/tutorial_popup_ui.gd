@@ -16,7 +16,7 @@ func _ready() -> void:
 	panel.scale = Vector2.ZERO
 	panel.resized.connect(_update_panel_pivot)
 	_update_panel_pivot()
-	GameManager.locale_changed.connect(_on_locale_changed)
+	SettingsManager.locale_changed.connect(_on_locale_changed)
 
 func _update_panel_pivot() -> void:
 	panel.pivot_offset = panel.size * 0.5

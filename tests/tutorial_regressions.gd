@@ -11,6 +11,11 @@ class TrainingTarget extends CombatBody2D:
 var failures: int = 0
 var fixture: Node2D
 
+# 오토로드 (테스트 스크립트에선 오토로드 이름을 바로 못 쓴다)
+func inv() -> Node: return root.get_node("Inventory")
+func settings() -> Node: return root.get_node("SettingsManager")
+func db() -> Node: return root.get_node("Database")
+
 func _initialize() -> void:
 	call_deferred("run_checks")
 
@@ -60,7 +65,7 @@ func check_practice_parry() -> void:
 		var projectile := make_projectile(target, 0, true)
 		check(projectile.attempt_parry(Vector2.LEFT * 10, extra), "Practice parry rejected")
 		check(target.hp == 50, "Parry should defeat target on impact, not immediately")
-		projectile._on_body_entered(target)
+		projectile.hit_target(target)
 		check(target.hp == 0 and target.deaths == 1, "Practice parry must use normal death handling, including counter bonus")
 		check(projectile.is_queued_for_deletion(), "Lethal practice projectile was not consumed")
 		target.queue_free()
@@ -76,23 +81,23 @@ func check_practice_parry() -> void:
 
 	var target := make_target()
 	var harmless := make_projectile(target, 0, true)
-	harmless._on_body_entered(target)
+	harmless.hit_target(target)
 	check(target.hp == 50, "Unparried training projectile damaged an enemy")
 	check(not harmless.is_queued_for_deletion(), "Same-team projectile consumed")
 	harmless.queue_free()
 	var ordinary_zero := make_projectile(target, 0, false)
 	ordinary_zero.attempt_parry(Vector2.LEFT * 10)
-	ordinary_zero._on_body_entered(target)
+	ordinary_zero.hit_target(target)
 	check(target.hp == 50, "Ordinary zero-damage parry should not gain a lethal effect")
 	ordinary_zero.queue_free()
 	var ordinary := make_projectile(target, 20, true)
 	ordinary.attempt_parry(Vector2.LEFT * 10, 10, 1.5)
-	ordinary._on_body_entered(target)
+	ordinary.hit_target(target)
 	check(target.hp == 10 and target.deaths == 0, "Positive damage should retain multiplier and counter bonus")
 	var other := make_target()
 	var practice := make_projectile(target, 0, true)
 	practice.attempt_parry(Vector2.LEFT * 10)
-	practice._on_body_entered(other)
+	practice.hit_target(other)
 	check(other.hp == 50, "Practice parry defeated an unrelated target")
 	practice.queue_free()
 	target.queue_free()
@@ -197,7 +202,7 @@ func check_popup_queue() -> void:
 	check(paused and popup.is_active and popup._is_closing, "Pause released before hide animation finished")
 	await wait_for_hide(popup)
 	check(popup._current_text_key == &"TUTORIAL_ATTACK" and paused, "Queued popups not shown in FIFO order")
-	manager.set_locale("ko")
+	settings().set_locale("ko")
 	check(popup.label.text == TranslationServer.translate(&"TUTORIAL_ATTACK"), "Active popup language did not refresh")
 	popup.hide_popup()
 	await wait_for_hide(popup)
@@ -223,18 +228,18 @@ func check_player_guard() -> void:
 	player.anim_player.stop()
 	player.hp = 100
 	player.change_state(player.State.GUARD)
-	check(is_zero_approx(player.get_guard_recharge_ratio()), "Guard-active bar should start empty")
+	check(is_zero_approx(player.guard.get_recharge_ratio()), "Guard-active bar should start empty")
 	player.change_state(player.State.IDLE)
-	check(is_equal_approx(player.guard_cooldown_timer, 1.5), "Guard cooldown not started")
-	player.guard_cooldown_timer = 0.75
-	check(is_equal_approx(player.get_guard_recharge_ratio(), 0.5), "Cooldown bar did not fill halfway")
-	check(player._get_guard_bar_center().y > 0.0, "Guard bar is not below the player")
-	player.guard_cooldown_timer = 0.0
-	check(is_equal_approx(player.get_guard_recharge_ratio(), 1.0), "Ready guard bar not full")
+	check(is_equal_approx(player.guard.cooldown_timer, 1.5), "Guard cooldown not started")
+	player.guard.cooldown_timer = 0.75
+	check(is_equal_approx(player.guard.get_recharge_ratio(), 0.5), "Cooldown bar did not fill halfway")
+	check(player.visuals.get_guard_bar_center().y > 0.0, "Guard bar is not below the player")
+	player.guard.cooldown_timer = 0.0
+	check(is_equal_approx(player.guard.get_recharge_ratio(), 1.0), "Ready guard bar not full")
 	# 가드 후딜 캔슬: 누르고 있던 방향키로는 안 풀리고, 새로 누른 이동 입력에 풀린다
 	player._menu_exit_cooldown = 0.0
 	for action in ["left", "right"]:
-		player.guard_cooldown_timer = 0.0
+		player.guard.cooldown_timer = 0.0
 		player.velocity = Vector2.ZERO
 		player.change_state(player.State.GUARD)
 		await process_frame
@@ -243,7 +248,7 @@ func check_player_guard() -> void:
 		await process_frame
 		player._process_guard(1.0 / 60.0)
 		check(player.current_state == player.State.GUARD, "Held direction cancelled the guard (%s)" % action)
-		var expected_guard_walk: float = (-1.0 if action == "left" else 1.0) * player.movespeed * player.guard_move_speed_ratio
+		var expected_guard_walk: float = (-1.0 if action == "left" else 1.0) * player.movespeed * player.guard.move_speed_ratio
 		check(is_equal_approx(player.velocity.x, expected_guard_walk), "Held direction should walk slowly while guarding (%s)" % action)
 		Input.action_release(action)
 		await process_frame
@@ -252,14 +257,14 @@ func check_player_guard() -> void:
 		# 테스트에는 바닥이 없어 RUN 대신 공중 이동으로 처리된다 — 가드가 풀리고 그 프레임에 누른 쪽으로 움직이는지만 본다
 		var expected_sign := -1.0 if action == "left" else 1.0
 		check(player.current_state != player.State.GUARD and signf(player.velocity.x) == expected_sign, "Fresh move input did not cancel the guard (%s)" % action)
-		check(not player.is_guarding, "Guard flag left on after cancel (%s)" % action)
+		check(not player.guard.is_guarding, "Guard flag left on after cancel (%s)" % action)
 		Input.action_release(action)
 		await process_frame
-		check(player.guard_shape.disabled, "Guard hitbox left on after cancel (%s)" % action)
-	player.guard_cooldown_timer = 0.0
+		check(player.guard.guard_shape.disabled, "Guard hitbox left on after cancel (%s)" % action)
+	player.guard.cooldown_timer = 0.0
 	var manager = root.get_node("GameManager")
 	for locale in ["en", "ko"]:
-		manager.set_locale(locale)
+		settings().set_locale(locale)
 		player.update_damage(1)
 		check(player.status_label.text == TranslationServer.translate(&"COMBAT_DAMAGE_UP"), "Damage popup not translated")
 		player.update_parry_ratio(0.1)
@@ -269,16 +274,16 @@ func check_player_guard() -> void:
 			check(not player.status_label.text.begins_with("STATUS_"), "Status translation key exposed")
 		for perfect in [false, true]:
 			player.reset_combat_state()
-			player.is_guarding = true
-			player.guard_timer = 0.1 if perfect else 0.3
-			player.has_perfect_guard_bonus = false
+			player.guard.is_guarding = true
+			player.guard.guard_timer = 0.1 if perfect else 0.3
+			player.combat.has_perfect_guard_bonus = false
 			var projectile := make_projectile(null, 0, false)
 			projectile.velocity = Vector2.LEFT * 150
-			player._on_guard_area_entered(projectile)
+			player.guard._on_guard_area_entered(projectile)
 			var key: StringName = &"COMBAT_PERFECT_GUARD" if perfect else &"COMBAT_GUARD"
 			check(projectile.is_queued_for_deletion() and player.hp == 100, "Zero-damage guard regression")
 			check(player.status_label.text == TranslationServer.translate(key), "Guard feedback not translated")
-			check(player.has_perfect_guard_bonus == perfect, "Perfect guard bonus regression")
+			check(player.combat.has_perfect_guard_bonus == perfect, "Perfect guard bonus regression")
 	player.queue_free()
 	print("Guard: cooldown state, bar placement, zero-damage guard and English/Korean feedback checked")
 

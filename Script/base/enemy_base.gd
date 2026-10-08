@@ -56,7 +56,7 @@ signal died(enemy: EnemyBase)
 @export var walk_animation: StringName = &"walk" # 없으면 걸을 때도 idle_animation 재생
 @export var idle_animation: StringName = &"idle"
 
-@onready var hurtbox: Area2D = $Hurtbox
+@onready var hurtbox: Hurtbox = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
 @onready var body_shape: CollisionShape2D = $CollisionShape2D
 @onready var detect_area: Area2D = $DetectArea
@@ -119,8 +119,9 @@ func _ready() -> void:
 	move_speed = move_speed_base
 	
 	if hitbox:
-		hitbox.body_entered.connect(_on_hitbox_body_entered)
-		hitbox.body_exited.connect(_on_hitbox_body_exited)
+		# 접촉 피해는 플레이어 Hurtbox(레이어 9)에 닿았을 때
+		hitbox.area_entered.connect(_on_hitbox_area_entered)
+		hitbox.area_exited.connect(_on_hitbox_area_exited)
 
 	if detect_area:
 		detect_area.body_entered.connect(_on_detect_entered)
@@ -197,7 +198,7 @@ func _on_death() -> void:
 	
 	# 충돌체 비활성화 (시체에 부딪히거나 데미지를 받지 않도록)
 	if hitbox: hitbox.set_deferred("monitoring", false)
-	if hurtbox: hurtbox.set_deferred("monitoring", false)
+	if hurtbox: hurtbox.set_enabled(false)
 	
 	# 충돌체 자체를 끄지 않고 레이어를 변경하여 바닥에 서 있게 함
 	# 1번 레이어(World)만 남기고 나머지는 끔으로써 플레이어와는 겹쳐짐
@@ -213,27 +214,31 @@ func _on_death() -> void:
 	if death_anim != &"":
 		anim_sprite.play(death_anim)
 		if not anim_sprite.sprite_frames.get_animation_loop(death_anim):
-			await anim_sprite.animation_finished
+			# 사망 애니메이션이 끝나면 사라지기 시작
+			anim_sprite.animation_finished.connect(_fade_out_and_free, CONNECT_ONE_SHOT)
+			return
+	_fade_out_and_free()
 
-	# [추가] 쉐이더 디졸브 효과 (서서히 증발)
+# 2초간 시체로 남았다가 3초 동안 디졸브로 증발한 뒤 삭제. 적에 묶인 트윈이라 적이 먼저 사라지면 같이 멈춘다
+func _fade_out_and_free() -> void:
+	var tween := create_tween()
+	tween.tween_interval(2.0)
 	if sprite and sprite.material is ShaderMaterial:
-		var tween = create_tween()
-		# 2초간 유지하다가 마지막 3초 동안 서서히 증발
-		tween.tween_interval(2.0)
 		tween.tween_property(sprite.material, "shader_parameter/dissolve_value", 1.1, 3.0)
+	else:
+		tween.tween_interval(3.0)
+	tween.tween_callback(queue_free)
 
-	await get_tree().create_timer(5.0).timeout
-	queue_free()
-
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
-	if not _active: return false
-	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
-	if took_damage:
+func receive_hit(hit: HitData) -> HitData.Result:
+	if not _active:
+		return HitData.Result.IGNORED
+	var result := super.receive_hit(hit)
+	if HitData.landed(result):
 		queue_redraw()
-	if took_damage and hit_sound:
-		hit_sound.pitch_scale = randf_range(0.9, 1.1)
-		hit_sound.play()
-	return took_damage
+		if hit_sound:
+			hit_sound.pitch_scale = randf_range(0.9, 1.1)
+			hit_sound.play()
+	return result
 
 func _play_hit_effects() -> void:
 	super._play_hit_effects()
@@ -399,33 +404,25 @@ func create_one_coin(amount: int):
 	else:
 		coin.queue_free()
 
-func _on_hitbox_body_entered(b: Node) -> void:
-	if not _active or contact_damage <= 0 or b == null: return
-	_touching[b] = 0.0
-	_apply_contact_damage_once(b)
+func _on_hitbox_area_entered(area: Area2D) -> void:
+	if not _active or contact_damage <= 0 or not area is Hurtbox: return
+	_touching[area] = 0.0
+	_apply_contact_damage_once(area)
 
-func _on_hitbox_body_exited(b: Node) -> void:
-	if _touching.has(b): _touching.erase(b)
+func _on_hitbox_area_exited(area: Area2D) -> void:
+	if _touching.has(area): _touching.erase(area)
 
+# b: 플레이어의 Hurtbox (테스트 등에서는 몸 노드를 직접 줘도 된다)
 func _apply_contact_damage_once(b: Node) -> void:
 	if not is_instance_valid(b): return
-	
-	var did_dmg: bool = false
-	if b is CombatBody2D:
-		var dx: float = b.global_position.x - global_position.x
-		var k_dir := Vector2(1.0 if dx >= 0.0 else -1.0, 0.0)
-		var k_vec := Vector2(k_dir.x * contact_knockback_x, contact_knockback_y)
-		did_dmg = b.apply_damage(contact_damage, k_vec)
-		if did_dmg and contact_status != null and randf() < contact_status_chance:
-			b.apply_status_effect(contact_status)
-	elif b.has_method("apply_damage"):
-		b.call("apply_damage", contact_damage)
-		did_dmg = true
-	
-	if did_dmg and not (b is CombatBody2D) and b.has_method("apply_knockback") and b is Node2D:
-		var dx: float = b.global_position.x - global_position.x
-		var k_dir := Vector2(1.0 if dx >= 0.0 else -1.0, 0.0)
-		b.call("apply_knockback", k_dir, contact_knockback_x, contact_knockback_y)
+	var victim: Node = b.receiver if b is Hurtbox else b
+	var dx: float = (victim as Node2D).global_position.x - global_position.x if victim is Node2D else 0.0
+	var k_dir := 1.0 if dx >= 0.0 else -1.0
+	var hit := HitData.new(contact_damage, Vector2(k_dir * contact_knockback_x, contact_knockback_y), self)
+	# 상태이상은 피해가 실제로 들어갔을 때(HIT)만 걸린다
+	if contact_status != null and randf() < contact_status_chance:
+		hit.status_effects.append(contact_status)
+	HitData.deliver(b, hit)
 
 func _on_detect_entered(body: Node) -> void:
 	if body.is_in_group("player") and body is Node2D:
@@ -454,7 +451,7 @@ func set_active(active: bool) -> void:
 		set_process(active)
 		
 		# deferred로 안전하게 켜고 끄기
-		if hurtbox: hurtbox.set_deferred("monitoring", active)
+		if hurtbox: hurtbox.set_enabled(active)
 		if hitbox: hitbox.set_deferred("monitoring", active)
 		if body_shape: body_shape.set_deferred("disabled", not active)
 		

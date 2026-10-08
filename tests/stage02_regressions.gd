@@ -5,6 +5,11 @@ extends SceneTree
 var failures: int = 0
 var fixture: Node2D
 
+# 오토로드 (테스트 스크립트에선 오토로드 이름을 바로 못 쓴다)
+func inv() -> Node: return root.get_node("Inventory")
+func settings() -> Node: return root.get_node("SettingsManager")
+func db() -> Node: return root.get_node("Database")
+
 func _initialize() -> void:
 	call_deferred("run_checks")
 
@@ -51,23 +56,23 @@ func check_vision_limit() -> void:
 
 	# 랜턴: 갖고 있으면 반지름이 넓어지고, 그리는 반지름은 서서히 따라간다. 잃으면 원래대로.
 	var manager = root.get_node("GameManager")
-	var lantern = manager.get_item_by_id("lantern")
+	var lantern = db().get_item_by_id("lantern")
 	check(lantern != null and lantern.vision_bonus_tiles > 0.0, "Lantern item missing or has no vision bonus")
 	var stock2 = load("res://resources/shops/Stage2.tres")
 	check(stock2.entries.any(func(e): return e.item != null and e.item.id == "lantern"), "Stage2 merchant should sell the lantern")
 	fixture.add_child(vision)
 	if lantern != null:
-		manager.add_item(lantern)
-		manager.add_item(lantern) # 여러 개 있어도 겹쳐서 더하지 않는다
+		inv().add_item(lantern)
+		inv().add_item(lantern) # 여러 개 있어도 겹쳐서 더하지 않는다
 		var goal: float = (4.0 + lantern.vision_bonus_tiles) * 16.0
 		check(is_equal_approx(vision.get_radius(), goal), "Lantern should widen the vision radius (not stacking)")
 		vision._process(0.1)
 		check(vision._shown_radius > 64.0 and vision._shown_radius < goal, "Vision radius should grow gradually")
 		vision._process(10.0)
 		check(is_equal_approx(vision._shown_radius, goal), "Vision radius should reach the lantern radius")
-	for i in manager.inventory.size(): # 테스트로 넣은 랜턴만 치운다 (신호로 시야도 갱신)
-		if manager.inventory[i] != null and manager.inventory[i] == lantern:
-			manager.remove_item_at(i)
+	for i in inv().inventory.size(): # 테스트로 넣은 랜턴만 치운다 (신호로 시야도 갱신)
+		if inv().inventory[i] != null and inv().inventory[i] == lantern:
+			inv().remove_item_at(i)
 	check(is_equal_approx(vision.get_radius(), 64.0), "Vision radius should shrink back without the lantern")
 	vision.free()
 

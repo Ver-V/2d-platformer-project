@@ -28,7 +28,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var raw_position: Vector2 = event.position
 		var raw_movement: Vector2 = raw_position - _last_raw_position
-		var sensitivity := GameManager.mouse_sensitivity
+		var sensitivity := SettingsManager.mouse_sensitivity
 		var viewport_size := get_viewport().get_visible_rect().size
 		cursor_position += raw_movement * sensitivity
 		cursor_position = cursor_position.clamp(Vector2.ZERO, viewport_size)

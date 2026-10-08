@@ -87,6 +87,9 @@ static func from_save(data: Dictionary) -> StatusEffect:
 	var script := load(path) as GDScript
 	if script == null or not script.can_instantiate():
 		return null
+	# 같은 폴더의 Node 스크립트(status_effects.gd 등)를 만들면 버려진 노드가 남으므로 먼저 걸러낸다
+	if not ClassDB.is_parent_class(script.get_instance_base_type(), "Resource"):
+		return null
 	var effect = script.new()
 	if not effect is StatusEffect:
 		return null

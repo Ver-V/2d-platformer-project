@@ -151,15 +151,13 @@ func _combat_state(_delta:float) -> void:
 func _dead_state(_delta:float) -> void:
 	velocity = Vector2.ZERO
 
-func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: bool = false, or_invuln_time: float = -1.0, is_projectile: bool = false) -> bool:
-	var took_damage = super.apply_damage(amount, knockback, ignore_cd, or_invuln_time, is_projectile)
-	
-	if took_damage and hp > 0 and boss_sprite != null:
+func receive_hit(hit: HitData) -> HitData.Result:
+	var result := super.receive_hit(hit)
+	if result == HitData.Result.HIT and boss_sprite != null:
 		boss_sprite.play("gethit")
-	if took_damage and HUD.has_method("show_boss_health"):
+	if HitData.landed(result) and HUD.has_method("show_boss_health"):
 		HUD.show_boss_health(self)
-		
-	return took_damage
+	return result
 
 func _on_status_damaged(amount: int) -> void:
 	super._on_status_damaged(amount)

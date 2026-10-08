@@ -4,6 +4,11 @@ extends SceneTree
 
 var failures: int = 0
 
+# 오토로드 (테스트 스크립트에선 오토로드 이름을 바로 못 쓴다)
+func inv() -> Node: return root.get_node("Inventory")
+func settings() -> Node: return root.get_node("SettingsManager")
+func db() -> Node: return root.get_node("Database")
+
 func _initialize() -> void:
 	call_deferred("run_checks")
 
@@ -27,6 +32,7 @@ func run_checks() -> void:
 	check_loot_seed(manager, saver)
 	check_save_slots(manager, saver)
 	check_inventory_signal(manager)
+	check_settings_manager()
 	manager.reset_data()
 	print("Item/shop regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
 	quit(0 if failures == 0 else 1)
@@ -42,7 +48,7 @@ func check_loot_seed(manager, saver) -> void:
 		entry.gold_amount = 10
 		entry.gold_max = 1000
 		entry.weight = 1
-		entry.item = manager.get_item_by_id("health_potion") if i == 0 else null
+		entry.item = db().get_item_by_id("health_potion") if i == 0 else null
 		table.entries.append(entry)
 
 	# 상자 하나의 결과 = (뽑힌 줄, 골드)
@@ -89,31 +95,31 @@ func check_inventory_signal(manager) -> void:
 	manager.reset_data()
 	var count := [0]
 	var on_changed := func(): count[0] += 1
-	manager.inventory_changed.connect(on_changed)
-	var potion = manager.get_item_by_id("health_potion")
-	var key = manager.get_item_by_id("pink_key")
+	inv().inventory_changed.connect(on_changed)
+	var potion = db().get_item_by_id("health_potion")
+	var key = db().get_item_by_id("pink_key")
 
-	manager.add_item(potion)
+	inv().add_item(potion)
 	check(count[0] == 1, "add_item should emit inventory_changed")
-	var removed = manager.remove_item_at(0)
-	check(removed == potion and manager.inventory[0] == null and count[0] == 2, "remove_item_at should clear the slot and emit")
-	check(manager.remove_item_at(0) == null and count[0] == 2, "Removing an empty slot should do nothing")
-	check(manager.remove_item_at(99) == null and count[0] == 2, "Removing out of range should do nothing")
+	var removed = inv().remove_item_at(0)
+	check(removed == potion and inv().inventory[0] == null and count[0] == 2, "remove_item_at should clear the slot and emit")
+	check(inv().remove_item_at(0) == null and count[0] == 2, "Removing an empty slot should do nothing")
+	check(inv().remove_item_at(99) == null and count[0] == 2, "Removing out of range should do nothing")
 
-	manager.add_item(key)
+	inv().add_item(key)
 	var before: int = count[0]
-	manager.consume_key_use("pink_key")
-	check(count[0] == before + 1 and not manager.has_item("pink_key"), "Using up a key should remove it and emit")
+	inv().consume_key_use("pink_key")
+	check(count[0] == before + 1 and not inv().has_item("pink_key"), "Using up a key should remove it and emit")
 
-	manager.add_item(potion)
+	inv().add_item(potion)
 	var data: Dictionary = manager.get_data_for_save()
 	before = count[0]
 	manager.reset_data()
 	check(count[0] == before + 1, "New game should emit inventory_changed")
 	manager.load_data_from_save(data)
-	check(count[0] == before + 2 and manager.has_item("health_potion"), "Loading a save should emit inventory_changed")
+	check(count[0] == before + 2 and inv().has_item("health_potion"), "Loading a save should emit inventory_changed")
 
-	manager.inventory_changed.disconnect(on_changed)
+	inv().inventory_changed.disconnect(on_changed)
 	manager.reset_data()
 	print("Inventory signal: add, remove, key use-up, new game and load all emit inventory_changed")
 
@@ -155,7 +161,7 @@ func check_save_slots(manager, saver) -> void:
 	var SlotMenu = load("res://Script/System/save_slot_menu.gd")
 	var manager_locale: String = TranslationServer.get_locale()
 	for locale in ["en", "ko"]:
-		manager.set_locale(locale)
+		settings().set_locale(locale)
 		var text: String = SlotMenu.slot_text(2, summary)
 		check(text.contains(TranslationServer.translate(&"STAGE_02_TITLE")) and text.contains("345"),
 			"Old save without a title key should still show the stage name from its scene path (%s)" % locale)
@@ -164,7 +170,7 @@ func check_save_slots(manager, saver) -> void:
 		check(empty_text.contains(TranslationServer.translate(&"SAVE_SLOT_EMPTY")), "Empty slot text missing (%s)" % locale)
 		var unknown: String = SlotMenu.stage_title({"scene_path": "res://Scenes/Other.tscn"})
 		check(unknown == TranslationServer.translate(&"SAVE_SLOT_UNKNOWN_STAGE"), "Unknown scene should show a fallback name")
-	manager.set_locale(manager_locale)
+	settings().set_locale(manager_locale)
 
 	saver.delete_save(legacy)
 	saver.delete_save(target)
@@ -179,9 +185,9 @@ func stock_of(manager, shop_id: String, item_id: String) -> int:
 
 func check_item_database(manager) -> void:
 	for id in ["health_potion", "health_flask", "Parry_increase_potion", "pink_key"]:
-		var item = manager.get_item_by_id(id)
+		var item = db().get_item_by_id(id)
 		check(item != null and item.id == id, "Item not loaded from resources/items: " + id)
-	check(manager.get_item_by_id("no_such_item") == null, "Unknown item id should return null")
+	check(db().get_item_by_id("no_such_item") == null, "Unknown item id should return null")
 	print("Items: every .tres in resources/items is found by id")
 
 func check_shop_stock(manager, saver) -> void:
@@ -248,7 +254,7 @@ func check_shop_ui(manager) -> void:
 	shop.open_confirm_panel()
 	await shop.buy_item()
 	check(stock_of(manager, "Stage1", "health_potion") == 2 and manager.gold == 850, "Buying through the shop UI failed")
-	check(manager.has_item("health_potion"), "Bought item not in inventory")
+	check(inv().has_item("health_potion"), "Bought item not in inventory")
 	shop.close_shop()
 	await process_frame
 	print("Shop UI: lists stock from resources and records purchases")
@@ -363,9 +369,9 @@ func check_interact_key_objects(manager) -> void:
 
 # 지정 아이템이 있는 상자·박스는 그것만, 없으면 LootTable 가중치대로 아이템 또는 골드.
 func check_chest_rewards(manager) -> void:
-	var potion = manager.get_item_by_id("health_potion")
-	var parry = manager.get_item_by_id("Parry_increase_potion")
-	var key = manager.get_item_by_id("pink_key")
+	var potion = db().get_item_by_id("health_potion")
+	var parry = db().get_item_by_id("Parry_increase_potion")
+	var key = db().get_item_by_id("pink_key")
 
 	# LootTable/LootEntry → ItemData → GameManager 의존이라 실행 중에 로드한다 (컴파일 시점엔 autoload가 없음)
 	var LootTableScript = load("res://Script/Item_UI/LootTable.gd")
@@ -453,7 +459,7 @@ func check_box_drops(manager, LootTableScript, LootEntryScript, potion) -> void:
 	box.persist_id = "test_box_item"
 	box.loot_table = _only_entry_table(LootTableScript, LootEntryScript, potion, 0)
 	root.add_child(box)
-	box.apply_damage(box.max_hp)
+	box.receive_hit(HitData.new(box.max_hp))
 	await process_frame
 	var drops := _children_with_script("res://Script/Item_UI/FieldItem.gd")
 	check(drops.size() == 1 and drops[0].item_resource == potion, "Broken box should drop its item on the floor")
@@ -473,7 +479,7 @@ func check_box_drops(manager, LootTableScript, LootEntryScript, potion) -> void:
 	gold_box.persist_id = "test_box_gold"
 	gold_box.loot_table = _only_entry_table(LootTableScript, LootEntryScript, null, 120)
 	root.add_child(gold_box)
-	gold_box.apply_damage(gold_box.max_hp)
+	gold_box.receive_hit(HitData.new(gold_box.max_hp))
 	await process_frame
 	var coins := _children_with_script("res://Script/Item_UI/coin.gd")
 	var coin_total := 0
@@ -496,7 +502,7 @@ func check_box_drops(manager, LootTableScript, LootEntryScript, potion) -> void:
 		stages_ok = stages_ok and staged.damage_stage() == expected[hp_value] 			and staged.sprite.texture == staged.damage_textures[expected[hp_value]]
 	check(stages_ok, "Box damage texture should follow the 100/75/50/25% thresholds")
 	staged.hp = 100
-	staged.apply_damage(30)
+	staged.receive_hit(HitData.new(30))
 	check(staged.sprite.texture == staged.damage_textures[1], "Hitting a box should switch to the damaged texture")
 	staged.free()
 
@@ -518,10 +524,10 @@ func check_box_drops(manager, LootTableScript, LootEntryScript, potion) -> void:
 # 인벤토리: 툴팁 대신 고정 설명 패널. 올린 아이템 → 없으면 클릭한 아이템 → 없으면 비움
 func check_inventory_item_info(manager) -> void:
 	manager.reset_data()
-	var potion = manager.get_item_by_id("health_potion")
-	var key = manager.get_item_by_id("pink_key")
-	manager.add_item(potion)
-	manager.add_item(key)
+	var potion = db().get_item_by_id("health_potion")
+	var key = db().get_item_by_id("pink_key")
+	inv().add_item(potion)
+	inv().add_item(key)
 	var ui = load("res://Scenes/System/InventoryUI.tscn").instantiate()
 	root.add_child(ui)
 	await process_frame
@@ -556,7 +562,7 @@ func _end_dialogue_and_wait(dialogue) -> void:
 func check_door_lock(manager) -> void:
 	manager.reset_data()
 	var dialogue = root.get_node("DialogueManager")
-	var key = manager.get_item_by_id("pink_key")
+	var key = db().get_item_by_id("pink_key")
 	var old_frames = key.lock_sprite_frames
 	var frames := SpriteFrames.new()
 	var tex := ImageTexture.create_from_image(Image.create(8, 8, false, Image.FORMAT_RGBA8))
@@ -592,7 +598,7 @@ func check_door_lock(manager) -> void:
 	check(not door._opened and not door.lock_overlay.is_showing() and not door._busy, "No key: door stays shut and the lock goes away after the line")
 
 	# 2) 열쇠 있음 → 아니오
-	manager.add_item(key)
+	inv().add_item(key)
 	door._try_use_door(player)
 	await process_frame
 	check(dialogue.is_dialogue_active and door.lock_overlay.is_showing() and door.lock_overlay.sprite.animation == &"locked",
@@ -600,7 +606,7 @@ func check_door_lock(manager) -> void:
 	dialogue._on_choice_selected({"text": "No"})
 	await process_frame
 	await process_frame
-	check(not door._opened and not door.lock_overlay.is_showing() and manager.has_item("pink_key"), "Choosing No should keep the door shut and the key")
+	check(not door._opened and not door.lock_overlay.is_showing() and inv().has_item("pink_key"), "Choosing No should keep the door shut and the key")
 
 	# 3) 열쇠 있음 → 예
 	door._try_use_door(player)
@@ -611,7 +617,7 @@ func check_door_lock(manager) -> void:
 	check(door.lock_overlay.is_showing() and door.lock_overlay.sprite.animation == &"unlock" and not door._opened,
 		"Choosing Yes should play the unlock animation before the door opens")
 	await create_timer(0.7).timeout
-	check(door._opened and not door.lock_overlay.is_showing() and not manager.has_item("pink_key"),
+	check(door._opened and not door.lock_overlay.is_showing() and not inv().has_item("pink_key"),
 		"After unlocking the door should be open and the single-use key spent")
 	await create_timer(0.3).timeout
 	check(not door.lock_overlay.visible and is_equal_approx(door.lock_overlay.dim.color.a, 0.0), "Dim and lock should fade out after unlocking")
@@ -628,7 +634,7 @@ func check_door_lock(manager) -> void:
 	await _end_dialogue_and_wait(dialogue)
 
 	# 질문 대사가 없는 잠긴 문은 묻지 않고 풀린다
-	manager.add_item(key)
+	inv().add_item(key)
 	var silent = load("res://Scenes/System/KeyDoor.tscn").instantiate()
 	silent.persist_id = "test_silent_door"
 	silent.dialogue_file = ""
@@ -653,3 +659,39 @@ func check_door_lock(manager) -> void:
 	await process_frame
 	manager.reset_data()
 	print("Door lock: no-key lock + line, Yes/No question, unlock animation then open, same key same lock, plain doors open")
+
+# 설정은 SettingsManager가 저장·불러오기 한다 (실제 설정 파일 대신 테스트 경로)
+func check_settings_manager() -> void:
+	var sm := settings()
+	var path := "user://test_settings_manager.json"
+	var before := {"locale": sm.locale, "sens": sm.mouse_sensitivity, "shake": sm.screenshake_intensity, "sfx": sm.get_audio_volume(&"SFX")}
+	var heard: Array = []
+	var on_locale := func(l): heard.append(l)
+	sm.locale_changed.connect(on_locale)
+	sm.set_locale("ko" if sm.locale != "ko" else "en")
+	check(heard.size() == 1, "SettingsManager.set_locale should emit locale_changed")
+	sm.locale_changed.disconnect(on_locale)
+
+	sm.mouse_sensitivity = 1.7
+	sm.screenshake_intensity = 0.2
+	sm.set_audio_volume(&"SFX", 0.4)
+	var saved_locale: String = sm.locale
+	check(sm.save_settings(path), "settings should save to the test path")
+	sm.mouse_sensitivity = 1.0
+	sm.screenshake_intensity = 0.5
+	sm.set_audio_volume(&"SFX", 1.0)
+	sm.set_locale(before.locale)
+	sm.load_settings(path)
+	check(is_equal_approx(sm.mouse_sensitivity, 1.7), "mouse sensitivity should survive a settings round trip")
+	check(is_equal_approx(sm.screenshake_intensity, 0.2), "screen shake should survive a settings round trip")
+	check(absf(sm.get_audio_volume(&"SFX") - 0.4) < 0.01, "SFX volume should survive a settings round trip")
+	check(sm.locale == saved_locale, "locale should survive a settings round trip")
+
+	# 원래대로 (실제 설정 파일은 쓰지 않음)
+	sm.mouse_sensitivity = before.sens
+	sm.screenshake_intensity = before.shake
+	sm.set_audio_volume(&"SFX", before.sfx)
+	sm.set_locale(before.locale)
+	for suffix in ["", ".tmp", ".bak"]:
+		if FileAccess.file_exists(path + suffix):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(path + suffix))

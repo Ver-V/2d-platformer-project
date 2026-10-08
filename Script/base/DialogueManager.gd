@@ -226,7 +226,7 @@ func _check_condition(cond: Dictionary) -> bool:
 		"hp": return GameManager.player_current_hp >= int(cond.get("value", 0))
 		"boss_defeated": return GameManager.defeated_bosses.get(str(cond.get("value")), false)
 		"has_item":
-			for item in GameManager.inventory:
+			for item in Inventory.inventory:
 				if item != null and item.id == str(cond.get("value")): return true
 			return false
 	return true

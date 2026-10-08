@@ -91,16 +91,18 @@ func _drop_reward() -> void:
 		parent.call_deferred("add_child", coin)
 		coin.call_deferred("setup", amount)
 
-func apply_damage(amount: int, _knockback: Vector2 = Vector2.ZERO) -> bool:
-	if amount <= 0 or hp <= 0:
-		return false
-	hp = max(0, hp - amount)
+# 상자는 무적·넉백·상태이상 없이 피해만 받는다
+func receive_hit(hit: HitData) -> HitData.Result:
+	if hit.amount <= 0 or hp <= 0:
+		return HitData.Result.IGNORED
+	hp = max(0, hp - hit.amount)
 	_update_damage_texture()
 	_play_hit_effects()
 	if hp == 0:
 		_drop_reward()
 		queue_free()
-	return true
+		return HitData.Result.KILLED
+	return HitData.Result.HIT
 
 func _play_hit_effects() -> void:
 	var scene := get_tree().current_scene
@@ -123,13 +125,7 @@ func _play_hit_effects() -> void:
 	dust.initial_velocity_max = 85.0
 	dust.scale_amount_min = 2.0
 	dust.scale_amount_max = 4.0
-	scene.add_child(dust)
-	dust.global_position = global_position + Vector2(0, -8)
-	dust.emitting = true
-	get_tree().create_timer(dust.lifetime).timeout.connect(func():
-		if is_instance_valid(dust):
-			dust.queue_free()
-	)
+	Effects.emit_once(dust, scene, global_position + Vector2(0, -8))
 	if hit_sound != null:
 		var sound := AudioStreamPlayer2D.new()
 		scene.add_child(sound)

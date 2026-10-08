@@ -93,11 +93,11 @@ func _play_effect(color: Color) -> void:
 	if sprite:
 		var original = sprite.modulate
 		sprite.modulate = color
-		await get_tree().create_timer(0.5).timeout
+		await Wait.seconds(self, 0.5)
 		sprite.modulate = original
 
 func _cooldown_and_reset() -> void:
-	await get_tree().create_timer(2.0).timeout
+	await Wait.seconds(self, 2.0)
 	can_save = true
 	if player_in_range:
 		GameManager.interact_msg_requested.emit("save_mode")

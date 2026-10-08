@@ -68,7 +68,7 @@ func _can_interact() -> bool:
 
 func _on_interact() -> void:
 	var player := current_player as Player
-	if locked and not GameManager.has_item(item_key):
+	if locked and not Inventory.has_item(item_key):
 		if DialogueManager.has_dialogue_file(dialogue_file):
 			DialogueManager.start_dialogue(dialogue_file, block_without_item)
 		else:
@@ -76,7 +76,7 @@ func _on_interact() -> void:
 		return
 	var rng := GameManager.make_loot_rng(_save_id()) # 같은 세이브에서는 같은 상자 = 같은 결과
 	var reward := _roll_reward(rng)
-	if reward.item != null and not GameManager.add_item(reward.item):
+	if reward.item != null and not Inventory.add_item(reward.item):
 		player.show_status("full")
 		return
 

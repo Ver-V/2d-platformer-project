@@ -70,7 +70,7 @@ func play_unlock(frames: SpriteFrames) -> void:
 	var fps := frames.get_animation_speed(&"unlock")
 	for i in frames.get_frame_count(&"unlock"):
 		duration += frames.get_frame_duration(&"unlock", i) / maxf(fps, 0.001)
-	await get_tree().create_timer(duration + 0.15).timeout # 풀린 모습을 잠깐 보여준다
+	await Wait.seconds(self, duration + 0.15) # 풀린 모습을 잠깐 보여준다
 	hide_lock()
 
 func _kill_tween() -> void:

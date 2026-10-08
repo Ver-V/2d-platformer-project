@@ -208,7 +208,7 @@ func check_death_animation() -> void:
 		var mob = spawn(kind, Vector2(0, -20))
 		mob.coin_scene = null
 		await wait_physics(5)
-		mob.apply_damage(9999)
+		mob.receive_hit(HitData.new(9999))
 		await wait_physics(2)
 		check(mob.sprite.animation == mob.death_animation(), "%s should play its death animation (%s)" % [kind, mob.sprite.animation])
 		await create_timer(0.3).timeout # 피격 번쩍임 타이머(0.1초)가 끝난 뒤 지운다

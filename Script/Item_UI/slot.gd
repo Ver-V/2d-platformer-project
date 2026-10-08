@@ -22,7 +22,7 @@ func set_item(item: ItemData, inventory_index: int = -1):
 			$AmountLabel.text = str(GameManager.flask_current_charges) + "/" + str(GameManager.flask_max_charges)
 			$AmountLabel.show()
 		elif item.key_uses > 0 and inventory_index >= 0:
-			$AmountLabel.text = str(GameManager.get_key_uses_for_slot(inventory_index))
+			$AmountLabel.text = str(Inventory.get_key_uses_for_slot(inventory_index))
 			$AmountLabel.show()
 		else:
 			$AmountLabel.hide()

@@ -63,16 +63,10 @@ func _physics_process(delta: float) -> void:
 # 부모(플레이어)에게 데미지 주는 함수
 func _hurt_parent(amount: int) -> void:
 	var parent = get_parent()
-	if parent.has_method("apply_damage"):
-		# [추가] 이미 죽었으면 데미지 무시
-		if "hp" in parent and parent.hp <= 0:
-			return
-		
-		# 넉백 계산 (위로 띄우거나, 0으로 하거나 취향대로)
-		var final_kb = Vector2.ZERO 
-		if "velocity" in parent and parent.velocity.y >= 0:
-			final_kb = Vector2(0, -1).normalized() * knockback_force
-
-		# [수정] 4번째 자리에 damage_invuln_time을 넣어줍니다!
-		# apply_damage(데미지, 넉백, 넉백쿨무시여부, 무적시간)
-		parent.apply_damage(amount, final_kb, false, damage_invuln_time)
+	# 떨어지는 중이면 위로 튕겨 올린다
+	var kb := Vector2.ZERO
+	if parent is CharacterBody2D and parent.velocity.y >= 0:
+		kb = Vector2.UP * knockback_force
+	var hit := HitData.new(amount, kb, self)
+	hit.invuln_time = damage_invuln_time # 가시 전용 (더 긴) 무적시간
+	HitData.deliver(parent, hit)

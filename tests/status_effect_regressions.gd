@@ -265,7 +265,9 @@ func check_save_round_trip() -> void:
 	check(not sm._is_valid_game(bad), "status effect scripts outside the status folder should be rejected")
 	bad.status_effects = [{"script": "res://Script/base/status/poison_effect.gd", "props": {"tick_damage": {"x": 1}}, "state": {}}]
 	check(not sm._is_valid_game(bad), "non-primitive status effect values should be rejected")
+	var orphans_before := Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)
 	check(StatusEffect.from_save({"script": "res://Script/base/status/status_effects.gd"}) == null, "non-StatusEffect scripts should not load")
+	check(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT) == orphans_before, "rejecting a Node script from a save should not leave an orphan node")
 	var old_save: Dictionary = json_data.duplicate(true)
 	old_save.erase("status_effects")
 	check(sm._is_valid_game(old_save), "saves without status_effects should stay valid")
@@ -286,9 +288,9 @@ func check_player_status_bars() -> void:
 	var gm = root.get_node("GameManager")
 	gm.carried_status_effects.clear()
 	var p = spawn_player()
-	check(p.get_status_bar_rects().is_empty(), "no status bars without effects")
+	check(p.visuals.get_status_bar_rects().is_empty(), "no status bars without effects")
 	var poison: StatusEffect = p.apply_status_effect(PoisonEffect.new())
-	var rects: Array[Rect2] = p.get_status_bar_rects()
+	var rects: Array[Rect2] = p.visuals.get_status_bar_rects()
 	check(rects.size() == 1, "one status bar per effect")
 	var body_left: float = p.collision_stand.position.x + p.collision_stand.shape.get_rect().position.x
 	check(rects.size() == 1 and rects[0].end.x <= body_left, "status bar should sit left of the body")
@@ -304,8 +306,8 @@ func check_player_status_bars() -> void:
 	check(not bleed.is_bar_warning(), "bleed below 70%% should not blink")
 	bleed.buildup = 70.0
 	check(bleed.is_bar_warning(), "bleed at 70%% or more should blink")
-	rects = p.get_status_bar_rects()
+	rects = p.visuals.get_status_bar_rects()
 	check(rects.size() == 2 and rects[1].end.x <= rects[0].position.x, "second bar should line up further left")
 	p.clear_status_effects()
-	check(p.get_status_bar_rects().is_empty(), "bars should disappear when effects clear")
+	check(p.visuals.get_status_bar_rects().is_empty(), "bars should disappear when effects clear")
 	p.queue_free()

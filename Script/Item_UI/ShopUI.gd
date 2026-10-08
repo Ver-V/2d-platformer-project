@@ -22,7 +22,7 @@ func _ready():
 	hide()
 	confirm_panel.hide()
 	_create_item_slots()
-	GameManager.locale_changed.connect(_on_locale_changed)
+	SettingsManager.locale_changed.connect(_on_locale_changed)
 
 # --- 상점 열고 닫기 ---
 func open_shop(shop_id: String = "Stage1"): # 인자 받기
@@ -227,7 +227,7 @@ func buy_item():
 	var price = item_resource.price
 
 	if GameManager.gold >= price:
-		var is_added = GameManager.add_item(item_resource)
+		var is_added = Inventory.add_item(item_resource)
 		
 		if is_added:
 			GameManager.update_gold(-price)
