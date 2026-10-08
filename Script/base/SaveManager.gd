@@ -131,6 +131,33 @@ func _valid_rooms(value: Variant) -> bool:
 			return false
 	return true
 
+# 상태이상 세이브 값: bool·숫자·문자열 또는 색상 [r, g, b, a]
+func _valid_effect_value(value: Variant) -> bool:
+	if value is bool or _is_number(value) or value is String:
+		return true
+	if value is Array and value.size() == 4:
+		for c in value:
+			if not _is_number(c):
+				return false
+		return true
+	return false
+
+func _valid_status_effects(value: Variant) -> bool:
+	if not value is Array:
+		return false
+	for entry in value:
+		if not entry is Dictionary or not entry.get("script") is String:
+			return false
+		if not entry.script.begins_with(StatusEffect.SAVE_SCRIPT_DIR):
+			return false
+		for key in ["props", "state"]:
+			if not entry.get(key, {}) is Dictionary:
+				return false
+			for name in entry.get(key, {}):
+				if not name is String or not _valid_effect_value(entry[key][name]):
+					return false
+	return true
+
 func _is_valid_game(data: Variant) -> bool:
 	if not data is Dictionary:
 		return false
@@ -186,6 +213,9 @@ func _is_valid_game(data: Variant) -> bool:
 			return false
 		if slot.has("key_uses") and (not _is_integer(slot.key_uses) or slot.key_uses < 0):
 			return false
+	# 저장 당시 걸려 있던 상태이상 (없으면 옛 세이브)
+	if data.has("status_effects") and not _valid_status_effects(data.status_effects):
+		return false
 	# 버전 2 이하: 상점별 남은 재고 (불러올 때 shop_sold로 변환)
 	if not data.get("merchant_stocks", {}) is Dictionary:
 		return false

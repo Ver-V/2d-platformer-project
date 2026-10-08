@@ -58,6 +58,9 @@ func action_rest() -> void:
 	var players = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		var p = players[0]
+		# 지속 중인 상태이상(독·출혈 등) 해제 — 전환 연출 동안 틱 피해가 들어가지 않도록 회복보다 먼저
+		if p.has_method("clear_status_effects"):
+			p.clear_status_effects()
 		p.hp = p.max_hp
 		GameManager.update_hp(p.max_hp)
 		

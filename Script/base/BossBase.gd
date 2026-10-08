@@ -161,6 +161,11 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 		
 	return took_damage
 
+func _on_status_damaged(amount: int) -> void:
+	super._on_status_damaged(amount)
+	if HUD.has_method("show_boss_health"):
+		HUD.show_boss_health(self)
+
 func _on_death() -> void:
 	current_state = State.DEAD
 	if HUD.has_method("hide_boss_health"):

@@ -15,6 +15,7 @@ var _invuln_left: float = 0.0
 var _knockback_left: float = 0.0
 var _blink_accum: float = 0.0
 var knockback_vel: Vector2 = Vector2.ZERO
+var _status_effects: StatusEffects # get_status_effects()로 접근
 
 # --- 자식 클래스에서 오버라이드할 가상 함수들 ---
 func get_invuln_time() -> float: return 0.0
@@ -61,6 +62,42 @@ func reset_combat_state() -> void:
 	_knockback_left = 0.0
 	_blink_accum = 0.0
 	_update_blink_visibility(true)
+	clear_status_effects()
+
+# --- 상태이상 ---
+# 처음 필요할 때 자식 노드로 만든다 (씬마다 노드를 따로 넣을 필요 없음)
+func get_status_effects() -> StatusEffects:
+	if _status_effects == null or not is_instance_valid(_status_effects):
+		_status_effects = StatusEffects.new()
+		_status_effects.name = "StatusEffects"
+		add_child(_status_effects)
+	return _status_effects
+
+func apply_status_effect(effect: StatusEffect) -> StatusEffect:
+	return get_status_effects().apply(effect)
+
+func has_status_effect(id: StringName) -> bool:
+	return _status_effects != null and is_instance_valid(_status_effects) and _status_effects.has(id)
+
+func clear_status_effects() -> void:
+	if _status_effects != null and is_instance_valid(_status_effects):
+		_status_effects.clear_all()
+
+# 상태이상이 진행(시간 흐름·틱)해도 되는지. 비활성 방의 적 등은 하위 클래스에서 false.
+func can_tick_status_effects() -> bool:
+	return hp > 0
+
+# 상태이상 피해: 무적·가드·넉백·히트스탑을 무시하고 HP만 깎는다.
+func apply_status_damage(amount: int) -> bool:
+	if amount <= 0 or hp <= 0: return false
+	hp = maxi(0, hp - amount)
+	_on_status_damaged(amount)
+	if hp <= 0:
+		velocity.x = 0
+		_on_death()
+	return true
+
+func _on_status_damaged(_amount: int) -> void: pass
 	
 func reset_motion() -> void:
 	velocity = Vector2.ZERO

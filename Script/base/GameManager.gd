@@ -13,6 +13,8 @@ var triggered_dialogues: Array = []  # [추가] 이미 실행된 대화 블록 I
 var npc_talk_counts: Dictionary = {} # [추가] NPC별 대화 횟수 저장 (세이브용)
 var defeated_mobs: Array = []
 var pending_status: String = ""
+# 씬 이동·불러오기 때 다음 플레이어에게 넘길 상태이상. 불러오면 세이브의 status_effects로 채워지고, 새 게임 때 비운다.
+var carried_status_effects: Array[StatusEffect] = []
 var inventory: Array[ItemData] = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
 var key_uses_remaining: Array[int] = [] # inventory와 같은 인덱스의 열쇠 잔여 사용 횟수
 var collected_items: Array = []
@@ -414,7 +416,9 @@ func respawn_player() -> void:
 	
 	# [2] 저장된 데이터 불러오기
 	var load_result = load_game()
-	
+	# 죽으면 상태이상은 풀린다: 독에 걸린 채 낮은 HP로 저장해도 부활 직후 다시 죽는 무한 반복이 없도록
+	carried_status_effects.clear()
+
 	# [3] 몹 사망 기록 초기화 (휴식 효과)
 	reset_mobs()
 	
@@ -519,11 +523,31 @@ func get_data_for_save() -> Dictionary:
 		"shop_sold": shop_sold,
 		"visited_rooms_by_scene": _visited_rooms_for_save(),
 		"flask_max": flask_max_charges,
-		"flask_current": flask_current_charges
+		"flask_current": flask_current_charges,
+		"status_effects": _status_effects_for_save()
 	}
+
+# 저장 순간 플레이어에게 걸려 있는 상태이상 (씬 전환 중이라 플레이어가 없으면 들고 가던 것)
+func _status_effects_for_save() -> Array:
+	var effects: Array = carried_status_effects
+	var player := get_tree().get_first_node_in_group("player") as CombatBody2D
+	if player != null and player.hp > 0:
+		effects = player.get_status_effects().get_effects()
+	var out: Array = []
+	for effect: StatusEffect in effects:
+		out.append(effect.to_save())
+	return out
 
 # --- [데이터 역직렬화] 불러온 데이터 적용 ---
 func load_data_from_save(data: Dictionary) -> void:
+	# 저장 당시 걸려 있던 상태이상은 다음에 생기는 플레이어가 이어받는다
+	carried_status_effects.clear()
+	for entry in data.get("status_effects", []):
+		var effect: StatusEffect = StatusEffect.from_save(entry) if entry is Dictionary else null
+		if effect != null:
+			carried_status_effects.append(effect)
+		else:
+			push_warning("Skipped invalid status effect in save: %s" % str(entry))
 	gold = data.get("gold", 0)
 	player_current_hp = data.get("current_hp", 100)
 	player_max_hp = data.get("max_hp", 100)
@@ -628,6 +652,7 @@ func make_loot_rng(source_id: String) -> RandomNumberGenerator:
 	
 func reset_data() -> void:
 	DebugLog.info("[GameManager] Resetting all game data for New Game...")
+	carried_status_effects.clear()
 	gold = 0
 	player_current_hp = 100
 	player_max_hp = 100

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BleedEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Script/base/status/bleed_effect.gd" id="1_bleed"]
+
+[resource]
+script = ExtResource("1_bleed")
+buildup_per_hit = 35.0
+threshold = 100.0
+decay_per_sec = 10.0
+burst_ratio = 0.2
+burst_min_damage = 10

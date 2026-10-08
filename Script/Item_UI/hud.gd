@@ -26,9 +26,31 @@ void fragment() {
 const DAMAGE_VIGNETTE_HOLD_MS: int = 500
 const DAMAGE_VIGNETTE_FADE_MS: int = 250
 
+# 상태이상(독 등)이 걸려 있는 동안 화면 가장자리를 해당 색으로 은은하게 점멸시킨다
+const STATUS_TINT_SHADER := """
+shader_type canvas_item;
+render_mode unshaded;
+
+uniform float strength = 0.0;
+uniform vec3 tint = vec3(0.55, 0.1, 0.8);
+
+void fragment() {
+	vec2 from_center = (UV - vec2(0.5)) * 2.0;
+	float edge = smoothstep(0.5, 1.15, length(from_center * vec2(1.0, 0.8)));
+	COLOR = vec4(tint, edge * strength);
+}
+"""
+const STATUS_TINT_MAX_STRENGTH: float = 0.16
+const STATUS_TINT_MIN_STRENGTH: float = 0.04
+const STATUS_TINT_PERIOD_SEC: float = 1.4
+
 var _damage_vignette_material: ShaderMaterial
 var _damage_vignette_start_ms: int = -1
 var _damage_vignette_strength: float = 0.0
+
+var status_tint_rect: ColorRect
+var _status_tint_material: ShaderMaterial
+var _status_tints: Dictionary = {} # 상태이상 id -> Color (나중에 걸린 것이 표시됨)
 
 var fade_tween: Tween
 var heart_scene: PackedScene = preload("res://Scenes/System/HeartIcon.tscn")
@@ -56,6 +78,7 @@ func _ready() -> void:
 	
 	hide_timer.timeout.connect(_on_hide_timer_timeout)
 	_setup_damage_vignette()
+	_setup_status_tint()
 	_setup_boss_health_bar()
 	_setup_ui()
 
@@ -96,6 +119,54 @@ func _update_damage_vignette() -> void:
 	var fade_progress := float(elapsed_ms - DAMAGE_VIGNETTE_HOLD_MS) / float(DAMAGE_VIGNETTE_FADE_MS)
 	_damage_vignette_material.set_shader_parameter("strength", _damage_vignette_strength * (1.0 - fade_progress))
 
+func _setup_status_tint() -> void:
+	var shader := Shader.new()
+	shader.code = STATUS_TINT_SHADER
+	_status_tint_material = ShaderMaterial.new()
+	_status_tint_material.shader = shader
+	status_tint_rect = ColorRect.new()
+	status_tint_rect.name = "StatusTint"
+	status_tint_rect.material = _status_tint_material
+	status_tint_rect.color = Color.WHITE
+	status_tint_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	status_tint_rect.z_index = -1
+	add_child(status_tint_rect)
+	# 피격 비네트가 위에 그려지도록 그 앞에 둔다
+	if damage_vignette:
+		move_child(status_tint_rect, damage_vignette.get_index())
+	status_tint_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	status_tint_rect.hide()
+
+func add_status_tint(id: StringName, color: Color) -> void:
+	_status_tints.erase(id) # 다시 걸리면 맨 뒤(표시 대상)로
+	_status_tints[id] = color
+	_refresh_status_tint()
+
+func remove_status_tint(id: StringName) -> void:
+	_status_tints.erase(id)
+	_refresh_status_tint()
+
+func clear_status_tints() -> void:
+	_status_tints.clear()
+	_refresh_status_tint()
+
+func _refresh_status_tint() -> void:
+	if status_tint_rect == null:
+		return
+	if _status_tints.is_empty():
+		status_tint_rect.hide()
+		return
+	var c: Color = _status_tints.values().back()
+	_status_tint_material.set_shader_parameter("tint", Vector3(c.r, c.g, c.b))
+	status_tint_rect.show()
+
+func _update_status_tint() -> void:
+	if status_tint_rect == null or not status_tint_rect.visible:
+		return
+	var t := Time.get_ticks_msec() / 1000.0
+	var wave := 0.5 + 0.5 * sin(t * TAU / STATUS_TINT_PERIOD_SEC)
+	_status_tint_material.set_shader_parameter("strength", lerpf(STATUS_TINT_MIN_STRENGTH, STATUS_TINT_MAX_STRENGTH, wave))
+
 func _input(event):
 	if event.is_action_pressed("toggle_map"):
 		minimap_container.visible = !minimap_container.visible
@@ -107,6 +178,7 @@ func _input(event):
 
 func _process(_delta: float) -> void:
 	_update_damage_vignette()
+	_update_status_tint()
 	if boss_target == null:
 		return
 	if not is_instance_valid(boss_target) or boss_target.hp <= 0:

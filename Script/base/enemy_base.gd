@@ -25,6 +25,9 @@ signal died(enemy: EnemyBase)
 @export var knockback_cooldown: float = 0.7
 @export var knockback_decay: float = 2600.0
 @export var contact_tick: float = 1.0
+# 접촉 피해가 실제로 들어갔을 때 contact_status_chance 확률로 거는 상태이상 (비우면 없음)
+@export var contact_status: StatusEffect
+@export_range(0.0, 1.0) var contact_status_chance: float = 1.0
 
 @export_group("Enemy Health Bar")
 @export var show_health_bar: bool = true
@@ -135,6 +138,8 @@ func get_knockback_decay() -> float: return knockback_decay
 func get_knockback_resist() -> float: return knockback_resist
 func get_knockback_cooldown() -> float: return knockback_cooldown
 func get_blink_node() -> CanvasItem: return sprite
+func can_tick_status_effects() -> bool: return _active and hp > 0
+func _on_status_damaged(_amount: int) -> void: queue_redraw()
 
 func _draw() -> void:
 	if not show_health_bar: return
@@ -411,6 +416,8 @@ func _apply_contact_damage_once(b: Node) -> void:
 		var k_dir := Vector2(1.0 if dx >= 0.0 else -1.0, 0.0)
 		var k_vec := Vector2(k_dir.x * contact_knockback_x, contact_knockback_y)
 		did_dmg = b.apply_damage(contact_damage, k_vec)
+		if did_dmg and contact_status != null and randf() < contact_status_chance:
+			b.apply_status_effect(contact_status)
 	elif b.has_method("apply_damage"):
 		b.call("apply_damage", contact_damage)
 		did_dmg = true

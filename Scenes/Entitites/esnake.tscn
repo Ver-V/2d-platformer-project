@@ -1,8 +1,9 @@
-[gd_scene load_steps=22 format=3 uid="uid://jdh4gq3rwxsg"]
+[gd_scene load_steps=23 format=3 uid="uid://jdh4gq3rwxsg"]
 
 [ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_txgma"]
 [ext_resource type="Texture2D" uid="uid://cxp0dtk8qcmic" path="res://Assets/sprites/snake_02.png" id="2_p70un"]
 [ext_resource type="Script" uid="uid://c1exm1728gpq6" path="res://Script/Entity/esnake.gd" id="3_esnake"]
+[ext_resource type="Resource" path="res://resources/status_effects/snake_poison.tres" id="4_poison"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_pyjl4"]
 atlas = ExtResource("2_p70un")
@@ -130,6 +131,8 @@ script = ExtResource("3_esnake")
 max_hp_base = 45
 contact_damage_base = 15
 move_speed_base = 40.0
+contact_status = ExtResource("4_poison")
+contact_status_chance = 0.2
 attack_distance = 15.0
 attack_active_frames = Vector2i(3, 3)
 

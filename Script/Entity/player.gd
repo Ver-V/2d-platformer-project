@@ -64,6 +64,14 @@ var guard_cooldown_timer: float = 0.0
 @export var guard_bar_gap: float = 4.0
 @export var guard_bar_x_offset: float = 0.0
 
+@export_group("Status Effect Bar")
+# 상태이상마다 몸 왼쪽에 세로 게이지 하나 (남은 양이 위에서 아래로 줄어듦). 여러 개면 왼쪽으로 나란히
+@export var show_status_bars: bool = true
+@export var status_bar_size: Vector2 = Vector2(5.0, 20.0) # 가드 게이지와 같은 두께, 몸 높이 정도
+@export var status_bar_gap: float = 4.0     # 몸 왼쪽 끝과 첫 게이지 사이
+@export var status_bar_spacing: float = 2.0 # 게이지끼리 간격
+@export var status_bar_blink_period: float = 0.3 # 주의 상태(is_bar_warning)일 때 깜빡이는 주기(초)
+
 @export_range(0.0, 1.0) var guard_move_speed_ratio: float = 0.2 # 가드 중 이동속도 배율
 
 const PERFECT_GUARD_WINDOW: float = 0.2     # 퍼펙트 가드 판정 시간
@@ -99,6 +107,13 @@ func _ready() -> void:
 	if guard_area != null:
 		guard_area.area_entered.connect(_on_guard_area_entered)
 		guard_shape.disabled = true
+	
+	var status := get_status_effects()
+	status.effect_added.connect(_on_status_effect_added)
+	status.effect_removed.connect(_on_status_effect_removed)
+	# 이전 씬에서 걸려 있던 상태이상을 남은 시간 그대로 이어받는다 (엘리베이터·문 등으로 이동해도 풀리지 않게)
+	status.attach_all(GameManager.carried_status_effects)
+	GameManager.carried_status_effects.clear()
 	
 	# 애니메이션 종료 신호 연결
 	if anim_player:
@@ -207,7 +222,53 @@ func get_knockback_decay() -> float: return knockback_decay
 func get_blink_node() -> CanvasItem: return sprite
 
 func _draw() -> void:
-	if not show_guard_cooldown_bar or hp <= 0:
+	if hp <= 0:
+		return
+	_draw_status_bars()
+	_draw_guard_bar()
+
+func _draw_status_bars() -> void:
+	if not show_status_bars or not is_instance_valid(_status_effects):
+		return
+	if status_bar_size.x <= 2.0 or status_bar_size.y <= 2.0:
+		return
+	var rects := get_status_bar_rects()
+	var effects := _status_effects.get_effects()
+	for i in rects.size():
+		var effect: StatusEffect = effects[i]
+		var r: Rect2 = rects[i]
+		draw_rect(r, Color.BLACK)
+		var inner_h := (r.size.y - 2.0) * clampf(effect.get_progress(), 0.0, 1.0)
+		# 아래쪽에 붙여 채우므로 남은 양이 줄면 위에서부터 내려온다
+		draw_rect(Rect2(r.position.x + 1.0, r.end.y - 1.0 - inner_h, r.size.x - 2.0, inner_h), get_status_bar_color(effect))
+
+# 주의 상태면 원래 색과 밝은 색을 번갈아 (양은 계속 보이도록 끄지 않고 밝게만)
+func get_status_bar_color(effect: StatusEffect) -> Color:
+	if effect.is_bar_warning() and status_bar_blink_period > 0.0:
+		var phase := fmod(Time.get_ticks_msec() / 1000.0, status_bar_blink_period)
+		if phase < status_bar_blink_period * 0.5:
+			return effect.bar_color.lightened(0.6)
+	return effect.bar_color
+
+# 걸려 있는 상태이상 순서대로, 몸(서 있는 충돌체) 왼쪽에 세로 중앙을 맞춘 게이지 위치
+func get_status_bar_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if not is_instance_valid(_status_effects):
+		return out
+	var left_x := 0.0
+	var center_y := 0.0
+	if collision_stand and collision_stand.shape:
+		var shape_rect: Rect2 = collision_stand.shape.get_rect()
+		left_x = collision_stand.position.x + shape_rect.position.x * absf(collision_stand.scale.x)
+		center_y = collision_stand.position.y + shape_rect.get_center().y * absf(collision_stand.scale.y)
+	var x := left_x - status_bar_gap - status_bar_size.x
+	for i in _status_effects.get_effects().size():
+		out.append(Rect2(Vector2(x, center_y - status_bar_size.y * 0.5), status_bar_size))
+		x -= status_bar_size.x + status_bar_spacing
+	return out
+
+func _draw_guard_bar() -> void:
+	if not show_guard_cooldown_bar:
 		return
 	if not is_guarding and guard_cooldown_timer <= 0.0:
 		return
@@ -380,6 +441,25 @@ func apply_damage(amount: int, knockback: Vector2 = Vector2.ZERO, ignore_cd: boo
 			change_state(State.IDLE if is_on_floor() else State.FALL)
 	
 	return took_damage
+
+# 상태이상 틱은 빨간 피격 비네트 대신 상태이상별 화면 점멸(screen_tint)로 표시한다
+func _on_status_damaged(_amount: int) -> void:
+	GameManager.update_hp(hp)
+	HUD.show_hud_temporarily()
+
+func _on_status_effect_added(effect: StatusEffect) -> void:
+	if effect.screen_tint.a > 0.0:
+		HUD.add_status_tint(effect.id, effect.screen_tint)
+
+func _on_status_effect_removed(id: StringName) -> void:
+	HUD.remove_status_tint(id)
+
+# 씬을 떠날 때 걸려 있는 상태이상은 GameManager에 맡겨 다음 씬의 플레이어가 이어받는다.
+# 휴식·사망은 그 전에 이미 해제하므로 넘어가지 않는다. 화면 점멸은 다음 플레이어가 다시 켠다.
+func _exit_tree() -> void:
+	if hp > 0 and is_instance_valid(_status_effects):
+		GameManager.carried_status_effects = _status_effects.detach_all()
+	HUD.clear_status_tints()
 
 func _on_death() -> void:
 	change_state(State.DEAD)
