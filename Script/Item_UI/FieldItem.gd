@@ -12,6 +12,8 @@ extends Area2D
 
 @export var collection_tutorial_key: StringName = &"" # 획득 시 띄울 튜토리얼 번역 키
 
+const ANIM_NODE_NAME := "ItemAnim"
+
 # 둥둥 떠다니는 설정
 var time_passed: float = 0.0
 var float_speed: float = 5.0
@@ -45,10 +47,28 @@ func _process(delta):
 		$Sprite2D.position.y = sin(time_passed * float_speed) * float_range
 
 func _update_texture():
-	if has_node("Sprite2D"):
-		if item_resource != null:
-			$Sprite2D.texture = item_resource.icon
-		# 코인일 경우, 에디터에 설정된 이미지가 있다면 건드리지 않음
+	if not has_node("Sprite2D"):
+		return
+	var sprite: Sprite2D = $Sprite2D
+	# 애니메이션은 Sprite2D 자식으로 붙여서 둥둥 효과·획득 시 숨김을 그대로 따라가게 한다 (씬에는 저장 안 됨)
+	var anim := sprite.get_node_or_null(ANIM_NODE_NAME) as AnimatedSprite2D
+	# ItemData는 @tool이 아니라 에디터에선 함수 호출이 안 된다 → 속성만 직접 확인
+	var frames: SpriteFrames = item_resource.anim_frames if item_resource != null else null
+	if frames != null and frames.has_animation(item_resource.anim_name):
+		sprite.texture = null
+		if anim == null:
+			anim = AnimatedSprite2D.new()
+			anim.name = ANIM_NODE_NAME
+			sprite.add_child(anim)
+		anim.sprite_frames = frames
+		anim.play(item_resource.anim_name)
+		return
+	if anim != null:
+		sprite.remove_child(anim)
+		anim.queue_free()
+	if item_resource != null:
+		sprite.texture = item_resource.icon
+	# 코인일 경우, 에디터에 설정된 이미지가 있다면 건드리지 않음
 
 func _on_body_entered(body: Node):
 	if body.is_in_group("player"):

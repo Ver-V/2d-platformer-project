@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://djm13n0lh006k"]
+[gd_scene load_steps=8 format=3 uid="uid://djm13n0lh006k"]
 
 [ext_resource type="Script" uid="uid://dwuhj8dnf17t2" path="res://Script/stage/stage_02.gd" id="1_joehr"]
 [ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="2_3j8uf"]
@@ -6,13 +6,14 @@
 [ext_resource type="Script" uid="uid://cnklf8macledf" path="res://Script/System/room_grid.gd" id="3_3j8uf"]
 [ext_resource type="PackedScene" uid="uid://c7jx653i6b2k3" path="res://Scenes/Stage/HazardTileMap.tscn" id="4_ucvjr"]
 [ext_resource type="AudioStream" uid="uid://bjb33qep6eamb" path="res://resources/Music/wild-road.mp3" id="5_v87du"]
+[ext_resource type="Texture2D" uid="uid://cwcvmvkkq8xgx" path="res://Assets/awesomeCavePixelArt.png" id="7_3j8uf"]
 
 [node name="Stage_02" type="Node2D"]
 script = ExtResource("1_joehr")
 stage_title_key = &"STAGE_02_TITLE"
-vision_radius_tiles = 5.0
 stage_prefix = "Floor1"
 player_scene = ExtResource("2_3j8uf")
+vision_radius_tiles = 5.0
 
 [node name="PauseMenu" parent="." instance=ExtResource("2_qn2eq")]
 visible = false
@@ -47,3 +48,23 @@ parameters/looping = true
 [node name="Boss" type="Node" parent="."]
 
 [node name="SavePoint" type="Node" parent="."]
+
+[node name="AwesomeCavePixelArt" type="Sprite2D" parent="."]
+position = Vector2(960.5, 546)
+scale = Vector2(1.5007813, 1.5166667)
+texture = ExtResource("7_3j8uf")
+
+[node name="AwesomeCavePixelArt2" type="Sprite2D" parent="."]
+position = Vector2(2878, 544.99866)
+scale = Vector2(1.503125, 1.5166705)
+texture = ExtResource("7_3j8uf")
+
+[node name="AwesomeCavePixelArt3" type="Sprite2D" parent="."]
+position = Vector2(4800.3115, 541.86884)
+scale = Vector2(1.5026382, 1.5086976)
+texture = ExtResource("7_3j8uf")
+
+[node name="AwesomeCavePixelArt4" type="Sprite2D" parent="."]
+position = Vector2(6721.622, 540.48145)
+scale = Vector2(1.5005907, 1.5069962)
+texture = ExtResource("7_3j8uf")

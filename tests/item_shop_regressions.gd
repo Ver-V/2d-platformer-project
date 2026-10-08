@@ -28,6 +28,7 @@ func run_checks() -> void:
 	await check_interact_key_objects(manager)
 	await check_chest_rewards(manager)
 	await check_inventory_item_info(manager)
+	await check_item_animation(manager)
 	await check_door_lock(manager)
 	check_loot_seed(manager, saver)
 	check_save_slots(manager, saver)
@@ -550,6 +551,45 @@ func check_inventory_item_info(manager) -> void:
 	await process_frame
 	manager.reset_data()
 	print("Inventory info: fixed panel shows hovered, then clicked item; no default tooltip")
+
+# 애니메이션 아이템: 필드에선 Sprite2D 자식 AnimatedSprite2D로 재생, 슬롯에선 프레임이 바뀌고 둥둥 뜬다. 없는 아이템은 icon 그대로.
+func check_item_animation(manager) -> void:
+	manager.reset_data()
+	var key = db().get_item_by_id("red_lighted_silver_key")
+	var potion = db().get_item_by_id("health_potion")
+	check(key != null and key.has_animation() and key.anim_frames.get_frame_count(key.anim_name) == 18, "Red-lit silver key should have an 18-frame animation")
+	check(not db().get_item_by_id("pink_key").has_animation(), "Pink key should stay a still icon")
+	check(key.get_frame_at(0.0) != key.get_frame_at(0.15), "Animated item frame should change over time")
+	check(potion.get_frame_at(1.0) == potion.icon, "Item without animation should use its icon")
+
+	var field = load("res://Scenes/Item/field_item.tscn").instantiate()
+	field.id = "test:anim_key"
+	field.item_resource = key
+	root.add_child(field)
+	await process_frame
+	var anim = field.get_node_or_null("Sprite2D/ItemAnim")
+	check(anim is AnimatedSprite2D and anim.is_playing() and field.get_node("Sprite2D").texture == null, "Field item should play the item animation instead of the icon")
+	field.queue_free()
+
+	inv().add_item(key)
+	inv().add_item(potion)
+	var ui = load("res://Scenes/System/InventoryUI.tscn").instantiate()
+	root.add_child(ui)
+	await process_frame
+	ui.open()
+	var key_slot = ui.grid.get_child(0)
+	var potion_slot = ui.grid.get_child(1)
+	var top_before = key_slot.icon.offset_top
+	var frame_before = key_slot.icon.texture
+	key_slot._process(0.15)
+	check(key_slot.icon.texture != frame_before, "Inventory slot should advance the item animation")
+	check(key_slot.icon.offset_top != top_before, "Inventory slot icon should bob")
+	check(not potion_slot.is_processing() and potion_slot.icon.texture == potion.icon, "Slot without animation should keep the icon still")
+	ui.close()
+	ui.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Item animation: field and inventory play anim_frames, others keep the icon")
 
 func _end_dialogue_and_wait(dialogue) -> void:
 	if dialogue.is_dialogue_active:

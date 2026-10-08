@@ -91,7 +91,7 @@
   "B4": [
 	{
 	  "name": "분홍 토끼",
-	  "text": "여기가 이미 지하 4층인가 봐.",
+	  "text": "여기가 이미 지하 4층이야.",
 	  "left_image": "HeroBunny_surprise",
 	  "speaker": "left",
 	  "next" : "start"

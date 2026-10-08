@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://bfwowkelvwttr"]
+
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://crn2mnpr8jsh8" path="res://Assets/Key 5 - SILVER - Spritesheet.png" id="2_sheet"]
+[ext_resource type="SpriteFrames" uid="uid://db1u54dua8481" path="res://resources/items/frames/red_lighted_silver_key_frames.tres" id="3_frames"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_icon"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 13, 29)
+
+[resource]
+script = ExtResource("1_script")
+id = "red_lighted_silver_key"
+name = "ITEM_RED_LIGHTED_SILVER_KEY_NAME"
+icon = SubResource("AtlasTexture_icon")
+description = "ITEM_RED_LIGHTED_SILVER_KEY_DESCRIPTION"
+anim_frames = ExtResource("3_frames")
+key_uses = 2

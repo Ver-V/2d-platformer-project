@@ -12,6 +12,11 @@ enum ItemType { GENERIC, CONSUMABLE, EQUIPMENT }
 @export_multiline var description: String = ""
 @export var type: ItemType = ItemType.GENERIC # 기본값은 잡동사니
 
+@export_group("Animation")
+# 있으면 필드(FieldItem)와 인벤토리 슬롯에서 icon 대신 이 애니메이션을 재생한다. 상점 등 나머지 UI는 icon 그대로.
+@export var anim_frames: SpriteFrames
+@export var anim_name: StringName = &"default"
+
 @export_group("Key Setting")
 @export_range(0, 99, 1) var key_uses: int = 0 # 0이면 열쇠가 아님; 문에서 요구하는 일반 아이템은 1회 사용
 # 이 열쇠로 여는 문에 뜨는 자물쇠 그림. 같은 열쇠를 쓰는 문은 모두 같은 자물쇠가 뜬다.
@@ -30,6 +35,28 @@ enum ItemType { GENERIC, CONSUMABLE, EQUIPMENT }
 @export_group("Equipment Setting")
 @export var attack_damage: int = 0 # 무기 아니면 0으로 두면 됨
 @export var parrymul: float = 0.0
+
+func has_animation() -> bool:
+	return anim_frames != null and anim_frames.has_animation(anim_name) and anim_frames.get_frame_count(anim_name) > 0
+
+# 재생 시작 후 time초가 지났을 때 보여줄 프레임 (AnimatedSprite2D를 못 쓰는 TextureRect용). 애니메이션이 없으면 icon.
+func get_frame_at(time: float) -> Texture2D:
+	if not has_animation():
+		return icon
+	var count := anim_frames.get_frame_count(anim_name)
+	var fps := anim_frames.get_animation_speed(anim_name)
+	var total := 0.0
+	for i in count:
+		total += anim_frames.get_frame_duration(anim_name, i)
+	if fps <= 0.0 or total <= 0.0:
+		return anim_frames.get_frame_texture(anim_name, 0)
+	var pos := time * fps
+	pos = fmod(pos, total) if anim_frames.get_animation_loop(anim_name) else minf(pos, total)
+	for i in count:
+		pos -= anim_frames.get_frame_duration(anim_name, i)
+		if pos < 0.0:
+			return anim_frames.get_frame_texture(anim_name, i)
+	return anim_frames.get_frame_texture(anim_name, count - 1)
 
 # 2. 통합된 use 함수
 func use(player) -> void:
