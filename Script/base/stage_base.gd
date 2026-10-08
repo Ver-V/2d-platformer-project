@@ -44,6 +44,7 @@ func _ready() -> void:
 	
 	spawn_player()
 	_setup_vision_limit()
+	_spawn_saved_mutant_chests()
 
 	if stage_title_key != &"":
 		_show_stage_title()
@@ -111,6 +112,19 @@ func spawn_player() -> void:
 	else:
 		add_child(p)
 	
+	# 다른 씬의 지름길 문을 타고 왔으면 짝 문 앞에서 시작
+	if _place_at_shortcut_arrival(p):
+		player = p
+		return
+
+	# 나갈 때 저장한 이어 하기 위치 (한 번 쓰면 지운다)
+	if GameManager.resume_scene_path == scene_file_path:
+		p.global_position = GameManager.resume_pos
+		GameManager.clear_resume_point()
+		player = p
+		DebugLog.info(str("[Spawn] 이어 하기 위치에서 시작: ", p.global_position))
+		return
+
 	# [핵심] 1. 체크포인트가 있고 & 2. 그 체크포인트가 이 맵에서 찍힌 거라면?
 	if GameManager.has_checkpoint and GameManager.last_scene_path == scene_file_path:
 		p.global_position = GameManager.last_checkpoint_pos
@@ -124,6 +138,38 @@ func spawn_player() -> void:
 			push_warning("[Spawn] SpawnPoint가 없습니다! (0,0)에 배치됩니다.")
 		
 	player = p
+
+# 나갈 때 저장할 위치. 전투 중이거나 아직 안전한 땅을 밟지 않았으면 null (세이브 포인트에서 시작)
+func get_resume_position() -> Variant:
+	if not is_instance_valid(player) or player.hp <= 0 or not player.has_safe_position or is_player_in_combat():
+		return null
+	return player.last_safe_position
+
+# 보스전이 시작된 보스가 살아 있거나, 활성화된 몹이 플레이어를 쫓고 있으면 전투 중
+func is_player_in_combat() -> bool:
+	for n in get_tree().get_nodes_in_group("enemies"):
+		var e := n as EnemyBase
+		if e == null or e.hp <= 0 or not e._active:
+			continue
+		if e.is_in_group("bosses"):
+			if e.get("boss_started"):
+				return true
+		elif e.target == player:
+			return true
+	return false
+
+func _place_at_shortcut_arrival(p: Player) -> bool:
+	var arrival: Dictionary = GameManager.pending_shortcut_arrival
+	if arrival.is_empty():
+		return false
+	GameManager.pending_shortcut_arrival = {}
+	var door := ShortcutDoor.find_door(get_tree(), str(arrival.get("link_id", "")), int(arrival.get("side", -1)))
+	if door == null:
+		push_warning("[Spawn] 도착할 지름길 문이 이 씬에 없습니다: %s" % str(arrival))
+		return false
+	door.place_player(p)
+	DebugLog.info(str("[Spawn] 지름길 문 앞에서 시작: ", p.global_position))
+	return true
 
 func _show_stage_title() -> void:
 	# Autoload에 StageTitleUI가 등록되어 있다고 가정하거나 
@@ -183,6 +229,8 @@ func _cleanup_already_dead_enemies() -> void:
 			e.queue_free()
 
 func _on_enemy_died(e: EnemyBase) -> void:
+	if e.is_split_minion: # 분열로 생긴 작은 몹은 기록하지 않는다
+		return
 	var id = e.get_persist_id()
 
 	# 1. 로컬 장부 기록 (잡몹 리젠 방지용, 껏다 켜면 초기화됨)
@@ -266,6 +314,35 @@ func register_enemies() -> void:
 		if e == null: continue
 		if not e.died.is_connected(_on_enemy_died):
 			e.died.connect(_on_enemy_died)
+
+# 스테이지가 시작된 뒤에 생긴 몹 (분열 변이의 작은 몹). 방 규칙(활성화·리셋)을 같이 받는다
+func register_spawned_enemy(e: EnemyBase) -> void:
+	if not _cached_enemies.has(e):
+		_cached_enemies.append(e)
+	if not e.died.is_connected(_on_enemy_died):
+		e.died.connect(_on_enemy_died)
+	if is_instance_valid(player):
+		apply_room_rules(room_from_pos(player.global_position))
+
+const MUTANT_CHEST_SCENE_PATH := "res://Scenes/System/MutantRewardChest.tscn"
+
+# 변이체 보상 상자. 상자 원점(바닥 중앙)이 pos에 온다
+func spawn_mutant_chest(chest_id: String, pos: Vector2) -> Node:
+	var chest_scene := load(MUTANT_CHEST_SCENE_PATH) as PackedScene
+	if chest_scene == null:
+		return null
+	var chest := chest_scene.instantiate()
+	chest.persist_id = chest_id
+	(Entities if Entities else self).add_child(chest)
+	chest.global_position = pos
+	return chest
+
+# 리롤 전에 떨어진 상자는 씬을 다시 열어도 그 자리에 있다
+func _spawn_saved_mutant_chests() -> void:
+	var chests: Dictionary = GameManager.mutant_chests.get(scene_file_path, {})
+	for chest_id in chests:
+		var p: Array = chests[chest_id]
+		spawn_mutant_chest(chest_id, Vector2(p[0], p[1]))
 
 func assign_persist_ids_by_formula() -> void:
 	var per_room: Dictionary = {}

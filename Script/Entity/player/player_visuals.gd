@@ -24,6 +24,10 @@ var player: Player
 var sprite: AnimatedSprite2D
 var status_label: Label
 var _status_tween: Tween
+var _popup_rise: float = POPUP_START_Y # 머리 위 팝업의 높이 (플레이어 기준, 떠오르며 줄어든다)
+const POPUP_START_Y := -45.0
+const POPUP_END_Y := -75.0
+const POPUP_SCREEN_MARGIN := 4.0 # 카메라 화면 가장자리와 띄울 간격
 var _squash_tween: Tween
 var _base_sprite_scale: Vector2 = Vector2.ONE
 
@@ -31,6 +35,12 @@ func setup(p: Player) -> void:
 	player = p
 	sprite = p.sprite
 	status_label = p.status_label
+	# 머리 위 팝업과 몸 옆 게이지는 HUD처럼 시야 제한(VisionLimit) 어둠보다 위에 그린다 (GlowEyes와 같은 Z_MAX)
+	z_as_relative = false
+	z_index = RenderingServer.CANVAS_ITEM_Z_MAX
+	if status_label:
+		status_label.z_as_relative = false
+		status_label.z_index = RenderingServer.CANVAS_ITEM_Z_MAX
 	if sprite:
 		_base_sprite_scale = sprite.scale
 	var status := p.get_status_effects()
@@ -39,6 +49,7 @@ func setup(p: Player) -> void:
 
 func _process(_delta: float) -> void:
 	queue_redraw()
+	_place_popup()
 	# 반격 보너스 오라 (쉐이더)
 	if sprite and sprite.material is ShaderMaterial:
 		var bonus := player.combat.has_perfect_guard_bonus
@@ -53,14 +64,31 @@ func show_popup(text: String, color: Color = Color.YELLOW) -> void:
 	status_label.text = text
 	status_label.modulate = color
 	status_label.visible = true
-	status_label.position.y = -45.0
+	status_label.reset_size() # 글자 길이에 맞춰 폭을 다시 잡는다 (가운데 정렬용)
+	_popup_rise = POPUP_START_Y
 	status_label.modulate.a = 1.0
+	_place_popup()
 
 	_status_tween = create_tween()
 	_status_tween.set_parallel(true)
-	_status_tween.tween_property(status_label, "position:y", -75.0, 1.0).set_trans(Tween.TRANS_SINE)
+	_status_tween.tween_property(self, "_popup_rise", POPUP_END_Y, 1.0).set_trans(Tween.TRANS_SINE)
 	_status_tween.tween_property(status_label, "modulate:a", 0.0, 1.5).set_ease(Tween.EASE_IN)
 	_status_tween.chain().tween_callback(func(): status_label.visible = false)
+
+# 팝업을 플레이어 머리 위 가운데에 두되, 카메라 화면 밖으로 나가면 화면 가장자리 안쪽에 붙인다
+func _place_popup() -> void:
+	if status_label == null or not status_label.visible:
+		return
+	var size := status_label.size
+	var pos := player.global_position + Vector2(-size.x * 0.5, _popup_rise)
+	var cam := player.get_viewport().get_camera_2d() if player.is_inside_tree() else null
+	if cam != null:
+		var half := player.get_viewport_rect().size / cam.zoom * 0.5
+		var center := cam.get_screen_center_position()
+		var lo := center - half + Vector2.ONE * POPUP_SCREEN_MARGIN
+		var hi := center + half - size - Vector2.ONE * POPUP_SCREEN_MARGIN
+		pos = Vector2(clampf(pos.x, lo.x, maxf(lo.x, hi.x)), clampf(pos.y, lo.y, maxf(lo.y, hi.y)))
+	status_label.global_position = pos
 
 # 상황별 정해진 문구·색 (저장, 회복 등)
 const STATUS_MESSAGES := {

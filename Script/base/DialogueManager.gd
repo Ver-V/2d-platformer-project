@@ -236,11 +236,16 @@ func _on_choice_selected(choice_data: Dictionary):
 	# 선택지에 "event"가 있으면 고른 순간 알린다 (문 열기 예/아니오, 루트 분기 등에서 사용)
 	if choice_data.has("event") and str(choice_data["event"]) != "":
 		dialogue_event.emit(str(choice_data["event"]))
-	if choice_data.has("scene_path"):
+	# "scene_path"가 있으면 그 씬으로 이동. 이미 그 씬이면 이동하지 않고 "next" 블록 (엘리베이터: "여기가 이미 그 층")
+	if choice_data.has("scene_path") and not (_is_current_scene(str(choice_data["scene_path"])) and choice_data.has("next")):
 		_start_scene_choice_transition(str(choice_data["scene_path"]))
 		return
 	if choice_data.has("next"): _jump_to_block(choice_data["next"])
 	else: end_dialogue()
+
+func _is_current_scene(scene_path: String) -> bool:
+	var scene := get_tree().current_scene
+	return scene != null and scene.scene_file_path == scene_path
 
 func _start_scene_choice_transition(scene_path: String) -> void:
 	if scene_path == "" or not ResourceLoader.exists(scene_path):

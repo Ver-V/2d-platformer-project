@@ -1,5 +1,8 @@
+@tool
 extends Node2D
 class_name KeyDoor
+
+# 원점 = 문 바닥 중앙 (상자와 같은 규칙). 에디터에서도 그림이 실제 게임과 같은 자리에 보이도록 @tool
 
 @export var locked: bool = true
 @export var item_key: String = "pink_key"
@@ -16,8 +19,16 @@ class_name KeyDoor
 @export_group("Sprite")
 # 배치한 문마다 인스펙터에서 바로 그림을 바꾸는 용도. 넣으면 ClosedSprite/OpenedSprite에 적용되고,
 # 문 바닥 중앙이 노드 원점(y=0)에 오도록 자동 정렬된다. 비워두면 자식 Sprite2D 설정 그대로.
-@export var closed_texture: Texture2D
-@export var opened_texture: Texture2D # 이것도 자식도 비어 있으면 닫힌 그림을 초록빛으로 칠해 열린 걸 구분한다
+@export var closed_texture: Texture2D:
+	set(value):
+		closed_texture = value
+		if Engine.is_editor_hint() and is_node_ready():
+			_apply_texture(get_node_or_null("ClosedSprite") as Sprite2D, value)
+@export var opened_texture: Texture2D: # 이것도 자식도 비어 있으면 닫힌 그림을 초록빛으로 칠해 열린 걸 구분한다
+	set(value):
+		opened_texture = value
+		if Engine.is_editor_hint() and is_node_ready():
+			_apply_texture(get_node_or_null("OpenedSprite") as Sprite2D, value)
 
 @onready var trigger: Area2D = $Trigger
 # 문은 배경 오브젝트라 기본 씬엔 몸으로 막는 Blocker가 없다. 필요한 문만 Blocker(StaticBody2D)를 추가하면 닫혀 있는 동안 막는다.
@@ -35,6 +46,10 @@ var _player: Player = null
 const TELEPORT_COOLDOWN_MS: int = 500
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		_apply_texture(closed_sprite, closed_texture)
+		_apply_texture(opened_sprite, opened_texture)
+		return
 	add_to_group("object")
 	lock_overlay = LockOverlay.new()
 	add_child(lock_overlay)
@@ -75,24 +90,33 @@ func _on_body_exited(body: Node2D) -> void:
 	_player = null
 	if not _busy:
 		_hide_lock()
-	if prompt_label != null:
-		prompt_label.hide()
+	_hide_prompt()
 
 func _on_locale_changed(_new_locale: String) -> void:
 	if is_instance_valid(_player):
 		_show_prompt()
 
+# 안내는 상자·상인처럼 HUD 하단의 상호작용 안내([E] : 문 열기)로 띄운다 (화면 밖으로 나가지 않게).
+# 문에 PromptLabel 자식을 두면 그 라벨을 대신 쓴다
 func _show_prompt() -> void:
 	if not is_instance_valid(_player):
 		return
-	var message := tr(&"KEY_DOOR_ENTER_PROMPT") if _opened else tr(&"KEY_DOOR_OPEN_PROMPT")
+	var message_key := "KEY_DOOR_ENTER_PROMPT" if _opened else "KEY_DOOR_OPEN_PROMPT"
 	if prompt_label != null:
-		prompt_label.text = message
+		prompt_label.text = tr(message_key)
 		prompt_label.show()
 	else:
-		_player.show_popup(message, Color.YELLOW)
+		GameManager.interact_msg_requested.emit(message_key)
+
+func _hide_prompt() -> void:
+	if prompt_label != null:
+		prompt_label.hide()
+	else:
+		GameManager.interact_msg_hidden.emit()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if Engine.is_editor_hint():
+		return
 	if not event.is_action_pressed("interact") or (event is InputEventKey and event.echo):
 		return
 	if _busy or not is_instance_valid(_player) or GameManager.is_menu_open:
@@ -107,8 +131,7 @@ func _try_use_door(body: Player) -> void:
 		call_deferred("_teleport_player", body)
 		return
 	_busy = true
-	if prompt_label != null:
-		prompt_label.hide()
+	_hide_prompt()
 	if DialogueManager.is_dialogue_active:
 		await DialogueManager.dialogue_finished
 		if not is_instance_valid(body) or body != _player:

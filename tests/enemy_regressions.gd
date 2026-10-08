@@ -29,12 +29,31 @@ func run_checks() -> void:
 	await check_patrol_on_platform()
 	await check_melee_attack()
 	await check_death_animation()
+	await check_boss_stage_unload()
 	# 피격 효과(번쩍임·스파크 타이머, 효과음)가 끝난 뒤 정리해야 이미 지운 노드를 참조하는 에러·누수가 남지 않는다
 	await create_timer(1.0).timeout
 	fixture.queue_free()
 	await process_frame
 	print("Enemy regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
 	quit(0 if failures == 0 else 1)
+
+# 보스가 있는 스테이지를 닫을 때 보스 방 비활성화 → _stop_boss_music이 current_scene 없이 불려도 에러가 나지 않아야 한다
+# (실패하면 SCRIPT ERROR로 run_tests.sh가 잡는다)
+func check_boss_stage_unload() -> void:
+	var manager = root.get_node("GameManager")
+	manager.reset_data()
+	var stage = load("res://Scenes/Stage/Stage_01.tscn").instantiate()
+	root.add_child(stage)
+	await process_frame
+	var bosses: Array = stage.find_children("*", "", true, false).filter(func(n): return n.is_in_group("bosses"))
+	check(not bosses.is_empty(), "Stage_01 should have a boss for the unload check")
+	for boss in bosses:
+		boss._stop_boss_music() # 씬이 살아 있을 때도 정상 동작
+	stage.queue_free()
+	await process_frame
+	await process_frame
+	manager.reset_data()
+	print("Boss stage unload: boss music stop is safe while the scene closes")
 
 # GroundEnemy → EnemyBase → GameManager(autoload) 의존이라 클래스 이름 대신 스크립트 경로로 확인한다
 func _extends(node: Object, script_path: String) -> bool:

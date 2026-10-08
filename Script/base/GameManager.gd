@@ -15,8 +15,17 @@ var defeated_mobs: Array = []
 var pending_status: String = ""
 # 씬 이동·불러오기 때 다음 플레이어에게 넘길 상태이상. 불러오면 세이브의 status_effects로 채워지고, 새 게임 때 비운다.
 var carried_status_effects: Array[StatusEffect] = []
+# 다른 씬의 지름길 문으로 이동 중일 때 도착할 문 {"link_id", "side"}. 다음 스테이지가 플레이어를 그 문 앞에 소환하고 비운다 (저장 안 함)
+var pending_shortcut_arrival: Dictionary = {}
+# 이어 하기 위치: 게임을 나갈 때(메인 메뉴로·창 닫기) 저장된 그 자리. 한 번 불러와 시작하면 지운다 (죽으면 쓰지 않고 세이브 포인트로)
+var resume_scene_path: String = ""
+var resume_pos: Vector2 = Vector2.ZERO
 var collected_items: Array = []
 var loot_seed: int = 0 # 세이브마다 정해지는 랜덤 보상 시드 (새 게임 때 생성, 세이브에 저장)
+# 몹 변이 리롤 회차. 몹이 되살아날 때(reset_mobs: 휴식·사망 후 부활)마다 1 오르고, 세이브에 저장된다 (MobMutation)
+var mutation_epoch: int = 0
+# 변이체가 떨군 보상 상자 {씬 경로: {상자 id: [x, y]}}. 다음 리롤까지 남는다
+var mutant_chests: Dictionary = {}
 var current_slot: int = 1 # 지금 플레이 중인 세이브 슬롯 (메인 메뉴에서 고름). 저장·불러오기는 이 슬롯 파일로
 var visited_rooms_by_scene: Dictionary = {} # 씬 경로별 미니맵 방문 기록
 var active_ui_count: int = 0
@@ -140,6 +149,17 @@ func add_collected_item(id: String) -> void:
 # [추가] 휴식 시 호출: 일반 몹 기록만 싹 지움! (이게 핵심!)
 func reset_mobs() -> void:
 	defeated_mobs.clear()
+	# 변이 리롤: 다음 회차로 넘어가고, 지난 회차의 보상 상자(열었든 안 열었든)는 치운다
+	mutation_epoch += 1
+	mutant_chests.clear()
+	collected_items = collected_items.filter(func(id): return not str(id).begins_with(MUTANT_CHEST_SAVE_PREFIX))
+
+const MUTANT_CHEST_SAVE_PREFIX := "chest:mutant:"
+
+func add_mutant_chest(scene_path: String, chest_id: String, pos: Vector2) -> void:
+	if not mutant_chests.has(scene_path):
+		mutant_chests[scene_path] = {}
+	mutant_chests[scene_path][chest_id] = [pos.x, pos.y]
 	
 func add_defeated_boss(id: String) -> void:
 	if not defeated_bosses.has(id):
@@ -173,6 +193,8 @@ func respawn_player() -> void:
 	var load_result = load_game()
 	# 죽으면 상태이상은 풀린다: 독에 걸린 채 낮은 HP로 저장해도 부활 직후 다시 죽는 무한 반복이 없도록
 	carried_status_effects.clear()
+	pending_shortcut_arrival.clear()
+	clear_resume_point() # 죽으면 이어 하기 위치가 아니라 세이브 포인트에서
 
 	# [3] 몹 사망 기록 초기화 (휴식 효과)
 	reset_mobs()
@@ -267,12 +289,20 @@ func get_data_for_save() -> Dictionary:
 		"inventory": Inventory.to_save(),
 		"collected_items": collected_items,
 		"loot_seed": loot_seed,
+		"mutation_epoch": mutation_epoch,
+		"mutant_chests": mutant_chests,
 		"shop_sold": shop_sold,
 		"visited_rooms_by_scene": _visited_rooms_for_save(),
 		"flask_max": flask_max_charges,
 		"flask_current": flask_current_charges,
-		"status_effects": _status_effects_for_save()
+		"status_effects": _status_effects_for_save(),
+		"resume": _resume_for_save(),
 	}
+
+func _resume_for_save() -> Dictionary:
+	if resume_scene_path.is_empty():
+		return {}
+	return {"scene": resume_scene_path, "x": resume_pos.x, "y": resume_pos.y}
 
 # 저장 순간 플레이어에게 걸려 있는 상태이상 (씬 전환 중이라 플레이어가 없으면 들고 가던 것)
 func _status_effects_for_save() -> Array:
@@ -316,6 +346,11 @@ func load_data_from_save(data: Dictionary) -> void:
 	collected_items = data.get("collected_items", [])
 	# 시드가 없는 옛 세이브는 새로 만든다 (다음 저장부터 고정)
 	loot_seed = int(data["loot_seed"]) if data.has("loot_seed") else new_loot_seed()
+	mutation_epoch = int(data.get("mutation_epoch", 0))
+	var resume: Dictionary = data.get("resume", {})
+	resume_scene_path = str(resume.get("scene", ""))
+	resume_pos = Vector2(float(resume.get("x", 0.0)), float(resume.get("y", 0.0)))
+	mutant_chests = data.get("mutant_chests", {}).duplicate(true)
 	if data.has("shop_sold"):
 		shop_sold = data["shop_sold"].duplicate(true)
 	else:
@@ -361,7 +396,12 @@ func apply_hitstop(time_scale: float, duration: float):
 		_hitstop_end_ms = 0
 		Engine.time_scale = 1.0
 
+# 테스트가 실제 슬롯 파일을 건드리지 않도록 다른 경로를 쓸 때만 채운다
+var save_path_override: String = ""
+
 func current_save_path() -> String:
+	if not save_path_override.is_empty():
+		return save_path_override
 	return SaveManager.slot_path(current_slot)
 
 func _current_stage_title_key() -> String:
@@ -386,6 +426,8 @@ func make_loot_rng(source_id: String) -> RandomNumberGenerator:
 func reset_data() -> void:
 	DebugLog.info("[GameManager] Resetting all game data for New Game...")
 	carried_status_effects.clear()
+	pending_shortcut_arrival.clear()
+	clear_resume_point()
 	gold = 0
 	player_current_hp = 100
 	player_max_hp = 100
@@ -403,6 +445,8 @@ func reset_data() -> void:
 	collected_items.clear()
 	visited_rooms_by_scene.clear()
 	loot_seed = new_loot_seed()
+	mutation_epoch = 0
+	mutant_chests.clear()
 
 	Inventory.reset()
 
@@ -423,6 +467,38 @@ func reset_data() -> void:
 
 # --- [함수 수정] 플레이어 체력 갱신 ---
 # Player 스크립트에서 직접 변수를 바꾸는 대신, 이 함수를 쓰도록 할 겁니다.
+# --- 이어 하기 저장 (나갈 때 자동) ---
+# 지금 상태 그대로 저장한다 (HP·플라스크·상태이상·처치 기록). 휴식이 아니므로 회복·몹 부활·변이 리롤 없음.
+# 위치는 마지막으로 밟은 안전한 땅. 전투 중(보스전, 몹이 쫓는 중)이면 위치는 저장하지 않아 세이브 포인트에서 시작한다.
+# 죽었거나 죽는 중, 스테이지 밖(메인 메뉴 등)에서는 저장하지 않는다.
+func save_on_quit() -> bool:
+	var stage := get_tree().current_scene if is_inside_tree() else null
+	if stage == null or not stage.has_method("get_resume_position") or is_respawning:
+		return false
+	var p = stage.get("player")
+	if not is_instance_valid(p) or p.hp <= 0 or player_current_hp <= 0:
+		return false
+	clear_resume_point()
+	var pos: Variant = stage.get_resume_position()
+	if pos is Vector2:
+		resume_scene_path = stage.scene_file_path
+		resume_pos = pos
+	return save_game()
+
+func clear_resume_point() -> void:
+	resume_scene_path = ""
+	resume_pos = Vector2.ZERO
+
+# 불러오기 후 들어갈 씬: 이어 하기 위치가 있으면 그 씬, 없으면 세이브 포인트 씬
+func get_continue_scene_path() -> String:
+	if not resume_scene_path.is_empty() and ResourceLoader.exists(resume_scene_path):
+		return resume_scene_path
+	return last_scene_path
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		save_on_quit() # 창 닫기(X, Alt+F4)
+
 func update_hp(new_hp: int) -> void:
 	player_current_hp = new_hp
 	

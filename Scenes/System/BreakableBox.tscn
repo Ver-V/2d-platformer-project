@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://o8xqbp6037wa" path="res://Assets/sprites/box_2/box_2_2.png" id="3_box22"]
 [ext_resource type="Texture2D" uid="uid://c7g6tcw7fjlk1" path="res://Assets/sprites/box_2/box_2_3.png" id="4_box23"]
 [ext_resource type="Texture2D" uid="uid://cfcvnidv23yfa" path="res://Assets/sprites/box_2/box_2_4.png" id="5_box24"]
-[ext_resource type="Script" path="res://Script/base/combat/hurtbox.gd" id="6_hurtbox"]
+[ext_resource type="Script" uid="uid://bisqnigdscqid" path="res://Script/base/combat/hurtbox.gd" id="6_hurtbox"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
 size = Vector2(12, 12)

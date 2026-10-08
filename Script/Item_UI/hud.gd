@@ -7,6 +7,7 @@ extends CanvasLayer
 @onready var ui_root: Control = $Control
 @onready var gold_label: Label = $Control/GoldLabel
 @onready var interact_label: Control = $Control/InteractPrompt # 키 아이콘 + 번역 문구(HUD_INTERACT)
+@onready var interact_text: Label = $Control/InteractPrompt/InteractLabel # 안내 문구 (번역 키를 그대로 넣으면 자동 번역)
 @onready var save_panel: HBoxContainer = $Control/SavePanel
 @onready var minimap_container = $Control/MinimapContainer
 @onready var damage_vignette: ColorRect = get_node_or_null("DamageVignette") as ColorRect
@@ -289,7 +290,11 @@ func _on_interact_msg(msg: String) -> void:
 		if save_panel: save_panel.visible = true
 		if interact_label: interact_label.visible = false
 	else:
-		if interact_label: interact_label.visible = true
+		# msg = 안내 번역 키 (문: KEY_DOOR_OPEN_PROMPT 등). 비우면 기본 ": 상호작용"
+		if interact_text:
+			interact_text.text = msg if msg != "" else "HUD_INTERACT"
+		if interact_label:
+			interact_label.visible = true
 		if save_panel: save_panel.visible = false
 
 func _on_interact_hide() -> void:
@@ -331,7 +336,17 @@ func _setup_boss_health_bar() -> void:
 	boss_bar_root.offset_right = BOSS_BAR_SIZE.x * 0.5
 	boss_bar_root.offset_top = BOSS_BAR_TOP
 	boss_bar_root.offset_bottom = BOSS_BAR_TOP + BOSS_BAR_SIZE.y
-	add_child(boss_bar_root)
+	# HUD CanvasLayer는 2배 스케일이라 바로 붙이면 1280x720 기준 중앙(화면상 오른쪽 끝)에 간다.
+	# ui_root와 같은 크기(스케일 전 화면 크기)의 틀에 넣어 중앙을 맞춘다. ui_root는 페이드되므로 따로 둔다
+	var holder := Control.new()
+	holder.name = "BossBarLayer"
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.anchor_right = 1.0
+	holder.anchor_bottom = 1.0
+	holder.offset_right = ui_root.offset_right
+	holder.offset_bottom = ui_root.offset_bottom
+	add_child(holder)
+	holder.add_child(boss_bar_root)
 	
 	var bg := ColorRect.new()
 	bg.name = "Background"

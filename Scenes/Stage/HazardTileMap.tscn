@@ -34,8 +34,5 @@ custom_data_layer_0/name = "damage"
 custom_data_layer_0/type = 2
 sources/0 = SubResource("TileSetAtlasSource_iyhyp")
 
-[node name="HazardTileMap" type="Node2D"]
-
-[node name="HazardTileMap" type="TileMapLayer" parent="."]
-use_parent_material = true
+[node name="HazardTileMap" type="TileMapLayer"]
 tile_set = SubResource("TileSet_oorsw")

@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://d2qf7f3rpxa10" path="res://Scenes/System/KeyDoor.tscn" id="1_keydoor"]
+[ext_resource type="Script" path="res://Script/System/shortcut_door.gd" id="2_script"]
+
+[node name="ShortcutDoor" instance=ExtResource("1_keydoor")]
+script = ExtResource("2_script")
+locked = false
+item_key = ""
+dialogue_file = ""

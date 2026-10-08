@@ -14,9 +14,8 @@
 		},
 		{
 		  "text": "B1",
-		  "next": "B1",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "scene_path": "res://Scenes/Stage/Stage_02.tscn",
+		  "next": "B1"
 		},
 		{
 		  "text": "B2",
@@ -32,6 +31,7 @@
 		},
 		{
 		  "text": "B4",
+		  "scene_path": "res://Scenes/Stage/Stage_01.tscn",
 		  "next": "B4"
 		},
 		{
@@ -87,6 +87,15 @@
 		  "next": "ignore"
 		}
 	  ]
+	}
+  ],
+  "B1": [
+	{
+	  "name": "Pink Bunny",
+	  "text": "This is already B1.",
+	  "left_image": "HeroBunny_surprise",
+	  "speaker": "left",
+	  "next" : "start"
 	}
   ],
   "B4": [

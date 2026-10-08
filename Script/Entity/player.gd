@@ -49,6 +49,9 @@ var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
 var _was_on_floor: bool = false
 var _menu_exit_cooldown: float = 0.0
+# 마지막으로 안전한 땅(가시가 아닌 일반 지형 타일)을 밟은 위치. 나갈 때 이어 하기 위치로 쓴다 (BaseStage.get_resume_position)
+var last_safe_position: Vector2 = Vector2.ZERO
+var has_safe_position: bool = false
 
 signal died
 signal death_started
@@ -285,6 +288,22 @@ func _physics_process(delta: float) -> void:
 		visuals.apply_squash(1.0 + (0.3 * impact_intensity), 1.0 - (0.3 * impact_intensity))
 
 	_was_on_floor = is_on_floor()
+	_update_safe_position()
+
+# 무너지는 블록·움직이는 발판(타일맵이 아닌 바닥)과 가시 타일맵(damage 데이터가 있는 타일셋)은 안전한 땅이 아니다
+func _update_safe_position() -> void:
+	if not is_on_floor():
+		return
+	for i in get_slide_collision_count():
+		var collision := get_slide_collision(i)
+		if collision.get_normal().y > -0.7:
+			continue
+		var floor_layer := collision.get_collider() as TileMapLayer
+		if floor_layer == null or (floor_layer.tile_set != null and floor_layer.tile_set.get_custom_data_layer_by_name("damage") != -1):
+			continue
+		last_safe_position = global_position
+		has_safe_position = true
+		return
 
 func _process_movement(delta: float) -> void:
 	var dir_input := Input.get_axis("left", "right")

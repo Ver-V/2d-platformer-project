@@ -84,7 +84,7 @@ func _start_new_game(slot: int) -> void:
 func _load_slot(slot: int) -> void:
 	GameManager.current_slot = slot
 	if GameManager.load_game():
-		var path = GameManager.last_scene_path
+		var path = GameManager.get_continue_scene_path()
 		if path == "" or not ResourceLoader.exists(path):
 			path = FIRST_LEVEL_PATH
 		get_tree().change_scene_to_file(path)

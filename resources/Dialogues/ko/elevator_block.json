@@ -14,9 +14,8 @@
 		},
 		{
 		  "text": "지하 1층",
-		  "next": "B1",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "데모에서는 이용할 수 없습니다."
+		  "scene_path": "res://Scenes/Stage/Stage_02.tscn",
+		  "next": "B1"
 		},
 		{
 		  "text": "지하 2층",
@@ -32,6 +31,7 @@
 		},
 		{
 		  "text": "지하 4층",
+		  "scene_path": "res://Scenes/Stage/Stage_01.tscn",
 		  "next": "B4"
 		},
 		{
@@ -86,6 +86,15 @@
 		  "next": "ignore"
 		}
 	  ]
+	}
+  ],
+  "B1": [
+	{
+	  "name": "분홍 토끼",
+	  "text": "여기가 이미 지하 1층이야.",
+	  "left_image": "HeroBunny_surprise",
+	  "speaker": "left",
+	  "next" : "start"
 	}
   ],
   "B4": [

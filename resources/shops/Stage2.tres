@@ -1,19 +1,18 @@
-[gd_resource type="Resource" script_class="ShopStock" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="ShopStock" load_steps=7 format=3 uid="uid://dmxxvd1lo8r7l"]
 
-[ext_resource type="Script" path="res://Script/Item_UI/ShopStock.gd" id="1_stock"]
-[ext_resource type="Script" path="res://Script/Item_UI/ShopEntry.gd" id="2_entry"]
+[ext_resource type="Script" uid="uid://mu5igmilxfkx" path="res://Script/Item_UI/ShopStock.gd" id="1_stock"]
+[ext_resource type="Script" uid="uid://luqwuovqr85o" path="res://Script/Item_UI/ShopEntry.gd" id="2_entry"]
 [ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="3_potion"]
-[ext_resource type="Resource" path="res://resources/items/lantern.tres" id="4_lantern"]
+[ext_resource type="Resource" uid="uid://dy7yr5osd0wk" path="res://resources/items/lantern.tres" id="4_lantern"]
 
 [sub_resource type="Resource" id="Resource_potion"]
 script = ExtResource("2_entry")
 item = ExtResource("3_potion")
-stock = 5
+stock = 10
 
 [sub_resource type="Resource" id="Resource_lantern"]
 script = ExtResource("2_entry")
 item = ExtResource("4_lantern")
-stock = 1
 
 [resource]
 script = ExtResource("1_stock")

@@ -50,17 +50,18 @@ func _on_interact() -> void:
 		ShopUI.open_shop(location_name)
 		
 	else:
-		if talk_count > 0:
-			var last_file_path = "res://resources/Dialogues/en/merchant_" + location_name + "_" + str(talk_count - 1) + ".json"
+		var last_file_path = "res://resources/Dialogues/en/merchant_" + location_name + "_" + str(talk_count - 1) + ".json"
+		if talk_count > 0 and DialogueManager.has_dialogue_file(last_file_path):
+			DialogueManager.start_dialogue(last_file_path)
+			await DialogueManager.dialogue_finished 
 			
-			if DialogueManager.has_dialogue_file(last_file_path):
-				DialogueManager.start_dialogue(last_file_path)
-				await DialogueManager.dialogue_finished 
-				
-				if not player_in_range:
-					return
-				
-				ShopUI.open_shop(location_name) 
+			if not player_in_range:
+				return
+			
+			ShopUI.open_shop(location_name) 
+		else:
+			# 대사 파일이 하나도 없는 상인(merchant_<location_name>_0.json 없음)은 바로 상점을 연다
+			ShopUI.open_shop(location_name)
 
 # 플레이어가 멀어지면 대화창 강제 종료!
 func _on_player_exited(_body: Node) -> void:

@@ -128,6 +128,7 @@ radius = 39.0
 [node name="Slime1" instance=ExtResource("1_d5xvo")]
 script = ExtResource("2_cbd27")
 max_hp_base = 30
+can_split = true
 contact_damage_base = 10
 move_speed_base = 40.0
 max_fall_speed = 100.0

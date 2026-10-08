@@ -25,15 +25,20 @@ func run_checks() -> void:
 	check_legacy_save(manager, saver)
 	await check_shop_ui(manager)
 	await check_merchant_input_lock(manager)
+	await check_merchant_without_dialogue(manager)
 	await check_interact_key_objects(manager)
 	await check_chest_rewards(manager)
 	await check_inventory_item_info(manager)
 	await check_item_animation(manager)
 	await check_door_lock(manager)
+	await check_shortcut_door(manager)
+	await check_resume_on_quit(manager, saver)
+	await check_door_prompt_on_hud(manager)
 	check_loot_seed(manager, saver)
 	check_save_slots(manager, saver)
 	check_inventory_signal(manager)
 	check_settings_manager()
+	check_boss_bar_centered()
 	manager.reset_data()
 	print("Item/shop regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
 	quit(0 if failures == 0 else 1)
@@ -184,6 +189,13 @@ func stock_of(manager, shop_id: String, item_id: String) -> int:
 			return row["stock"]
 	return -1
 
+# 상점 리소스(resources/shops)에 적힌 시작 재고. 재고 수치를 바꿔도 테스트가 따라가도록
+func default_stock(shop_id: String, item_id: String) -> int:
+	for entry in db().get_shop(shop_id).entries:
+		if entry.item != null and entry.item.id == item_id:
+			return entry.stock
+	return -1
+
 func check_item_database(manager) -> void:
 	for id in ["health_potion", "health_flask", "Parry_increase_potion", "pink_key"]:
 		var item = db().get_item_by_id(id)
@@ -193,15 +205,19 @@ func check_item_database(manager) -> void:
 
 func check_shop_stock(manager, saver) -> void:
 	manager.reset_data()
-	check(stock_of(manager, "Stage1", "health_potion") == 3, "Stage1 potion default stock")
-	check(stock_of(manager, "Stage1", "Parry_increase_potion") == 1, "Stage1 parry potion default stock")
-	check(stock_of(manager, "Stage2", "health_potion") == 5, "Stage2 potion default stock")
+	# 시작 재고는 상점 리소스 값 그대로 (숫자는 리소스에서 자유롭게 바꿀 수 있다)
+	var potion1 := default_stock("Stage1", "health_potion")
+	var parry1 := default_stock("Stage1", "Parry_increase_potion")
+	check(potion1 >= 3, "Stage1 should start with at least 3 potions for the purchase checks below")
+	check(stock_of(manager, "Stage1", "health_potion") == potion1, "Stage1 potion default stock")
+	check(stock_of(manager, "Stage1", "Parry_increase_potion") == parry1, "Stage1 parry potion default stock")
+	check(stock_of(manager, "Stage2", "health_potion") == default_stock("Stage2", "health_potion"), "Stage2 potion default stock")
 	check(manager.get_shop_stock("NoShop").is_empty(), "Unknown shop should be empty")
 
 	manager.record_shop_purchase("Stage1", "health_potion")
-	manager.record_shop_purchase("Stage1", "Parry_increase_potion")
-	manager.record_shop_purchase("Stage1", "Parry_increase_potion")
-	check(stock_of(manager, "Stage1", "health_potion") == 2, "Purchase did not reduce stock")
+	for i in parry1 + 1: # 재고보다 한 번 더 산다
+		manager.record_shop_purchase("Stage1", "Parry_increase_potion")
+	check(stock_of(manager, "Stage1", "health_potion") == potion1 - 1, "Purchase did not reduce stock")
 	check(stock_of(manager, "Stage1", "Parry_increase_potion") == 0, "Stock should not go below zero")
 
 	# 저장 → JSON → 불러오기 왕복 (파일 없이)
@@ -209,18 +225,18 @@ func check_shop_stock(manager, saver) -> void:
 	check(saver._is_valid_game(data), "Save data with shop_sold rejected by validator")
 	var round_trip: Dictionary = JSON.parse_string(JSON.stringify(data))
 	manager.reset_data()
-	check(stock_of(manager, "Stage1", "health_potion") == 3, "New game did not restore default stock")
+	check(stock_of(manager, "Stage1", "health_potion") == potion1, "New game did not restore default stock")
 	manager.load_data_from_save(round_trip)
-	check(stock_of(manager, "Stage1", "health_potion") == 2, "Loaded stock wrong after JSON round trip")
-	check(stock_of(manager, "Stage2", "health_potion") == 5, "Untouched shop changed after load")
+	check(stock_of(manager, "Stage1", "health_potion") == potion1 - 1, "Loaded stock wrong after JSON round trip")
+	check(stock_of(manager, "Stage2", "health_potion") == default_stock("Stage2", "health_potion"), "Untouched shop changed after load")
 	manager.record_shop_purchase("Stage1", "health_potion")
-	check(stock_of(manager, "Stage1", "health_potion") == 1, "Purchase after load (float counts from JSON) failed")
+	check(stock_of(manager, "Stage1", "health_potion") == potion1 - 2, "Purchase after load (float counts from JSON) failed")
 
 	# 세이브에 없는 상점(나중에 추가된 상점)은 기본 재고로 보인다.
 	var without_stage2 := round_trip.duplicate(true)
 	without_stage2["shop_sold"] = {"Stage1": {"health_potion": 1}}
 	manager.load_data_from_save(without_stage2)
-	check(stock_of(manager, "Stage2", "health_potion") == 5, "Shop missing from save should use default stock")
+	check(stock_of(manager, "Stage2", "health_potion") == default_stock("Stage2", "health_potion"), "Shop missing from save should use default stock")
 
 	var bad := round_trip.duplicate(true)
 	bad["shop_sold"] = {"Stage1": {"health_potion": -1}}
@@ -233,14 +249,14 @@ func check_legacy_save(manager, saver) -> void:
 	legacy.erase("shop_sold")
 	legacy["save_version"] = 2
 	legacy["merchant_stocks"] = {
-		"Stage1": [{"id": "health_potion", "stock": 1}, {"id": "Parry_increase_potion", "stock": 1}],
+		"Stage1": [{"id": "health_potion", "stock": 1}, {"id": "Parry_increase_potion", "stock": default_stock("Stage1", "Parry_increase_potion")}],
 		"OldShop": [{"id": "health_potion", "stock": 0}],
 	}
 	check(saver._is_valid_game(legacy), "Version 2 save rejected")
 	manager.load_data_from_save(JSON.parse_string(JSON.stringify(legacy)))
 	check(stock_of(manager, "Stage1", "health_potion") == 1, "Legacy remaining stock not converted")
-	check(stock_of(manager, "Stage1", "Parry_increase_potion") == 1, "Legacy untouched item changed")
-	check(stock_of(manager, "Stage2", "health_potion") == 5, "Shop absent from legacy save changed")
+	check(stock_of(manager, "Stage1", "Parry_increase_potion") == default_stock("Stage1", "Parry_increase_potion"), "Legacy untouched item changed")
+	check(stock_of(manager, "Stage2", "health_potion") == default_stock("Stage2", "health_potion"), "Shop absent from legacy save changed")
 	var resaved: Dictionary = manager.get_data_for_save()
 	check(resaved["save_version"] == saver.SAVE_VERSION and not resaved.has("merchant_stocks"), "Legacy save not upgraded on next save")
 	print("Legacy: version 2 merchant_stocks converted to sold counts")
@@ -250,12 +266,14 @@ func check_shop_ui(manager) -> void:
 	manager.gold = 1000
 	var shop = root.get_node("ShopUI")
 	shop.open_shop("Stage1")
-	check(shop.item_list.get_child_count() == 2, "Shop UI did not list Stage1 items")
+	check(shop.item_list.get_child_count() == db().get_shop("Stage1").entries.size(), "Shop UI did not list Stage1 items")
 	shop.selected_index = 0
+	var first_item = db().get_shop("Stage1").entries[0].item
+	var before := stock_of(manager, "Stage1", first_item.id)
 	shop.open_confirm_panel()
 	await shop.buy_item()
-	check(stock_of(manager, "Stage1", "health_potion") == 2 and manager.gold == 850, "Buying through the shop UI failed")
-	check(inv().has_item("health_potion"), "Bought item not in inventory")
+	check(stock_of(manager, "Stage1", first_item.id) == before - 1 and manager.gold == 1000 - first_item.price, "Buying through the shop UI failed")
+	check(inv().has_item(first_item.id), "Bought item not in inventory")
 	shop.close_shop()
 	await process_frame
 	print("Shop UI: lists stock from resources and records purchases")
@@ -308,6 +326,7 @@ func check_interact_key_objects(manager) -> void:
 	var chest = load("res://Scenes/System/Chest.tscn").instantiate()
 	chest.persist_id = "test_chest"
 	chest.reward_gold = 10
+	chest.loot_table = null # 입력 키만 검사: 랜덤 보상(기본 상자 목록은 바뀔 수 있음) 없이 골드 10만
 	root.add_child(chest)
 	chest._on_body_entered(player)
 	var gold_before: int = manager.gold
@@ -590,6 +609,226 @@ func check_item_animation(manager) -> void:
 	await process_frame
 	manager.reset_data()
 	print("Item animation: field and inventory play anim_frames, others keep the icon")
+
+# HUD는 2배 스케일 CanvasLayer — 보스 체력바가 실제 화면(1280x720) 가운데 위에 와야 한다
+func check_boss_bar_centered() -> void:
+	var hud = root.get_node("HUD")
+	var r: Rect2 = hud.boss_bar_root.get_global_rect()
+	var center: float = (r.position.x + r.size.x * 0.5) * hud.scale.x
+	check(is_equal_approx(center, root.get_visible_rect().size.x * 0.5), "Boss health bar should be centered on screen, got x=%s" % center)
+	print("Boss bar: centered on the scaled HUD")
+
+# 지름길 문: A는 B를 한 번 쓰기 전엔 잠김. B를 쓰면 A로 이동하며 개방(세이브 기록), 그 뒤로 A→B도 된다.
+# 다른 씬의 짝으로 갈 때는 도착 정보를 남기고, 다음 스테이지가 플레이어를 그 문 앞에 소환한다.
+func check_shortcut_door(manager) -> void:
+	manager.reset_data()
+	var door_scene = load("res://Scenes/System/ShortcutDoor.tscn")
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	var a = door_scene.instantiate()
+	a.link_id = "test_link"
+	a.side = 0
+	a.position = Vector2(100, 0)
+	var b = door_scene.instantiate()
+	b.link_id = "test_link"
+	b.side = 1
+	b.position = Vector2(900, 0)
+	root.add_child(a)
+	root.add_child(b)
+	player.global_position = a.arrival_position()
+
+	a._try_use_door(player)
+	await process_frame
+	check(not a.is_unlocked() and player.global_position.is_equal_approx(a.arrival_position()), "Shortcut A should stay locked before B is used")
+
+	player.global_position = b.arrival_position()
+	b._try_use_door(player)
+	await process_frame
+	check(a.is_unlocked() and b.is_unlocked() and manager.collected_items.has("shortcut:test_link"), "Using B should unlock the shortcut and save it")
+	check(player.global_position.is_equal_approx(a.arrival_position()), "Using B should move the player to A")
+
+	player.set_meta("key_door_teleport_until", 0)
+	a._try_use_door(player)
+	await process_frame
+	check(player.global_position.is_equal_approx(b.arrival_position()), "After unlocking, A should take the player to B")
+
+	var a_again = door_scene.instantiate()
+	a_again.link_id = "test_link"
+	root.add_child(a_again)
+	check(a_again.is_unlocked(), "An unlocked shortcut should stay open when the scene is loaded again")
+	# 문 원점 = 바닥 중앙 (기본 그림도, 바꾼 그림도). 플레이어 원점(발끝)이 그 바닥 1px 위에 도착
+	check(is_equal_approx(b.arrival_position().y - b.global_position.y, -1.0), "Shortcut arrival should be at the default door art's bottom")
+	var art_bottom: float = b.closed_sprite.to_global(Vector2(0, b.closed_sprite.get_rect().end.y)).y
+	check(is_equal_approx(art_bottom, b.global_position.y), "Door art should stand on the node origin (bottom center), like in the editor")
+	b.closed_texture = ImageTexture.create_from_image(Image.create(16, 40, false, Image.FORMAT_RGBA8))
+	b._apply_texture(b.closed_sprite, b.closed_texture)
+	check(is_equal_approx(b.arrival_position().y - b.global_position.y, -1.0), "Shortcut arrival should follow a replaced door art's bottom")
+	b.partner_scene = "res://Scenes/Stage/Stage_02.tscn"
+	check(b._partner_in_other_scene(), "A partner_scene different from the current scene should travel across scenes")
+	for n in [a, b, a_again, player]:
+		n.queue_free()
+	await process_frame
+
+	# 다른 씬에서 온 경우: 스테이지가 도착 문(link_id + side) 앞에 플레이어를 소환하고 도착 정보를 지운다
+	var stage = load("res://Scenes/Stage/Stage_02.tscn").instantiate()
+	var arrival_door = door_scene.instantiate()
+	arrival_door.link_id = "test_cross"
+	arrival_door.side = 1
+	arrival_door.position = Vector2(777, 333)
+	stage.get_node("Entities").add_child(arrival_door)
+	manager.pending_shortcut_arrival = {"link_id": "test_cross", "side": 1}
+	root.add_child(stage) # 스폰은 스테이지 _ready에서 바로 일어난다 (프레임을 넘기면 중력으로 떨어짐)
+	check(stage.player != null and stage.player.global_position.is_equal_approx(arrival_door.arrival_position()),
+		"Arriving through a shortcut should spawn the player at the partner door")
+	check(manager.pending_shortcut_arrival.is_empty(), "Shortcut arrival info should be cleared after spawning")
+	stage.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Shortcut door: A locked until B used, unlock saved, both ways after, cross-scene arrival")
+
+# 이어 하기 저장: 나갈 때 지금 상태 그대로 + 마지막 안전한 땅 위치. 전투 중이면 위치 없이(세이브 포인트에서).
+# 불러오면 그 씬·그 자리에서 시작하고 한 번 쓰면 지운다. 죽어서 부활할 땐 쓰지 않는다.
+func check_resume_on_quit(manager, saver) -> void:
+	const TEST_SAVE := "user://test_resume_save.json"
+	manager.reset_data()
+	manager.save_path_override = TEST_SAVE
+	var stage = load("res://Scenes/Stage/Stage_03.tscn").instantiate()
+	root.add_child(stage)
+	current_scene = stage
+	for i in 30:
+		await physics_frame
+	var player = stage.player
+	check(player.has_safe_position and player.last_safe_position.is_equal_approx(player.global_position),
+		"Standing on normal ground should record a safe position")
+	player.hp = 37
+	manager.update_hp(37)
+	manager.mutation_epoch = 2
+	manager.add_defeated_mob("M-resume")
+	var safe: Vector2 = player.last_safe_position
+	check(manager.save_on_quit(), "Quitting in a stage should save")
+	var data: Dictionary = saver.load_game(TEST_SAVE)
+	check(saver._is_valid_game(data) and data.get("current_hp") == 37 and data.get("defeated_mobs", []).has("M-resume") and data.get("mutation_epoch") == 2,
+		"Quit save should keep HP, kills and mutation epoch as they are (not a rest)")
+	check(data.get("resume", {}).get("scene") == stage.scene_file_path, "Quit save should remember the scene")
+
+	# 몹이 쫓는 중이면 위치는 남기지 않는다
+	var mob = load("res://Scenes/Entitites/slime_1.tscn").instantiate()
+	mob.mutation_enabled = false
+	mob.position = player.global_position + Vector2(40, -10)
+	stage.get_node("Entities").add_child(mob)
+	stage.register_spawned_enemy(mob)
+	await process_frame
+	mob.target = player
+	check(stage.is_player_in_combat() and stage.get_resume_position() == null, "A chasing mob should count as combat")
+	manager.save_on_quit()
+	check(saver.load_game(TEST_SAVE).get("resume", {}).is_empty(), "Quitting during combat should not keep the position")
+	mob.target = null
+	mob.queue_free()
+	await process_frame
+	manager.save_on_quit()
+
+	# 불러오면 그 자리에서 시작, 한 번 쓰면 지운다
+	stage.queue_free()
+	await process_frame
+	manager.reset_data()
+	manager.save_path_override = TEST_SAVE
+	check(manager.load_game() and manager.get_continue_scene_path() == "res://Scenes/Stage/Stage_03.tscn", "Continue should go to the quit scene")
+	stage = load(manager.get_continue_scene_path()).instantiate()
+	root.add_child(stage)
+	current_scene = stage
+	check(stage.player.global_position.is_equal_approx(safe) and stage.player.hp == 37, "Continue should start at the quit position with the same HP")
+	check(manager.resume_scene_path.is_empty(), "The resume point should be used only once")
+	stage.queue_free()
+	await process_frame
+
+	# 죽었거나 메뉴(스테이지 밖)에서는 저장하지 않는다
+	manager.reset_data()
+	manager.save_path_override = TEST_SAVE
+	current_scene = null
+	check(not manager.save_on_quit(), "Quitting outside a stage should not save")
+	var bad: Dictionary = data.duplicate(true)
+	bad["resume"] = {"scene": 3}
+	check(not saver._is_valid_game(bad), "Broken resume data should be rejected")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE + ".bak"))
+	manager.save_path_override = ""
+	manager.reset_data()
+	print("Resume: quit saves state as is + safe position, not during combat, used once on continue")
+
+# 문 안내는 플레이어 머리 위가 아니라 HUD 하단 상호작용 안내로 뜬다 (방 위쪽에서도 화면 밖으로 안 나감)
+func check_door_prompt_on_hud(manager) -> void:
+	manager.reset_data()
+	var stage = load("res://Scenes/Stage/Stage_03.tscn").instantiate()
+	root.add_child(stage)
+	current_scene = stage
+	var hud = root.get_node("HUD")
+	var shown := []
+	var on_show := func(msg): shown.append(msg)
+	var on_hide := func(): shown.append("<hidden>")
+	manager.interact_msg_requested.connect(on_show)
+	manager.interact_msg_hidden.connect(on_hide)
+	var door = load("res://Scenes/System/KeyDoor.tscn").instantiate()
+	door.locked = false
+	door.persist_id = "test_prompt_door"
+	stage.get_node("Entities").add_child(door)
+	door._on_body_entered(stage.player)
+	check(shown == ["KEY_DOOR_OPEN_PROMPT"], "Door prompt should go to the HUD interact prompt, got %s" % str(shown))
+	check(hud.interact_label.visible and hud.interact_text.text == "KEY_DOOR_OPEN_PROMPT", "HUD should show the door's prompt text")
+	door._on_body_exited(stage.player)
+	check(shown.back() == "<hidden>" and not hud.interact_label.visible, "Leaving the door should hide the HUD prompt")
+	hud._on_interact_msg("")
+	check(hud.interact_text.text == "HUD_INTERACT", "Other interactables should get the default prompt back")
+	hud._on_interact_hide()
+
+	# 머리 위 팝업(show_popup)도 카메라 화면 안에 붙는다: 방 맨 위·맨 왼쪽에서 띄워도 화면 밖으로 안 나감
+	var player = stage.player
+	player.set_physics_process(false)
+	await process_frame # 카메라가 방 중앙으로 옮겨진 뒤
+	var cam: Camera2D = player.get_viewport().get_camera_2d()
+	var half: Vector2 = player.get_viewport_rect().size / cam.zoom * 0.5
+	var view := Rect2(cam.get_screen_center_position() - half, half * 2.0)
+	player.global_position = view.position + Vector2(2, 10) # 화면 왼쪽 위 구석
+	player.show_popup("A long popup message near the corner")
+	await process_frame
+	var label: Label = player.status_label
+	check(view.encloses(label.get_global_rect()), "Popup should stay inside the camera view (%s in %s)" % [label.get_global_rect(), view])
+	player.global_position = view.get_center()
+	await process_frame
+	var r: Rect2 = label.get_global_rect()
+	check(is_equal_approx(r.get_center().x, player.global_position.x) and r.end.y < player.global_position.y,
+		"Popup should be centered above the player when there is room")
+	manager.interact_msg_requested.disconnect(on_show)
+	manager.interact_msg_hidden.disconnect(on_hide)
+	stage.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Door prompt: shown on the HUD, hidden on leave, default text restored for others")
+
+# 대사 파일이 없는 상인(Stage2 상인)은 E를 누르면 바로 자기 상점을 연다
+func check_merchant_without_dialogue(manager) -> void:
+	manager.reset_data()
+	# 상호작용 물체는 배치만 해도 플레이어(레이어 2)를 감지해야 한다 (스테이지에서 따로 바꾸지 않아도)
+	for scene_path in ["res://Scenes/Entitites/MerchantNPC.tscn", "res://Scenes/System/Chest.tscn", "res://Scenes/System/SavePoint.tscn"]:
+		var obj = load(scene_path).instantiate()
+		check(obj.get_collision_mask_value(2), "%s should detect the player (collision mask 2) by default" % scene_path)
+		obj.free()
+	var shop = root.get_node("ShopUI")
+	var dialogue = root.get_node("DialogueManager")
+	var merchant = load("res://Scenes/Entitites/MerchantNPC.tscn").instantiate()
+	merchant.location_name = "Stage2"
+	root.add_child(merchant)
+	merchant.player_in_range = true
+	check(not dialogue.has_dialogue_file("res://resources/Dialogues/en/merchant_Stage2_0.json"), "This check assumes the Stage2 merchant has no dialogue yet")
+	merchant._on_interact()
+	await process_frame
+	check(shop.is_open and shop.current_shop_id == "Stage2", "A merchant without dialogue should open its shop directly")
+	check(manager.get_shop_stock("Stage2").any(func(row): return row["item"].id == "lantern"), "Stage2 shop should sell the lantern")
+	shop.close_shop()
+	merchant.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Merchant without dialogue: opens its shop directly")
 
 func _end_dialogue_and_wait(dialogue) -> void:
 	if dialogue.is_dialogue_active:

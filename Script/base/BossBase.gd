@@ -82,8 +82,8 @@ func set_active(active: bool) -> void:
 # --- 음악 관리 함수 ---
 func _play_boss_music():
 	# 스테이지 배경음악 찾아서 끄기
-	var stage_bgm = get_tree().current_scene.get_node_or_null("AudioStreamPlayer")
-	if stage_bgm and stage_bgm is AudioStreamPlayer:
+	var stage_bgm := _stage_bgm()
+	if stage_bgm:
 		stage_bgm.stop()
 		
 	if bgm_player != null and not bgm_player.playing:
@@ -94,9 +94,18 @@ func _stop_boss_music():
 		bgm_player.stop()
 		
 	# 스테이지 배경음악 다시 켜기 (이미 재생 중이 아닐 때만)
-	var stage_bgm = get_tree().current_scene.get_node_or_null("AudioStreamPlayer")
-	if stage_bgm and stage_bgm is AudioStreamPlayer and not stage_bgm.playing:
+	var stage_bgm := _stage_bgm()
+	if stage_bgm and not stage_bgm.playing:
 		stage_bgm.play()
+
+# 스테이지 배경음악. 씬을 닫는 중(트리에서 빠졌거나 current_scene이 비었을 때)에는 null
+func _stage_bgm() -> AudioStreamPlayer:
+	if not is_inside_tree():
+		return null
+	var scene := get_tree().current_scene
+	if scene == null:
+		return null
+	return scene.get_node_or_null("AudioStreamPlayer") as AudioStreamPlayer
 
 func _start_intro() -> void:
 	current_state = State.INTRO

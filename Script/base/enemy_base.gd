@@ -47,6 +47,11 @@ signal died(enemy: EnemyBase)
 @export var death_bounce_height: float = 14.0 # 죽을 때 튀어오르는 높이(px)
 @export var death_flip_time: float = 0.4 # 튀어올라 뒤집혀 떨어지기까지 걸리는 시간
 
+@export_group("Mutation")
+# 스테이지에 놓인 잡몹은 MobMutation.CHANCE 확률로 변이체가 된다 (보스·분열로 생긴 작은 몹 제외)
+@export var mutation_enabled: bool = true
+@export var can_split: bool = false # 분열 변이가 나올 수 있는 몹 (슬라임)
+
 @export_group("Patrol Idle")
 # 순찰(타겟 없음) 중 가끔 멈춰서 idle 동작을 취한다
 @export var patrol_idle_enabled: bool = true
@@ -81,7 +86,17 @@ var _patrol_timer: float = 0.0
 var _sprite_base_scale: Vector2 = Vector2.ONE
 var _sprite_base_pos: Vector2 = Vector2.ZERO
 var _motion_tween: Tween
+var _death_flip_ground_y: float = NAN # 뒤집기 기준 바닥 (_body_bottom_y), NAN이면 프레임 크기 기준
+var _death_flip_start_offset: float = 0.0
 var _health_bar_top_y: float = NAN # 체력바 기준 y (처음 그릴 때 계산)
+
+# 체력바는 몸과 따로 이 노드에 그린다: 시야 제한(VisionLimit) 어둠보다 위(Z_MAX)에 보이도록
+var _health_bar_layer: Node2D
+const ABOVE_DARK_Z := RenderingServer.CANVAS_ITEM_Z_MAX
+
+var mutation: MobMutation.Kind = MobMutation.Kind.NONE
+var is_split_minion: bool = false # 분열 변이가 죽으며 낳은 작은 몹: 세이브에 기록 안 함, 방이 비활성화되면 사라짐
+var _was_activated: bool = false
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -101,6 +116,13 @@ func _ready() -> void:
 	if sprite:
 		_sprite_base_scale = sprite.scale
 		_sprite_base_pos = sprite.position
+
+	_health_bar_layer = Node2D.new()
+	_health_bar_layer.name = "HealthBarLayer"
+	_health_bar_layer.z_as_relative = false
+	_health_bar_layer.z_index = ABOVE_DARK_Z
+	_health_bar_layer.draw.connect(_draw_health_bar)
+	add_child(_health_bar_layer)
 		
 	# 태어난 위치를 집으로 기억
 	home_position = global_position
@@ -131,6 +153,8 @@ func _ready() -> void:
 	set_active(false)
 	if sprite: sprite.play()
 	_reset_patrol_idle()
+	# persist_id는 스테이지 _ready(공식 배정)가 끝나야 확정되므로 그 뒤에 굴린다
+	call_deferred("_roll_mutation")
 
 # --- Overrides (CombatBody2D) ---
 func get_invuln_time() -> float: return invuln_time
@@ -142,7 +166,12 @@ func get_blink_node() -> CanvasItem: return sprite
 func can_tick_status_effects() -> bool: return _active and hp > 0
 func _on_status_damaged(_amount: int) -> void: queue_redraw()
 
+# 몸을 다시 그릴 때(queue_redraw) 체력바 노드도 같이 다시 그린다
 func _draw() -> void:
+	if is_instance_valid(_health_bar_layer):
+		_health_bar_layer.queue_redraw()
+
+func _draw_health_bar() -> void:
 	if not show_health_bar: return
 	if is_in_group("bosses"): return
 	if not _active: return
@@ -155,8 +184,8 @@ func _draw() -> void:
 	var bg_rect := Rect2(top_left, health_bar_size)
 	var fill_rect := Rect2(top_left + Vector2.ONE, Vector2((health_bar_size.x - 2.0) * ratio, health_bar_size.y - 2.0))
 	
-	draw_rect(bg_rect, Color.BLACK)
-	draw_rect(fill_rect, Color(0.1, 0.9, 0.2, 1.0))
+	_health_bar_layer.draw_rect(bg_rect, Color.BLACK)
+	_health_bar_layer.draw_rect(fill_rect, Color(0.1, 0.9, 0.2, 1.0))
 
 func _get_health_bar_center() -> Vector2:
 	if sprite == null:
@@ -192,6 +221,10 @@ func _visible_sprite_top_y() -> float:
 func _on_death() -> void:
 	queue_redraw()
 	_play_death_flip()
+	if mutation != MobMutation.Kind.NONE:
+		_try_drop_reward_chest()
+		if mutation == MobMutation.Kind.SPLIT:
+			call_deferred("_spawn_split_minions")
 	# 죽음 신호를 보내야 Stage가 장부에 기록
 	died.emit(self)
 	spawn_gold()
@@ -301,8 +334,51 @@ func _play_death_flip() -> void:
 	if not death_flip_enabled or not _can_play_sprite_motion():
 		return
 	_reset_sprite_motion()
+	_prepare_death_flip()
 	_motion_tween = create_tween()
 	_motion_tween.tween_method(_apply_death_flip, 0.0, 1.0, death_flip_time)
+
+# 뒤집기 기준 = 몸 충돌체 바닥(땅). 시작 자세와 바닥 맞춘 자세의 차이를 기억해 뒤집는 동안 서서히 없앤다 (시작할 때 튀지 않게)
+func _prepare_death_flip() -> void:
+	_death_flip_ground_y = _body_bottom_y()
+	_death_flip_start_offset = 0.0
+	if not is_nan(_death_flip_ground_y):
+		_death_flip_start_offset = _sprite_base_pos.y - _flip_grounded_y(1.0)
+
+# 몸 충돌체 바닥 (스프라이트 부모 좌표). 충돌체가 없으면 NAN
+func _body_bottom_y() -> float:
+	var parent := sprite.get_parent() as Node2D if sprite != null else null
+	if body_shape == null or body_shape.shape == null or parent == null:
+		return NAN
+	return parent.to_local(body_shape.to_global(body_shape.shape.get_rect().end)).y
+
+# 세로 배율 k에서 실제로 그려진 픽셀의 맨 아래가 충돌체 바닥에 닿는 y 위치.
+# 프레임 여백은 무시하므로, 쓰러진 시체처럼 그림이 프레임 아래쪽에 몰려 있어도 뒤집힌 뒤 땅에 붙는다
+func _flip_grounded_y(k: float) -> float:
+	var extent := _sprite_opaque_v_extent()
+	var s := _sprite_base_scale.y
+	return _death_flip_ground_y - maxf(extent.x * s * k, extent.y * s * k)
+
+# 현재 프레임에서 투명하지 않은 픽셀의 세로 범위 (scale 적용 전, 스프라이트 로컬 y). 텍스처별로 한 번만 계산
+static var _opaque_rows_cache := {}
+func _sprite_opaque_v_extent() -> Vector2:
+	var tex: Texture2D = null
+	if sprite.sprite_frames != null:
+		tex = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if tex == null:
+		return _sprite_v_extent()
+	if not _opaque_rows_cache.has(tex):
+		var rows := Vector2(0.0, tex.get_height())
+		var img := tex.get_image()
+		if img != null:
+			if img.is_compressed():
+				img.decompress()
+			var used := img.get_used_rect()
+			if used.size.y > 0:
+				rows = Vector2(used.position.y, used.end.y)
+		_opaque_rows_cache[tex] = rows
+	var top := sprite.offset.y - (tex.get_height() * 0.5 if sprite.centered else 0.0)
+	return Vector2(top, top) + _opaque_rows_cache[tex]
 
 # t: 0 → 1. 세로 배율이 1 → -1로 넘어가며 뒤집히고, 그동안 포물선으로 튀었다 떨어진다.
 func _apply_death_flip(t: float) -> void:
@@ -310,8 +386,12 @@ func _apply_death_flip(t: float) -> void:
 		return
 	var k := cos(t * PI)
 	sprite.scale = Vector2(_sprite_base_scale.x, _sprite_base_scale.y * k)
-	var y := _grounded_sprite_y(k) - death_bounce_height * sin(t * PI)
-	sprite.position = Vector2(_sprite_base_pos.x, y)
+	var y: float
+	if is_nan(_death_flip_ground_y):
+		y = _grounded_sprite_y(k) # 충돌체가 없으면 프레임 크기 기준으로 발끝을 바닥에 맞춘다
+	else:
+		y = _flip_grounded_y(k) + _death_flip_start_offset * (k + 1.0) * 0.5
+	sprite.position = Vector2(_sprite_base_pos.x, y - death_bounce_height * sin(t * PI))
 
 # --- Logic ---
 func _process(delta: float) -> void:
@@ -372,10 +452,15 @@ func death_animation(anim_sprite: AnimatedSprite2D = null) -> StringName:
 
 func spawn_gold():
 	# 코인 씬이 연결되어 있고, 드랍 금액이 0보다 클 때만 생성
-	if not coin_scene or drop_gold_amount <= 0:
+	var total := reward_gold()
+	if not coin_scene or total <= 0:
 		return
-	for amount in split_gold_into_coins(drop_gold_amount):
+	for amount in split_gold_into_coins(total):
 		create_one_coin(amount)
+
+# 변이체는 MobMutation.REWARD_MULT배
+func reward_gold() -> int:
+	return drop_gold_amount * (MobMutation.REWARD_MULT if mutation != MobMutation.Kind.NONE else 1)
 
 # 금액을 금화(1000)·은화(100)·동화(10) 단위로 나눈다. 10 미만 나머지는 버린다. (박스 드롭도 사용)
 static func split_gold_into_coins(total: int) -> Array[int]:
@@ -444,6 +529,11 @@ func get_persist_id() -> StringName:
 func set_active(active: bool) -> void:
 	_active = active
 	queue_redraw()
+	if active:
+		_was_activated = true
+	elif is_split_minion and _was_activated:
+		queue_free() # 분열로 생긴 몹은 화면 밖으로 나가면 사라진다
+		return
 	
 	# 비활성화되면 물리 연산, 프로세스, 충돌체꺼서 리소스 절약
 	if disable_when_inactive:
@@ -546,3 +636,86 @@ func play_move_animation(moving: bool) -> void:
 		anim = walk_animation
 	if sprite.sprite_frames.has_animation(anim) and sprite.animation != anim:
 		sprite.play(anim)
+
+# -------------------------------------------------------------------------
+# 변이 (MobMutation)
+# -------------------------------------------------------------------------
+
+func _can_mutate() -> bool:
+	if not mutation_enabled or is_split_minion or is_in_group("bosses") or hp <= 0 or not is_inside_tree():
+		return false
+	# 스테이지에 놓인 몹만 (테스트용 임시 배치 등은 제외)
+	var stage := get_tree().current_scene
+	return stage != null and stage.has_method("register_spawned_enemy")
+
+func _roll_mutation() -> void:
+	if mutation != MobMutation.Kind.NONE or not _can_mutate():
+		return
+	var gm := get_node("/root/GameManager")
+	var rng: RandomNumberGenerator = gm.make_loot_rng(MobMutation.seed_key(get_persist_id(), gm.mutation_epoch))
+	apply_mutation(MobMutation.roll(rng, can_split))
+
+func apply_mutation(kind: MobMutation.Kind) -> void:
+	mutation = kind
+	match kind:
+		MobMutation.Kind.TOUGH:
+			max_hp = max_hp_base * MobMutation.TOUGH_HP_MULT
+			hp = max_hp
+			knockback_resist = 1.0
+		MobMutation.Kind.SWIFT:
+			move_speed = move_speed_base * MobMutation.SWIFT_SPEED_MULT
+			if sprite:
+				sprite.speed_scale = MobMutation.SWIFT_SPEED_MULT # 걷기·공격 애니메이션(=공격 속도)
+		MobMutation.Kind.POISON:
+			contact_status = load(MobMutation.POISON_EFFECT_PATH)
+			contact_status_chance = 1.0
+		MobMutation.Kind.BLEED:
+			contact_status = load(MobMutation.BLEED_EFFECT_PATH) # 한 번에 게이지가 가득 차서 바로 터진다
+			contact_status_chance = 1.0
+	if sprite and kind != MobMutation.Kind.NONE:
+		sprite.material = MobMutation.make_material(kind)
+	queue_redraw()
+
+# 변이체를 잡으면 MobMutation.CHEST_CHANCE 확률로 보상 상자. 다음 리롤(휴식·부활)까지 그 자리에 남는다
+func _try_drop_reward_chest() -> void:
+	var gm := get_node("/root/GameManager")
+	var rng: RandomNumberGenerator = gm.make_loot_rng(MobMutation.chest_key(get_persist_id(), gm.mutation_epoch))
+	if not MobMutation.rolls_chest(rng):
+		return
+	var stage := get_tree().current_scene if is_inside_tree() else null
+	if stage == null or not stage.has_method("spawn_mutant_chest"):
+		return
+	var chest_id := "mutant:%s:%d" % [get_persist_id(), gm.mutation_epoch]
+	var pos := _ground_point()
+	gm.add_mutant_chest(stage.scene_file_path, chest_id, pos)
+	stage.call_deferred("spawn_mutant_chest", chest_id, pos)
+
+# 몸 충돌체 바닥 중앙 (전역 좌표). 상자 원점이 바닥 중앙이라 그대로 놓으면 땅에 붙는다
+func _ground_point() -> Vector2:
+	if body_shape == null or body_shape.shape == null:
+		return global_position
+	var bottom := body_shape.to_global(body_shape.shape.get_rect().end)
+	return Vector2(global_position.x, bottom.y)
+
+# 분열: 작고 약한 일반 몹 SPLIT_COUNT마리. 세이브에 남지 않는다
+func _spawn_split_minions() -> void:
+	var scene_res := load(scene_file_path) as PackedScene if not scene_file_path.is_empty() else null
+	var parent := get_parent()
+	if scene_res == null or parent == null:
+		return
+	var stage := get_tree().current_scene
+	for i in MobMutation.SPLIT_COUNT:
+		var minion := scene_res.instantiate() as EnemyBase
+		if minion == null:
+			continue
+		minion.is_split_minion = true
+		minion.persist_id = &""
+		minion.max_hp_base = maxi(1, max_hp_base / MobMutation.SPLIT_HP_DIV)
+		minion.drop_gold_amount = drop_gold_amount / MobMutation.SPLIT_HP_DIV
+		minion.scale = Vector2.ONE * MobMutation.SPLIT_SCALE
+		var offset := float(i - (MobMutation.SPLIT_COUNT - 1) * 0.5) * 12.0
+		minion.position = position + Vector2(offset, -4.0)
+		parent.add_child(minion)
+		if stage != null and stage.has_method("register_spawned_enemy"):
+			stage.register_spawned_enemy(minion)
+		minion.velocity = Vector2(offset * 8.0, -160.0) # 사방으로 튀어 나온다

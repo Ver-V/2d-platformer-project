@@ -27,6 +27,9 @@ func run_checks() -> void:
 	check_patrol_idle()
 	check_hit_squash_and_death_flip()
 	check_persist_ids()
+	check_elevator_floors()
+	check_hazard_layers()
+	await check_world_ui_above_darkness()
 	fixture.queue_free()
 	await process_frame
 	print("Stage02 regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
@@ -271,6 +274,28 @@ func check_hit_squash_and_death_flip() -> void:
 	check(is_equal_approx(spr.scale.y, -2.0) and is_equal_approx(spr.scale.x, 2.0), "Death flip should end upside down without mirroring")
 	check(is_equal_approx(_sprite_visual_bottom(spr), ground), "Death flip should land back on the ground")
 
+	# 몸 충돌체가 있으면 프레임 여백은 무시하고, 뒤집힌 뒤 실제 그려진 픽셀의 맨 아래를 충돌체 바닥(땅)에 맞춘다.
+	# 프레임 아래쪽 8줄에만 그림이 있는 시체 = 사망 애니메이션처럼 위 여백이 큰 경우
+	var img := Image.create(16, 20, false, Image.FORMAT_RGBA8)
+	img.fill_rect(Rect2i(0, 12, 16, 8), Color.WHITE)
+	frames.set_frame(&"default", 0, ImageTexture.create_from_image(img))
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(12, 10)
+	shape.shape = rect
+	shape.position = Vector2(0, -5) # 바닥 y = 0
+	enemy.add_child(shape)
+	enemy.body_shape = shape
+	enemy._prepare_death_flip()
+	check(is_equal_approx(enemy._death_flip_ground_y, 0.0), "Death flip ground should be the body shape's bottom")
+	enemy._apply_death_flip(0.0)
+	check(spr.position.is_equal_approx(Vector2(2, 3)), "Death flip should start from the normal pose")
+	enemy._apply_death_flip(1.0)
+	var opaque_top := spr.offset.y - 10.0 + 12.0 # 그림 맨 윗줄 (스프라이트 로컬) — 뒤집히면 맨 아래가 된다
+	check(is_equal_approx(spr.position.y + spr.scale.y * opaque_top, 0.0) and is_equal_approx(spr.scale.y, -2.0),
+		"Flipped corpse should rest its drawn pixels on the body shape's bottom, ignoring frame padding")
+	enemy._death_flip_ground_y = NAN
+
 	enemy._reset_sprite_motion()
 	check(spr.scale.is_equal_approx(Vector2(2, 2)) and spr.position.is_equal_approx(Vector2(2, 3)), "Reset should restore the sprite transform")
 	check(enemy._can_play_sprite_motion(), "Normal mobs should play hit/death motion")
@@ -278,6 +303,70 @@ func check_hit_squash_and_death_flip() -> void:
 	check(not enemy._can_play_sprite_motion(), "Bosses should keep their own hit/death presentation")
 	enemy.free()
 	print("Hit squash / death flip: grounded squash, bounce, upside-down landing, bosses excluded")
+
+# 월드에 그리는 HUD성 요소(플레이어 머리 위 팝업, 몸 옆 게이지, 몹 체력바)는 어둠(VisionLimit)보다 위에 그린다
+func check_world_ui_above_darkness() -> void:
+	var dark_z: int = load("res://Script/System/vision_limit.gd").Z_INDEX
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	fixture.add_child(player)
+	player.set_physics_process(false)
+	for item in [player.status_label, player.get_node("Visuals")]:
+		check(not item.z_as_relative and item.z_index > dark_z, "%s should draw above the darkness" % item.name)
+	var mob = load("res://Scenes/Entitites/slime_1.tscn").instantiate()
+	fixture.add_child(mob)
+	var bar: Node2D = mob.get_node_or_null("HealthBarLayer")
+	check(bar != null and not bar.z_as_relative and bar.z_index > dark_z, "Mob health bar should draw above the darkness")
+	player.queue_free()
+	mob.queue_free()
+	await process_frame
+	print("World UI: popups, gauges and mob health bars above the darkness")
+
+# 가시는 HazardTileMap(씬 루트가 바로 TileMapLayer)에 칠한다. 그 타일셋의 "damage" 데이터로 피해가 들어간다.
+# 스테이지마다 HazardTileMap과 그 아래 칠해진 레이어는 전부 damage 데이터가 있는 타일셋이어야 한다 (복사한 타일셋 금지)
+func check_hazard_layers() -> void:
+	for path in ["res://Scenes/Stage/Stage_01.tscn", "res://Scenes/Stage/Stage_02.tscn", "res://Scenes/Stage/Stage_03.tscn"]:
+		var stage: Node = load(path).instantiate()
+		var hazard := stage.get_node_or_null("HazardTileMap")
+		check(hazard != null, "%s should have a HazardTileMap" % path)
+		if hazard != null:
+			check(hazard is TileMapLayer, "%s: HazardTileMap should itself be the paintable TileMapLayer" % path)
+			var layers: Array = hazard.find_children("*", "TileMapLayer", true, false)
+			if hazard is TileMapLayer:
+				layers.push_front(hazard)
+			for layer in layers:
+				if layer.get_used_cells().is_empty():
+					continue
+				var has_damage_layer: bool = layer.tile_set != null and layer.tile_set.get_custom_data_layer_by_name("damage") != -1
+				check(has_damage_layer, "%s: %s paints spikes with a tileset that has no 'damage' data (spikes won't hurt)" % [path, layer.name])
+				if has_damage_layer:
+					var hurts: bool = layer.get_used_cells().any(func(c): return int(layer.get_cell_tile_data(c).get_custom_data("damage")) > 0)
+					check(hurts, "%s: %s has spike cells but none deal damage" % [path, layer.name])
+		stage.free()
+	var spikes_s1: TileMapLayer = load("res://Scenes/Stage/Stage_01.tscn").instantiate().get_node("HazardTileMap")
+	check(spikes_s1.get_used_cells().size() > 0 and spikes_s1.position == Vector2(1, -10), "Stage_01 spikes should keep their cells and offset after the HazardTileMap change")
+	spikes_s1.get_parent().free()
+	print("Hazards: HazardTileMap is a TileMapLayer and every spike layer uses the damage tileset")
+
+# 엘리베이터 석판: 지하 1층 = Stage_02, 지하 4층 = Stage_01 (en·ko 같게). 지금 있는 층을 고르면 이동하지 않고 "이미 그 층" 블록
+func check_elevator_floors() -> void:
+	var floors := {"B1": "res://Scenes/Stage/Stage_02.tscn", "B4": "res://Scenes/Stage/Stage_01.tscn"}
+	for lang in ["en", "ko"]:
+		var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://resources/Dialogues/%s/elevator_block.json" % lang))
+		var choices: Array = data["start"][0]["choices"]
+		for block in floors:
+			var picked = choices.filter(func(c): return c.get("next") == block)
+			check(picked.size() == 1 and picked[0].get("scene_path") == floors[block] and not picked[0].has("condition"),
+				"%s elevator: %s should go to %s" % [lang, block, floors[block]])
+			check(data.has(block), "%s elevator: '%s' (already on this floor) block should exist" % [lang, block])
+	var dm = root.get_node("DialogueManager")
+	var stage := Node.new()
+	stage.scene_file_path = floors["B1"]
+	root.add_child(stage)
+	current_scene = stage
+	check(dm._is_current_scene(floors["B1"]) and not dm._is_current_scene(floors["B4"]), "Elevator should know which floor it is on")
+	current_scene = null
+	stage.free()
+	print("Elevator: B1 -> Stage_02, B4 -> Stage_01, current floor stays")
 
 # 몹·박스·상자·문 persist_id: 빈 칸 배정, 중복 시 뒤쪽 재발급, 기존 값 유지, 씬 루트 제외
 func check_persist_ids() -> void:

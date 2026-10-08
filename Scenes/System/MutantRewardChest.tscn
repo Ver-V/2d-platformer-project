@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://6oty7bk6i7q0" path="res://Scenes/System/Chest.tscn" id="1_chest"]
+[ext_resource type="Resource" path="res://resources/loot/mutant_chest.tres" id="2_loot"]
+
+[node name="MutantRewardChest" instance=ExtResource("1_chest")]
+loot_table = ExtResource("2_loot")
