@@ -89,6 +89,20 @@
 	  ]
 	}
   ],
+  "locked": [
+	{
+		"name": "Ancient tablet",
+		"text": "A weathered stone tablet floats in mid-air. An inscription is carved onto its surface. \n'If you possess the Gatekeeper's Token, I shall take you wherever you desire.'",
+		"left_image": "HeroBunny_idle",
+		"speaker": "left"
+	},
+	{
+		"name": "Ancient tablet",
+		"text": "Those without permission may not board.",
+		"left_image": "HeroBunny_idle",
+		"speaker": "left"
+	}
+  ],
   "B1": [
 	{
 	  "name": "Pink Bunny",

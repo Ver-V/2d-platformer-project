@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3 uid="uid://bsk7g0n03nub1"]
+
+[ext_resource type="Script" uid="uid://c7ehks8cu082r" path="res://Script/System/cracked_wall.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bisqnigdscqid" path="res://Script/base/combat/hurtbox.gd" id="2_hurtbox"]
+[ext_resource type="Texture2D" uid="uid://cgpum4v6rh8hm" path="res://Assets/sprites/world_tileset.png" id="2_iemuh"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5poch"]
+atlas = ExtResource("2_iemuh")
+region = Rect2(16, 16, 16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bxl5j"]
+size = Vector2(48, 48)
+
+[node name="CrackedWall" type="StaticBody2D"]
+collision_mask = 2
+script = ExtResource("1_script")
+texture = SubResource("AtlasTexture_5poch")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -24)
+shape = SubResource("RectangleShape2D_bxl5j")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 512
+collision_mask = 0
+monitoring = false
+script = ExtResource("2_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -24)
+shape = SubResource("RectangleShape2D_bxl5j")

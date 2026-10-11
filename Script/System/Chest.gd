@@ -3,7 +3,7 @@ class_name Chest
 
 @export var locked: bool = false
 @export var item_key: String = "pink_key"
-@export_file("*.json") var dialogue_file: String = "res://resources/Dialogues/en/chest_key_example.json"
+@export_file("*.json") var dialogue_file: String = "res://resources/Dialogues/en/no_chest_key.json"
 @export var block_without_item: String = "without_item"
 @export var reward_item: ItemData # 지정하면 항상 이 아이템. 비워두면 loot_table에서 랜덤
 @export var loot_table: LootTable = preload("res://resources/loot/default_chest.tres") # 아이템/골드 랜덤 목록. 비우면 reward_gold만
@@ -20,10 +20,16 @@ class_name Chest
 
 var _opened: bool = false
 
+const VANISH_DELAY := 3.0 # 연 뒤 이만큼 있다가
+const VANISH_FADE := 0.5 # 이 시간 동안 흐려지며 사라진다
+
 func _ready() -> void:
 	super()
-	add_to_group("object")
+	add_to_group("minimap_chest")
 	_opened = GameManager.collected_items.has(_save_id())
+	if _opened:
+		queue_free() # 이미 연 상자는 다시 나오지 않는다
+		return
 	_update_visual()
 
 func _save_id() -> String:
@@ -41,12 +47,27 @@ func _update_visual() -> void:
 		tex = locked_texture
 	if tex != null:
 		sprite.texture = tex
-	# 원점 = 상자 바닥 중앙. 그림 크기가 달라도 바닥에 붙게 맞춘다
+	# 원점 = 상자 바닥 중앙. 그림의 투명 여백은 빼고 실제로 그려진 맨 아래 픽셀을 바닥에 붙인다
 	if sprite.texture != null:
 		sprite.centered = true
-		sprite.offset = Vector2(0, -sprite.texture.get_size().y * 0.5)
+		sprite.offset = Vector2(0, -(visible_bottom(sprite.texture) - sprite.texture.get_size().y * 0.5))
 	if _opened:
 		set_deferred("monitoring", false)
+
+# 그림에서 투명하지 않은 맨 아래 줄 바로 아래 y (텍스처 픽셀 기준). 그림마다 한 번만 계산
+static var _bottom_cache := {}
+static func visible_bottom(tex: Texture2D) -> float:
+	if not _bottom_cache.has(tex):
+		var bottom := tex.get_size().y
+		var img := tex.get_image()
+		if img != null and not img.is_empty():
+			if img.is_compressed():
+				img.decompress()
+			var used := img.get_used_rect()
+			if used.size.y > 0:
+				bottom = used.end.y
+		_bottom_cache[tex] = bottom
+	return _bottom_cache[tex]
 
 # 지정 아이템이 있으면 그것, 없으면 랜덤 목록에서 한 줄(아이템 또는 골드)을 뽑는다.
 # rng를 주면 그걸로 뽑는다 (세이브 시드로 결과 고정). 아무것도 없으면 빈 LootEntry.
@@ -83,8 +104,19 @@ func _on_interact() -> void:
 	var gold := reward_gold + reward.roll_gold(rng)
 	if gold > 0:
 		GameManager.update_gold(gold)
+	# 획득 목록(HUD 왼쪽 위): 골드, 아이템 순으로 한 묶음
+	HUD.log_pickup_gold(gold)
+	HUD.log_pickup_item(reward.item)
 	_opened = true
 	GameManager.add_collected_item(_save_id())
 	_hide_prompt()
 	_update_visual()
 	open_sound.play()
+	_vanish_after_open()
+
+# 연 상자는 잠시 열린 모습을 보여준 뒤 흐려지며 사라진다 (열림 기록은 세이브에 남아 다시 나오지 않음)
+func _vanish_after_open() -> void:
+	await Wait.seconds(self, VANISH_DELAY)
+	var tween := create_tween()
+	tween.tween_property(self, "modulate:a", 0.0, VANISH_FADE)
+	tween.tween_callback(queue_free)

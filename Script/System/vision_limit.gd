@@ -20,8 +20,12 @@ var _rect: ColorRect
 var _material: ShaderMaterial
 var _shown_radius: float = -1.0 # 실제로 그리는 반지름. 목표값(get_radius)을 부드럽게 따라간다
 var _bonus_tiles: float = 0.0 # 갖고 있는 아이템의 시야 보너스 (인벤토리가 바뀔 때만 다시 계산)
+var _eye: Vector2 = Vector2.ZERO # 빛의 중심 (플레이어 몸 중앙)
+
+const GROUP := &"vision_limit"
 
 func _ready() -> void:
+	add_to_group(GROUP)
 	# Inventory를 이름으로 직접 쓰지 않는다 — 테스트 스크립트가 autoload보다 먼저 이 클래스를 컴파일함
 	var inventory := get_node_or_null("/root/Inventory")
 	if inventory != null:
@@ -51,6 +55,10 @@ func _on_inventory_changed() -> void:
 func get_radius() -> float:
 	return (radius_tiles + _bonus_tiles) * tile_size
 
+# 이 위치가 빛 안에 있는가 (지금 그려지는 반지름 기준). 어둠 위에 그리는 몹 체력바가 빛 밖에서는 숨는 데 쓴다
+func is_lit(world_pos: Vector2) -> bool:
+	return world_pos.distance_to(_eye) <= _shown_radius
+
 func _update() -> void:
 	if not is_instance_valid(target):
 		target = get_tree().get_first_node_in_group("player") as Node2D
@@ -69,6 +77,7 @@ func _update() -> void:
 	_rect.global_position = center - cover * 0.5
 
 	var eye := target.global_position + center_offset if is_instance_valid(target) else center
+	_eye = eye
 	_material.set_shader_parameter("center", eye)
 	_material.set_shader_parameter("radius", _shown_radius)
 	_material.set_shader_parameter("softness", edge_softness)

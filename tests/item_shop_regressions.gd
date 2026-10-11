@@ -28,9 +28,17 @@ func run_checks() -> void:
 	await check_merchant_without_dialogue(manager)
 	await check_interact_key_objects(manager)
 	await check_chest_rewards(manager)
+	await check_chest_ground_and_vanish(manager)
+	await check_pickup_log(manager)
+	await check_equipment(manager, saver)
+	check_gatekeepers_token(manager)
 	await check_inventory_item_info(manager)
 	await check_item_animation(manager)
 	await check_door_lock(manager)
+	await check_minimap_markers(manager)
+	check_chest_key_dialogue()
+	await check_heavy_attack_drug(manager)
+	check_world_map(manager)
 	await check_shortcut_door(manager)
 	await check_resume_on_quit(manager, saver)
 	await check_door_prompt_on_hud(manager)
@@ -552,9 +560,9 @@ func check_inventory_item_info(manager) -> void:
 	root.add_child(ui)
 	await process_frame
 	ui.open()
-	check(ui.info_name_label.text == "" and ui.info_desc_label.text == "", "Inventory info should start empty")
+	check(ui.info_name_label.text == "" and ui.info_desc_label.get_parsed_text() == "", "Inventory info should start empty")
 	ui._on_slot_mouse_entered(0)
-	check(ui.info_name_label.text == TranslationServer.translate(potion.name) and ui.info_desc_label.text == TranslationServer.translate(potion.description),
+	check(ui.info_name_label.text == TranslationServer.translate(potion.name) and ui.info_desc_label.get_parsed_text() == TranslationServer.translate(potion.description),
 		"Hovering an item should show its name and description")
 	ui._on_slot_clicked(1)
 	ui._on_slot_mouse_exited(0)
@@ -565,6 +573,22 @@ func check_inventory_item_info(manager) -> void:
 	ui._on_slot_mouse_exited(5)
 	check(ui.info_name_label.text == "", "Closing the action menu with nothing hovered should clear the info")
 	check(ui.grid.get_child(0).tooltip_text == "", "Slots should no longer use the default tooltip")
+	# 장착 아이템은 이름 아래에 장착 효과를 한 줄씩, 그다음 설명
+	var token = db().get_item_by_id("gatekeepers_token")
+	inv().add_item(token)
+	ui.hovered_equip = [1, 0]
+	ui._update_item_info()
+	var expected := "
+".join([TranslationServer.translate(&"ITEM_EFFECT_ATTACK").format({"value": "+ 5"}),
+		TranslationServer.translate(&"ITEM_EFFECT_ATTACK_SPEED").format({"value": "+ 10"}), TranslationServer.translate(token.description)])
+	check(ui.info_desc_label.get_parsed_text() == expected, "Equipment info should list its effects under the name, then the description")
+	check(ui.info_desc_label.text.begins_with("[color=#%s]" % ui.EFFECT_BUFF_COLOR.to_html(false)), "Stat increases should be shown in the buff color")
+	var cursed = token.duplicate()
+	cursed.attack_damage = -3
+	check(not cursed.effect_lines()[0]["buff"] and cursed.effect_lines()[0]["text"] == TranslationServer.translate(&"ITEM_EFFECT_ATTACK").format({"value": "- 3"}),
+		"Stat decreases should be marked as debuffs")
+	check(potion.effect_lines().is_empty(), "Items without equip effects should show no effect lines")
+	ui.hovered_equip = [-1, -1]
 	ui.close()
 	ui.queue_free()
 	await process_frame
@@ -603,12 +627,18 @@ func check_item_animation(manager) -> void:
 	key_slot._process(0.15)
 	check(key_slot.icon.texture != frame_before, "Inventory slot should advance the item animation")
 	check(key_slot.icon.offset_top != top_before, "Inventory slot icon should bob")
-	check(not potion_slot.is_processing() and potion_slot.icon.texture == potion.icon, "Slot without animation should keep the icon still")
+	check(not potion_slot.is_processing() and potion_slot.icon.texture == potion_slot._trimmed(potion, potion.icon), "Slot without animation should keep the icon still")
+	var pink = db().get_item_by_id("pink_key")
+	var used: Rect2i = pink.icon.get_image().get_used_rect()
+	var shown: Texture2D = potion_slot._trimmed(pink, pink.icon)
+	check(Vector2i(shown.get_size()) == used.size, "Slot icon should be trimmed to the drawn pixels so it sits centered")
+	check(key_slot.icon.texture.get_size() == key_slot._trimmed(key, key.get_frame_at(0.0)).get_size(), "Animated icons should be trimmed to one shared area")
+	check(key_slot.get_node("AmountLabel").visible == false, "Keys should not show their remaining uses")
 	ui.close()
 	ui.queue_free()
 	await process_frame
 	manager.reset_data()
-	print("Item animation: field and inventory play anim_frames, others keep the icon")
+	print("Item animation: field and inventory play anim_frames, others keep the icon; icons trimmed, no key counts")
 
 # HUD는 2배 스케일 CanvasLayer — 보스 체력바가 실제 화면(1280x720) 가운데 위에 와야 한다
 func check_boss_bar_centered() -> void:
@@ -819,7 +849,10 @@ func check_merchant_without_dialogue(manager) -> void:
 	merchant.location_name = "Stage2"
 	root.add_child(merchant)
 	merchant.player_in_range = true
-	check(not dialogue.has_dialogue_file("res://resources/Dialogues/en/merchant_Stage2_0.json"), "This check assumes the Stage2 merchant has no dialogue yet")
+	# 대사 파일이 없는 대화 차례(merchant_Stage2_98/99.json 없음)로 맞춰서, 대사 없이 바로 상점이 열리는지 본다
+	manager.npc_talk_counts["Stage2"] = 99
+	check(not dialogue.has_dialogue_file("res://resources/Dialogues/en/merchant_Stage2_99.json") and not dialogue.has_dialogue_file("res://resources/Dialogues/en/merchant_Stage2_98.json"),
+		"This check needs a talk count with no merchant dialogue file")
 	merchant._on_interact()
 	await process_frame
 	check(shop.is_open and shop.current_shop_id == "Stage2", "A merchant without dialogue should open its shop directly")
@@ -830,6 +863,236 @@ func check_merchant_without_dialogue(manager) -> void:
 	manager.reset_data()
 	print("Merchant without dialogue: opens its shop directly")
 
+# 상자: 그려진 맨 아래 픽셀이 원점(바닥)에 붙고(에디터 기본 그림도 같게), 배치된 상자는 땅 위에 서 있다.
+# 열면 3초 뒤 흐려지며 사라지고, 이미 연 상자는 다시 나오지 않는다
+func check_chest_ground_and_vanish(manager) -> void:
+	manager.reset_data()
+	var chest = load("res://Scenes/System/Chest.tscn").instantiate()
+	var editor_offset: Vector2 = chest.get_node("Sprite2D").offset # _ready 전 = 에디터에서 보이는 값
+	chest.persist_id = "test_vanish_chest"
+	chest.loot_table = null
+	chest.reward_gold = 10
+	root.add_child(chest)
+	var spr: Sprite2D = chest.sprite
+	var drawn_bottom: float = spr.offset.y - spr.texture.get_size().y * 0.5 + chest.visible_bottom(spr.texture)
+	check(is_equal_approx(drawn_bottom, 0.0), "Chest art's last drawn row should sit on the origin (got %s)" % drawn_bottom)
+	check(spr.offset.is_equal_approx(editor_offset), "Chest scene's default art should match the in-game alignment (editor = game)")
+	for path in ["res://Scenes/Stage/Stage_01.tscn", "res://Scenes/Stage/Stage_02.tscn"]:
+		var stage: Node = load(path).instantiate()
+		var world: TileMapLayer = stage.get_node("World")
+		for n in stage.get_node("Item").get_children():
+			if not n.name.begins_with("Chest"):
+				continue
+			var below := world.local_to_map(world.to_local(n.position + Vector2(0, 1)))
+			var above := world.local_to_map(world.to_local(n.position + Vector2(0, -1)))
+			check(world.get_cell_source_id(below) != -1 and world.get_cell_source_id(above) == -1,
+				"%s %s should stand exactly on the ground" % [path.get_file(), n.name])
+		stage.free()
+
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	chest._on_body_entered(player)
+	chest._on_interact()
+	check(chest._opened, "Chest should open")
+	var vanish_delay: float = chest.VANISH_DELAY
+	await create_timer(vanish_delay - 0.5).timeout
+	check(is_instance_valid(chest), "Opened chest should stay a moment")
+	await create_timer(1.2).timeout
+	check(not is_instance_valid(chest), "Opened chest should vanish about 3 seconds after opening")
+	var again = load("res://Scenes/System/Chest.tscn").instantiate()
+	again.persist_id = "test_vanish_chest"
+	root.add_child(again)
+	await process_frame
+	check(not is_instance_valid(again), "An already opened chest should not appear again")
+	player.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Chest: drawn bottom on the ground, editor = game, vanishes 3s after opening, opened ones gone on reload")
+
+# 상자에서 얻은 것은 HUD 왼쪽 위 획득 목록에 한 묶음(줄마다 하나)으로 뜨고, pickup_lifetime 뒤 사라진다
+func check_pickup_log(manager) -> void:
+	manager.reset_data()
+	var stage = load("res://Scenes/Stage/Stage_03.tscn").instantiate()
+	root.add_child(stage)
+	current_scene = stage
+	var hud = root.get_node("HUD")
+	var old_lifetime: float = hud.pickup_lifetime
+	hud.pickup_lifetime = 0.4
+	for g in hud.pickup_log.get_children(): # 앞선 검사에서 연 상자들의 목록
+		hud.pickup_log.remove_child(g)
+		g.queue_free()
+	var potion = db().get_item_by_id("health_potion")
+	var chest = load("res://Scenes/System/Chest.tscn").instantiate()
+	chest.persist_id = "test_pickup_chest"
+	chest.loot_table = null
+	chest.reward_gold = 150
+	chest.reward_item = potion
+	stage.get_node("Entities").add_child(chest)
+	chest._on_body_entered(stage.player)
+	chest._on_interact()
+	await process_frame
+	check(hud.pickup_log.get_child_count() == 1, "One chest should add one pickup group")
+	var labels: Array = hud.pickup_log.get_child(0).find_children("*", "Label", true, false)
+	var texts := labels.map(func(l): return l.text)
+	var expected := [TranslationServer.translate(&"PICKUP_GOLD") % 150, TranslationServer.translate(&"PICKUP_ITEM") % TranslationServer.translate(potion.name)]
+	check(texts == expected, "Pickup lines should be gold then item, one per line: %s" % str(texts))
+	check(hud.visible, "HUD should show while pickups are listed")
+	hud.show_pickups(["a"])
+	await process_frame
+	check(hud.pickup_log.get_child_count() == 2, "Later pickups should stack below")
+	await create_timer(1.3).timeout
+	check(hud.pickup_log.get_child_count() == 0, "Pickup lines should disappear after their lifetime")
+
+	# 연달아 줍는 골드(코인 여러 개)는 한 줄로 합쳐진다
+	hud.pickup_lifetime = 5.0
+	hud.log_pickup_gold(10)
+	await create_timer(0.4).timeout # 묶음 시간은 지났지만 골드 합치는 시간 안
+	hud.log_pickup_gold(100)
+	await process_frame
+	var gold_lines: Array = hud.pickup_log.find_children("*", "Label", true, false)
+	check(gold_lines.size() == 1 and gold_lines[0].text == TranslationServer.translate(&"PICKUP_GOLD") % 110,
+		"Gold picked up in a row should merge into one line: %s" % str(gold_lines.map(func(l): return l.text)))
+
+	# 필드 아이템·필드 골드·코인도 획득 목록에 뜬다
+	for g in hud.pickup_log.get_children():
+		hud.pickup_log.remove_child(g)
+		g.queue_free()
+	hud._pickup_gold_label = null
+	var field = load("res://Scenes/Item/field_item.tscn").instantiate()
+	field.id = "test:pickup_field"
+	field.item_resource = potion
+	stage.get_node("Entities").add_child(field)
+	field._on_body_entered(stage.player)
+	var coin = load("res://Scenes/Item/Coin.tscn").instantiate()
+	stage.get_node("Entities").add_child(coin)
+	coin.setup(100)
+	await process_frame
+	coin._on_body_entered(stage.player)
+	await process_frame
+	var texts2: Array = hud.pickup_log.find_children("*", "Label", true, false).map(func(l): return l.text)
+	check(texts2.has(TranslationServer.translate(&"PICKUP_ITEM") % TranslationServer.translate(potion.name)), "Field items should show in the pickup log: %s" % str(texts2))
+	check(texts2.has(TranslationServer.translate(&"PICKUP_GOLD") % 100), "Coins should show in the pickup log: %s" % str(texts2))
+	hud.pickup_lifetime = old_lifetime
+	stage.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Pickup log: chest/field item/coin listed top-left, one group per moment, gold merges, disappears after its time")
+
+# 장비 칸 (보조 4, 보석 2): 장착 아이템은 칸이 비면 바로 장착, 가방과 장비 칸 사이를 오가며, 장착한 것만 효과가 있다
+# 1스테이지 보스 보상 "문지기의 징표": 공격력·공격 속도 보너스, 장착 중에만 엘리베이터 탑승
+func check_gatekeepers_token(manager) -> void:
+	manager.reset_data()
+	var token = db().get_item_by_id("gatekeepers_token")
+	check(token != null and token.equip_slot == 1 and token.attack_damage == 5 and is_equal_approx(token.attack_speed_bonus, 0.1),
+		"Gatekeeper's Token should be an accessory with +5 attack and +10% attack speed")
+	var boss = load("res://Scenes/Entitites/boss_stage_1.tscn").instantiate()
+	check(boss.reward_item == token, "Stage 1 boss should reward the Gatekeeper's Token")
+	boss.free()
+	for locale in ["en", "ko"]:
+		var data = JSON.parse_string(FileAccess.get_file_as_string("res://resources/Dialogues/%s/elevator_block.json" % locale))
+		check(data.has("locked") and data["locked"].size() == 2 and data["locked"][0]["text"] == data["start"][0]["text"],
+			"Elevator locked block should repeat the tablet line, then refuse (%s)" % locale)
+
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	var base_damage: int = player.combat.attack_damage
+	var elevator = load("res://Script/System/elevator_block.gd").new()
+	check(elevator.dialogue_block() == "locked", "Elevator should refuse without the token")
+	inv().add_item(token)
+	check(inv().is_equipped("gatekeepers_token"), "Token should auto-equip into a free accessory slot")
+	check(elevator.dialogue_block() == "start", "Elevator should open the floor choices while the token is equipped")
+	check(player.combat.attack_damage == base_damage + 5 and is_equal_approx(player.combat.attack_speed_mult, 1.1),
+		"Equipped token should add attack and attack speed")
+	player.combat.begin_attack()
+	check(is_equal_approx(player.combat.cooldown_left, player.combat.attack_cooldown / 1.1), "Attack speed should shorten the attack cooldown")
+	player.combat.end_attack()
+	inv().unequip(1, 0)
+	check(inv().has_item("gatekeepers_token") and elevator.dialogue_block() == "locked", "A token only carried in the bag should not open the elevator")
+	check(is_equal_approx(player.combat.attack_speed_mult, 1.0), "Unequipping the token should remove the attack speed bonus")
+	elevator.free()
+	player.queue_free()
+	manager.reset_data()
+
+func check_equipment(manager, saver) -> void:
+	manager.reset_data()
+	var lantern = db().get_item_by_id("lantern")
+	check(lantern.equip_slot == 1, "Lantern should be an accessory")
+	inv().add_item(lantern)
+	check(inv().accessories[0] == lantern and inv().find_item("lantern") == -1 and inv().has_item("lantern"),
+		"Lantern should auto-equip into the first accessory slot (still counts as owned)")
+	check(is_equal_approx(inv().get_vision_bonus_tiles(), lantern.vision_bonus_tiles), "Equipped lantern should widen vision")
+	check(inv().unequip(1, 0) and inv().accessories[0] == null and inv().find_item("lantern") != -1, "Unequip should move it to the bag")
+	check(is_equal_approx(inv().get_vision_bonus_tiles(), 0.0), "A lantern only carried in the bag should not widen vision")
+	check(inv().equip_from_bag(inv().find_item("lantern")) and inv().accessories[0] == lantern, "Equip from bag should put it back")
+	for i in 3:
+		inv().add_item(lantern)
+	inv().add_item(lantern) # 보조 칸 4개가 다 찼으니 가방으로
+	check(inv().accessories.count(lantern) == 4 and inv().find_item("lantern") != -1, "A 5th accessory should go to the bag when slots are full")
+	check(not inv().equip_from_bag(inv().find_item("lantern")), "Equipping with full slots should fail")
+
+	# 보석: 장착 중 공격력·패링 배율 보너스, 타격 상태이상. 플레이어 공격력이 바로 바뀐다
+	var gem = load("res://Script/Item_UI/ItemData.gd").new()
+	gem.id = "test_gem"
+	gem.name = "TEST_GEM"
+	gem.equip_slot = 2
+	gem.attack_damage = 5
+	gem.parrymul = 0.5
+	gem.hit_status = load("res://resources/status_effects/bleed_basic.tres")
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	var base_damage: int = player.combat.attack_damage
+	inv().add_item(gem)
+	check(inv().gems[0] == gem, "Gem should go into a gem slot")
+	check(player.combat.attack_damage == base_damage + 5 and is_equal_approx(player.combat.parry_damage_multiplier, manager.player_parry_damage_multifac + 0.5),
+		"Equipped gem should add attack and parry bonuses right away")
+	check(inv().roll_equipped_hit_statuses().size() == 1, "Equipped gem should add its hit status to sword hits")
+	inv().unequip(2, 0)
+	check(player.combat.attack_damage == base_damage, "Unequipping the gem should remove its bonus")
+	player.queue_free()
+
+	# 저장 / 불러오기 / 옛 세이브(가방에 랜턴) 변환 / 검증
+	manager.reset_data()
+	inv().add_item(lantern)
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data) and data["equipment"]["accessories"][0] == "lantern", "Equipment should be saved")
+	manager.reset_data()
+	manager.load_data_from_save(data)
+	check(inv().accessories[0] == lantern, "Equipment should load back")
+	var legacy := data.duplicate(true)
+	legacy.erase("equipment")
+	legacy["inventory"] = [{"id": "lantern", "key_uses": 1}]
+	manager.reset_data()
+	manager.load_data_from_save(legacy)
+	check(inv().accessories[0] == lantern and inv().find_item("lantern") == -1, "Old saves should auto-equip the lantern from the bag")
+	var bad := data.duplicate(true)
+	bad["equipment"] = {"accessories": [5]}
+	check(not saver._is_valid_game(bad), "Broken equipment data should be rejected")
+
+	# 인벤토리 UI: 장비 칸 6개, 장비 칸을 누르면 "해제", 장착 아이템은 "장착"
+	var ui = load("res://Scenes/System/InventoryUI.tscn").instantiate()
+	root.add_child(ui)
+	await process_frame
+	ui.open()
+	check(ui.accessory_slots.size() == 4 and ui.gem_slots.size() == 2, "Inventory UI should show 4 accessory and 2 gem slots")
+	check(ui.accessory_slots[0].icon.visible, "Equipped lantern should show in the first accessory slot")
+	ui._on_equip_slot_clicked(1, 0)
+	check(ui.btn_use.text == "INVENTORY_UNEQUIP" and ui.action_menu.visible, "Clicking an equipment slot should offer Unequip")
+	ui._on_use_pressed()
+	var bag_index: int = inv().find_item("lantern")
+	check(inv().accessories[0] == null and bag_index != -1, "Unequip button should move the lantern to the bag")
+	ui._on_slot_clicked(bag_index)
+	check(ui.btn_use.text == "INVENTORY_EQUIP", "Equippable bag items should offer Equip")
+	ui._on_use_pressed()
+	check(inv().accessories[0] == lantern, "Equip button should equip it again")
+	ui.close()
+	ui.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Equipment: 4 accessory + 2 gem slots, auto-equip, equip/unequip, bonuses only when equipped, save + old saves, UI buttons")
+
 func _end_dialogue_and_wait(dialogue) -> void:
 	if dialogue.is_dialogue_active:
 		dialogue.end_dialogue()
@@ -838,6 +1101,181 @@ func _end_dialogue_and_wait(dialogue) -> void:
 
 # 잠긴 문: 열쇠 없으면 그 열쇠의 자물쇠 + "맞는 열쇠가 없어" 대사.
 # 열쇠 있으면 자물쇠 + "문을 열겠습니까?" → 예를 골라야 "unlock" 재생 후 열림, 아니오면 그대로.
+# 미니맵: 오브젝트마다 자기 그룹(색)으로 표시된다. 문은 닫힘/열림 색이 다르다
+func check_minimap_markers(manager) -> void:
+	manager.reset_data()
+	var minimap = load("res://Script/Item_UI/minimap_ui.gd")
+	var expected := {
+		"res://Scenes/System/Chest.tscn": "minimap_chest",
+		"res://Scenes/System/KeyDoor.tscn": "minimap_door",
+		"res://Scenes/System/ShortcutDoor.tscn": "minimap_door",
+		"res://Scenes/System/SavePoint.tscn": "minimap_save",
+	}
+	for path in expected:
+		var node = load(path).instantiate()
+		root.add_child(node)
+		await process_frame
+		check(node.is_in_group(expected[path]) and not node.is_in_group("object"), "%s should be on the minimap as %s" % [path.get_file(), expected[path]])
+		if node.has_method("is_open"):
+			check(minimap.marker_color(node, Color.BLACK) == minimap.COLOR_DOOR_CLOSED, "Closed door should use the closed-door color")
+			node._opened = true
+			check(minimap.marker_color(node, Color.BLACK) == minimap.COLOR_DOOR_OPEN, "Opened door should use the open-door color")
+		node.queue_free()
+		await process_frame
+	var elevator = load("res://Script/System/elevator_block.gd").new()
+	root.add_child(elevator)
+	check(elevator.is_in_group("minimap_elevator"), "Elevator should be on the minimap")
+	elevator.queue_free()
+	var box = load("res://Scenes/System/BreakableBox.tscn").instantiate()
+	root.add_child(box)
+	await process_frame
+	check(not box.is_in_group("minimap_box") and not box.is_in_group("object"), "Breakable boxes should not show on the minimap")
+	box.queue_free()
+	var colors := [minimap.COLOR_PLAYER, minimap.COLOR_ENEMY, minimap.COLOR_BOSS, minimap.COLOR_NPC, minimap.COLOR_SAVE, minimap.COLOR_ELEVATOR,
+		minimap.COLOR_CHEST, minimap.COLOR_DOOR_CLOSED, minimap.COLOR_DOOR_OPEN]
+	# 범례: 지도에 나오는 기호마다 한 줄, en/ko 번역이 있다
+	check(minimap.LEGEND.size() == colors.size() and minimap.LEGEND.all(func(row): return colors.has(row[1])), "Legend should list every minimap marker")
+	for locale in ["en", "ko"]:
+		settings().set_locale(locale)
+		for row in minimap.LEGEND:
+			check(TranslationServer.translate(row[0]) != String(row[0]), "Legend label %s missing in %s" % [row[0], locale])
+	var unique := {}
+	for c in colors:
+		unique[c] = true
+	check(unique.size() == colors.size(), "Every minimap marker kind should have its own color")
+	# 오브젝트는 플레이어가 5칸 안으로 가 본 것만 기록되고, 기록은 세이브에 남는다
+	manager.reset_data()
+	var chest = load("res://Scenes/System/Chest.tscn").instantiate()
+	chest.persist_id = "C-minimaptest"
+	root.add_child(chest)
+	chest.global_position = Vector2(1000, 0)
+	await process_frame
+	var map_ui = minimap.new()
+	map_ui.set_process(false) # 진짜 현재 씬으로 경로를 바꾸지 않게
+	root.add_child(map_ui)
+	map_ui.current_scene_path = "res://test_scene.tscn"
+	var key: String = minimap.map_object_key(root, chest)
+	map_ui._record_nearby_objects(root, Vector2(1000 + minimap.REVEAL_RADIUS_TILES * minimap.TILE_SIZE + 8.0, 0))
+	check(not manager.has_seen_map_object("res://test_scene.tscn", key), "A chest farther than 5 tiles should not be recorded")
+	map_ui._record_nearby_objects(root, Vector2(1000 + minimap.REVEAL_RADIUS_TILES * minimap.TILE_SIZE - 8.0, 0))
+	check(key == "id:C-minimaptest" and manager.has_seen_map_object("res://test_scene.tscn", key), "A chest within 5 tiles should be recorded")
+	var saver = root.get_node("SaveManager")
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data), "Save with seen map objects should validate")
+	manager.reset_data()
+	check(not manager.has_seen_map_object("res://test_scene.tscn", key), "New game should forget seen map objects")
+	manager.load_data_from_save(data)
+	check(manager.has_seen_map_object("res://test_scene.tscn", key), "Seen map objects should load back")
+	var bad := data.duplicate(true)
+	bad["seen_map_objects"] = {"res://test_scene.tscn": [3]}
+	check(not saver._is_valid_game(bad), "Invalid seen map objects should fail validation")
+	# 지형도 플레이어 주변 5칸만 기록 (맵 타일 한 칸당 1비트), 세이브에 남고 옛 세이브는 다녀간 방 전체를 본 걸로
+	manager.reset_data()
+	map_ui.fog_enabled = true
+	map_ui.fog_size = Vector2i(80, 45)
+	map_ui.room_size = Vector2(640, 360)
+	map_ui.grid_origin = Vector2.ZERO
+	var r: float = minimap.REVEAL_RADIUS_TILES
+	map_ui._reveal_terrain_around(Vector2(320, 180)) # 칸 (20, 11)
+	var fog: Dictionary = map_ui.current_fog()
+	check(manager.is_tile_seen(fog, Vector2i(20, 11)) and manager.is_tile_seen(fog, Vector2i(20 + int(r), 11)) and manager.is_tile_seen(fog, Vector2i(20, 11 - int(r))),
+		"Terrain within 5 tiles of the player should be recorded")
+	check(not manager.is_tile_seen(fog, Vector2i(20 + int(r) + 1, 11)) and not manager.is_tile_seen(fog, Vector2i(20 + int(r), 11 + int(r))),
+		"Terrain beyond 5 tiles (or outside the circle) should stay hidden")
+	data = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data) and data.has("seen_tiles"), "Save should include the terrain record")
+	manager.reset_data()
+	manager.load_data_from_save(data)
+	fog = map_ui.current_fog()
+	check(manager.is_tile_seen(fog, Vector2i(20, 11)) and not manager.is_tile_seen(fog, Vector2i(40, 11)), "Terrain record should load back")
+	var legacy := data.duplicate(true)
+	legacy.erase("seen_tiles")
+	legacy["visited_rooms_by_scene"] = {"res://test_scene.tscn": [{"x": 1, "y": 0}]}
+	manager.reset_data()
+	manager.load_data_from_save(legacy)
+	fog = map_ui.current_fog()
+	check(manager.is_tile_seen(fog, Vector2i(40, 0)) and manager.is_tile_seen(fog, Vector2i(79, 21)) and not manager.is_tile_seen(fog, Vector2i(39, 0)),
+		"Old saves without a terrain record should show their visited rooms whole")
+	bad = data.duplicate(true)
+	bad["seen_tiles"] = {"res://test_scene.tscn": {"w": 0, "h": 1, "bits": ""}}
+	check(not saver._is_valid_game(bad), "Invalid terrain record should fail validation")
+	map_ui.queue_free()
+	chest.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Minimap: chest/door/save/elevator markers + legend, no boxes with distinct colors; door color follows open state; objects and terrain recorded only within 5 tiles")
+
+# 잠긴 상자의 기본 "열쇠 없음" 대사 파일 (en/ko 모두 블록이 있어야 한다)
+func check_chest_key_dialogue() -> void:
+	var chest = load("res://Scenes/System/Chest.tscn").instantiate()
+	for locale in ["en", "ko"]:
+		var path := "res://resources/Dialogues/%s/%s" % [locale, chest.dialogue_file.get_file()]
+		var data = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+		check(data is Dictionary and data.has(chest.block_without_item), "Chest no-key dialogue missing in %s (%s)" % [locale, path])
+	chest.free()
+
+# 수상한 과학자의 약물: 마시면 강공격 해금(안내 팝업 한 번), 세이브에 남는다
+func check_heavy_attack_drug(manager) -> void:
+	manager.reset_data()
+	var saver = root.get_node("SaveManager")
+	var popup = root.get_node("TutorialPopup")
+	var drug = db().get_item_by_id("suspicious_drug")
+	check(drug != null and drug.type == 1 and drug.unlocks_heavy_attack, "Suspicious Scientist's Drug should be a consumable that unlocks the heavy attack")
+	check(not manager.heavy_attack_unlocked, "Heavy attack should start locked")
+	drug.use(null)
+	await process_frame
+	check(manager.heavy_attack_unlocked and popup.visible, "Drinking the drug should unlock the heavy attack and explain it")
+	popup.hide_popup()
+	await process_frame
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data) and data["heavy_attack"] == true, "Heavy attack unlock should be saved")
+	manager.reset_data()
+	check(not manager.heavy_attack_unlocked, "New game should lock the heavy attack again")
+	manager.load_data_from_save(data)
+	check(manager.heavy_attack_unlocked, "Heavy attack unlock should load back")
+	var bad := data.duplicate(true)
+	bad["heavy_attack"] = "yes"
+	check(not saver._is_valid_game(bad), "Invalid heavy attack flag should fail validation")
+	manager.reset_data()
+
+# 전체 지도: 층 정보는 씬 파일에서 읽고, 다녀간 층만 그린다. 엘리베이터가 모든 층에서 같은 세로 축에 오고,
+# 층 사이에는 통로선이 지나갈 빈 공간이 있다. 튜토리얼은 지도에 없다. 쉼표 키로 연다
+func check_world_map(manager) -> void:
+	manager.reset_data()
+	var world_map = root.get_node("WorldMap")
+	var b1: Dictionary = world_map.read_floor_info("res://Scenes/Stage/Stage_02.tscn")
+	var b4: Dictionary = world_map.read_floor_info("res://Scenes/Stage/Stage_01.tscn")
+	check(b1["elevator"] is Vector2 and b4["elevator"] is Vector2, "Both floors should have their elevator found from the scene file")
+	check(b1["title_key"] == &"STAGE_02_TITLE" and b1["grid_size"] is Vector2i and b1["room_size"] is Vector2, "Floor info should read the stage title and room grid")
+	check(b1["markers"].any(func(m): return m["kind"] == "npc" and m["key"] == "path:Entities/MerchantNPC"), "Stage 2 merchant should be a world-map marker with the minimap's object key")
+	var floor_scenes: Array = world_map.FLOORS.map(func(row): return row[1])
+	var floor_labels: Array = world_map.FLOORS.map(func(row): return row[0])
+	check(floor_labels.size() == 13 and floor_labels[0] == &"WORLD_MAP_FLOOR_GROUND" and floor_labels[12] == &"WORLD_MAP_FLOOR_B12",
+		"Floors should go from the ground floor down to B12")
+	check(floor_scenes[1] == "res://Scenes/Stage/Stage_02.tscn" and floor_scenes[4] == "res://Scenes/Stage/Stage_01.tscn" and floor_scenes[8] == "res://Scenes/Stage/Stage_03.tscn"
+		and not floor_scenes.has("res://Scenes/Stage/Stage_tutorial.tscn"), "B1 = Stage 2, B4 = Stage 1, B8 = Stage 3, and no tutorial")
+	check(world_map.map_floors().all(func(f): return not f["known"]), "Every floor should be ??? before visiting any")
+	manager.visit_room("res://Scenes/Stage/Stage_02.tscn", Vector2i(0, 0))
+	manager.visit_room("res://Scenes/Stage/Stage_01.tscn", Vector2i(0, 0))
+	manager.visit_room("res://Scenes/Stage/Stage_tutorial.tscn", Vector2i(0, 0))
+	var floors: Array = world_map.layout_floors(world_map.map_floors(), 500.0, 0.0)
+	var known: Array = floors.filter(func(f): return f["known"])
+	check(floors.size() == 13 and known.size() == 2, "All 13 floors should be listed, only visited ones filled in (%d known)" % known.size())
+	for f in floors:
+		if f["known"]:
+			var map_pos: Vector2 = f["offset"] + (f["info"]["elevator"] - f["info"]["grid_origin"]) * world_map.MAP_SCALE
+			check(is_equal_approx(map_pos.x, 500.0), "Each floor's elevator should sit on the shared axis (x=%.1f)" % map_pos.x)
+		else:
+			check(is_equal_approx(f["rect"].get_center().x, 500.0), "Unknown floors should sit centered on the axis")
+	for i in floors.size() - 1:
+		check(floors[i + 1]["rect"].position.y - floors[i]["rect"].end.y >= world_map.FLOOR_GAP - 0.01, "Floors should leave a gap for the elevator shaft")
+	check(InputMap.has_action("world_map") and InputMap.action_get_events("world_map").any(func(e): return e is InputEventKey and e.physical_keycode == KEY_COMMA),
+		"World map should open with the comma key")
+	for locale in ["en", "ko"]:
+		settings().set_locale(locale)
+		check(TranslationServer.translate(&"TUTORIAL_INVENTORY").contains("[,]"), "Tutorial should mention the [,] map key (%s)" % locale)
+	manager.reset_data()
+
 func check_door_lock(manager) -> void:
 	manager.reset_data()
 	var dialogue = root.get_node("DialogueManager")

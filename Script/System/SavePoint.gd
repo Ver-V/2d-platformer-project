@@ -9,6 +9,7 @@ var can_save: bool = true   # 쿨타임
 func _ready() -> void:
 	interact_msg = "save_mode"
 	super()
+	add_to_group("minimap_save")
 	if sprite: sprite.play("default")
 
 # 메뉴·대화 중 확인은 Interactable이 한다. 사망 화면의 재시작 입력(R)과 겹치지 않도록 막는다.

@@ -38,8 +38,6 @@ var _generation: int = 0 # 크기를 바꾸면 진행 중이던 무너짐/재생
 
 func _ready() -> void:
 	set_process(false) # 흔들릴 때만 켠다
-	if not Engine.is_editor_hint():
-		add_to_group("object")
 	_rebuild()
 
 # 칸 수에 맞게 충돌·감지 영역·상태를 다시 만든다. 모든 칸은 멀쩡한 상태로 돌아간다.

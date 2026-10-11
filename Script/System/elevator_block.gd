@@ -3,11 +3,15 @@ extends Area2D
 @export_file("*.json") var dialogue_file: String = ""
 @export var bounce_height: float = 10.0
 @export var bounce_speed: float = 0.2
+# 이 아이템을 "장착"하고 있어야 층 선택지가 나온다. 없으면 locked_block (석판 글귀 뒤에 탑승 거부)을 띄운다. 비우면 항상 탑승 가능
+@export var required_item_id: String = "gatekeepers_token"
+@export var locked_block: String = "locked"
 
 var is_active: bool = true
 var original_pos: Vector2
 
 func _ready() -> void:
+	add_to_group("minimap_elevator")
 	original_pos = position
 	body_entered.connect(_on_body_entered)
 
@@ -30,6 +34,11 @@ func _on_body_entered(body: Node) -> void:
 			if p.velocity.y < 50.0: # 떨어지는 중만 아니면 됨
 				_hit_block()
 
+func dialogue_block() -> String:
+	if required_item_id.is_empty() or Inventory.is_equipped(required_item_id):
+		return "start"
+	return locked_block
+
 func _hit_block() -> void:
 	DebugLog.info("ElevatorBlock 작동!")
 	# 블록 튕김 연출
@@ -39,7 +48,7 @@ func _hit_block() -> void:
 	tween.tween_property(self, "position:y", original_pos.y, bounce_speed / 2).set_trans(Tween.TRANS_SINE)
 	
 	if dialogue_file != "":
-		DialogueManager.start_dialogue(dialogue_file)
+		DialogueManager.start_dialogue(dialogue_file, dialogue_block())
 	
 	# 필요하다면 일정 시간 쿨다운
 	is_active = false

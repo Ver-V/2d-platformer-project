@@ -135,6 +135,7 @@ func _on_body_entered(body):
 		
 		# 골드 업데이트
 		GameManager.update_gold(gold_amount)
+		HUD.log_pickup_gold(gold_amount)
 		
 		# 필드 기록
 		if is_field_coin and id != "":

@@ -8,12 +8,14 @@ class_name PlayerGuard
 @export_range(0.0, 1.0) var move_speed_ratio: float = 0.2 # 가드 중 이동속도 배율
 
 const PERFECT_GUARD_WINDOW: float = 0.2 # 퍼펙트 가드 판정 시간
+const PERFECT_GUARD_INVULN: float = 0.1  # 퍼펙트 가드 뒤 무적 (길면 뒤따르는 연발 투사체까지 공짜로 흡수한다)
 const CHIP_DAMAGE_MAX: int = 5          # 일반 가드로 막은 투사체가 주는 최대 피해
-const COOLDOWN_TIME: float = 1.5        # 가드 재사용 대기 시간
+const COOLDOWN_TIME: float = 1.0        # 가드 재사용 대기 시간 (퍼펙트 가드에 성공한 가드는 대기 없음)
 
 var is_guarding: bool = false
 var guard_timer: float = 0.0     # 가드를 시작한 뒤 지난 시간 (퍼펙트 가드 판정)
 var cooldown_timer: float = 0.0
+var perfect_guarded: bool = false # 이번 가드에서 퍼펙트 가드에 성공했는가
 
 var player: Player
 var guard_area: Area2D
@@ -32,13 +34,14 @@ func can_start() -> bool:
 func begin() -> void:
 	is_guarding = true
 	guard_timer = 0.0
+	perfect_guarded = false
 	player.sfx_player.play_guard()
 	guard_shape.set_deferred("disabled", false)
 
 func end() -> void:
 	is_guarding = false
 	guard_shape.set_deferred("disabled", true)
-	cooldown_timer = COOLDOWN_TIME
+	cooldown_timer = 0.0 if perfect_guarded else COOLDOWN_TIME
 
 # 매 프레임 (가드 중이 아니어도) — 재사용 대기시간
 func tick(delta: float) -> void:
@@ -77,12 +80,13 @@ func block(hit: HitData) -> HitData.Result:
 	return HitData.Result.GUARDED if chip_result == HitData.Result.HIT else chip_result
 
 func _perfect_guard() -> void:
+	perfect_guarded = true
 	player.show_popup(tr(&"COMBAT_PERFECT_GUARD"), Color.CYAN)
 	GameManager.apply_hitstop(0.15, 0.1)
 	player.sfx_player.play_perfect_guard()
 	player.shake_camera(3.0)
 	player.combat.grant_counter_bonus()
-	player.start_invuln(0.2)
+	player.start_invuln(PERFECT_GUARD_INVULN)
 
 # 가드 판정 영역에 앞쪽에서 투사체가 들어오면, 몸에 닿기 전에 막는다
 func _on_guard_area_entered(area: Area2D) -> void:

@@ -1,0 +1,58 @@
+[
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_surprise",
+		"right_image": "LittleBunny_idle",
+		"name": "Pink Bunny",
+		"text": "Whoa! You startled me."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_surprise",
+		"right_image": "LittleBunny_smile",
+		"name": "Little Bunny",
+		"text": "Sis! We meet again. What brings you all the way to the rats' territory?"
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_smile",
+		"name": "Pink Bunny",
+		"text": "Um... it just sort of happened. There was nowhere else for me to go."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_smile",
+		"name": "Little Bunny",
+		"text": "Really? What a coincidence!"
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_embarrassed",
+		"right_image": "LittleBunny_smile",
+		"name": "Pink Bunny",
+		"text": "Hmm. I guess so. Anyway, it's so dark down here that it seems dangerous. Are you okay?"
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_embarrassed",
+		"right_image": "LittleBunny_smile",
+		"name": "Little Bunny",
+		"text": "Ahaha. Sis! How can you walk around a place this dark without a lantern? I'll sell you one cheap. Take one!"
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_tired",
+		"right_image": "LittleBunny_smile",
+		"name": "Pink Bunny",
+		"text": "Ugh, fine. Can't you just give it to me for free?"
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_tired",
+		"right_image": "LittleBunny_smile",
+		"name": "Little Bunny",
+		"text": "Sis, I've got to make a living too!"
+	}
+]

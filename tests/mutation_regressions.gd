@@ -25,10 +25,10 @@ func run_checks() -> void:
 	await check_kind_effects(stage)
 	await check_bleed_and_poison_hits(stage)
 	await check_split(stage)
-	await check_reward_chest(stage)
+	var chest_id: String = await check_reward_chest(stage)
 	stage.queue_free()
 	await process_frame
-	await check_chest_restored_on_reload()
+	await check_chest_restored_on_reload(chest_id)
 	check_save_format()
 	gm().reset_data()
 	print("Mutation regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
@@ -199,7 +199,7 @@ func _chest_mob_id() -> String:
 			return id
 	return ""
 
-func check_reward_chest(stage) -> void:
+func check_reward_chest(stage) -> String:
 	var hits := 0
 	for i in 4000:
 		if MobMutation.rolls_chest(gm().make_loot_rng(MobMutation.chest_key("M-rate%d" % i, 0))):
@@ -222,10 +222,12 @@ func check_reward_chest(stage) -> void:
 	check(gm().mutant_chests.get(stage.scene_file_path, {}).has(chest_id), "Reward chest should be remembered until the next reroll")
 	await create_timer(0.3).timeout
 	print("Reward chest: ~5%, dropped on the ground, remembered")
+	return chest_id
 
-func check_chest_restored_on_reload() -> void:
+# 앞선 검사에서 잡은 다른 변이체도 시드에 따라 상자를 떨어뜨릴 수 있으므로, 보상 상자 검사에서 떨어진 그 상자만 센다
+func check_chest_restored_on_reload(chest_id: String) -> void:
 	var stage = await open_stage()
-	var restored: Array = stage.get_node("Entities").get_children().filter(func(n): return _is_chest(n) and str(n.persist_id).begins_with("mutant:"))
+	var restored: Array = stage.get_node("Entities").get_children().filter(func(n): return _is_chest(n) and str(n.persist_id) == chest_id)
 	check(restored.size() == 1, "Reopening the scene should bring back the unopened reward chest")
 	stage.queue_free()
 	await process_frame

@@ -1,0 +1,50 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Entitites/rat.tscn" id="1_rat"]
+[ext_resource type="Shader" path="res://resources/Shaders/enemy_tint.gdshader" id="2_tint"]
+[ext_resource type="Texture2D" path="res://Assets/sprites/whiteeye.png" id="9_eyetex"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tint"]
+shader = ExtResource("2_tint")
+shader_parameter/tint_color = Color(1, 1, 1, 1)
+shader_parameter/tint_strength = 1.0
+shader_parameter/tint_brightness = 4.5
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0
+shader_parameter/dissolve_value = 0.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(40, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(44, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(36, 20)
+
+[node name="RatWhite" instance=ExtResource("1_rat")]
+drop_gold_amount = 50
+max_hp_base = 150
+contact_damage_base = 30
+move_speed_base = 35.0
+knockback_resist = 0.8
+lunge_enabled = false
+ledge_check_offset = 28.0
+mutation_enabled = false
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+material = SubResource("ShaderMaterial_tint")
+scale = Vector2(2, 2)
+
+[node name="CollisionShape2D" parent="." index="1"]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+shape = SubResource("RectangleShape2D_hurt")
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, 2)
+shape = SubResource("RectangleShape2D_hit")
+
+[node name="GlowEyes" parent="." index="7"]
+texture = ExtResource("9_eyetex")

@@ -507,22 +507,22 @@ is_field_coin = true
 gold_amount = 100
 
 [node name="Chest" parent="Item" instance=ExtResource("13_an4tw")]
-position = Vector2(665, 49)
+position = Vector2(665, 54)
 locked = true
 item_key = "red_lighted_silver_key"
 reward_gold = 300
 persist_id = "C-870a4239"
 
 [node name="Chest2" parent="Item" instance=ExtResource("13_an4tw")]
-position = Vector2(2508, 673)
+position = Vector2(2508, 678)
 persist_id = "C-72ed0e01"
 
 [node name="Chest3" parent="Item" instance=ExtResource("13_an4tw")]
-position = Vector2(2552, 1057)
+position = Vector2(2552, 1062)
 persist_id = "C-ac0e332a"
 
 [node name="Chest4" parent="Item" instance=ExtResource("13_an4tw")]
-position = Vector2(4399, 705)
+position = Vector2(4399, 710)
 reward_item = ExtResource("14_tdvhl")
 persist_id = "C-9fbc35fa"
 

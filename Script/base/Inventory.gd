@@ -4,20 +4,34 @@ extends Node
 # 플레이어가 들고 있는 아이템. 칸(inventory)을 직접 바꾸지 말고 아래 함수를 거쳐야 inventory_changed가 나간다
 # (인벤토리 UI, 랜턴 시야(VisionLimit) 등이 이 신호를 듣는다).
 # 저장·불러오기·새 게임 초기화는 GameManager가 to_save / load_from_save / reset으로 부른다.
-# 나중에 장비 칸(무기)·패시브 칸이 생기면 여기에 같은 방식으로 추가한다.
+# 장비 칸: 보조 장비(accessories) 4칸, 보석(gems) 2칸. 장착 아이템(ItemData.equip_slot)은 얻을 때 칸이 비어 있으면
+# 바로 장착되고, 가방(inventory)과 장비 칸 사이는 equip_from_bag / unequip으로만 옮긴다 (inventory_changed가 나간다).
+# 장착 효과(시야·공격력·패링 배율·타격 상태이상)는 장착한 것만 적용된다.
 
 signal inventory_changed
 
 const SLOT_COUNT: int = 15
+const ACCESSORY_SLOTS: int = 4
+const GEM_SLOTS: int = 2
 
 var inventory: Array[ItemData] = []
 var key_uses_remaining: Array[int] = [] # inventory와 같은 인덱스의 열쇠 잔여 사용 횟수
+var accessories: Array[ItemData] = []
+var gems: Array[ItemData] = []
 
 func _init() -> void:
 	inventory.resize(SLOT_COUNT)
 	key_uses_remaining.resize(SLOT_COUNT)
+	accessories.resize(ACCESSORY_SLOTS)
+	gems.resize(GEM_SLOTS)
 
+# 장착 아이템은 맞는 장비 칸이 비어 있으면 바로 장착, 아니면 가방으로
 func add_item(item: ItemData) -> bool:
+	if item == null:
+		return false
+	if _equip_into_free_slot(item):
+		inventory_changed.emit()
+		return true
 	for i in range(inventory.size()):
 		if inventory[i] == null:
 			inventory[i] = item # 리소스 파일 자체를 저장
@@ -36,8 +50,11 @@ func remove_item_at(index: int) -> ItemData:
 	inventory_changed.emit()
 	return item
 
+# 가방이나 장비 칸에 있으면 true
 func has_item(item_id: String) -> bool:
-	return find_item(item_id) != -1
+	if find_item(item_id) != -1:
+		return true
+	return equipped_items().any(func(item): return item.id == item_id)
 
 # 그 아이템이 든 첫 칸의 번호. 없으면 -1.
 func find_item(item_id: String) -> int:
@@ -48,13 +65,92 @@ func find_item(item_id: String) -> int:
 			return i
 	return -1
 
-# 갖고 있는 아이템 중 가장 큰 시야 보너스 (랜턴 등). 겹쳐서 더하지 않는다.
+# --- 장비 칸 ---
+func equipment_for(kind: ItemData.EquipSlot) -> Array[ItemData]:
+	match kind:
+		ItemData.EquipSlot.ACCESSORY:
+			return accessories
+		ItemData.EquipSlot.GEM:
+			return gems
+	return []
+
+func equipped_items() -> Array[ItemData]:
+	var out: Array[ItemData] = []
+	for item in accessories + gems:
+		if item != null:
+			out.append(item)
+	return out
+
+func _equip_into_free_slot(item: ItemData) -> bool:
+	var slots := equipment_for(item.equip_slot)
+	for i in slots.size():
+		if slots[i] == null:
+			slots[i] = item
+			return true
+	return false
+
+# 가방 칸의 아이템을 맞는 장비 칸(빈 칸)에 장착. 장착할 수 없는 아이템이거나 칸이 가득 차면 false
+func equip_from_bag(index: int) -> bool:
+	if index < 0 or index >= inventory.size() or inventory[index] == null:
+		return false
+	var item := inventory[index]
+	if not _equip_into_free_slot(item):
+		return false
+	inventory[index] = null
+	key_uses_remaining[index] = 0
+	inventory_changed.emit()
+	return true
+
+# 장비 칸의 아이템을 가방 빈 칸으로. 가방이 가득 차면 false
+func unequip(kind: ItemData.EquipSlot, slot_index: int) -> bool:
+	var slots := equipment_for(kind)
+	if slot_index < 0 or slot_index >= slots.size() or slots[slot_index] == null:
+		return false
+	var bag_index := inventory.find(null)
+	if bag_index == -1:
+		return false
+	inventory[bag_index] = slots[slot_index]
+	key_uses_remaining[bag_index] = maxi(1, slots[slot_index].key_uses)
+	slots[slot_index] = null
+	inventory_changed.emit()
+	return true
+
+# 장착한 것 중 가장 큰 시야 보너스 (랜턴 등). 겹쳐서 더하지 않는다.
 func get_vision_bonus_tiles() -> float:
 	var bonus := 0.0
-	for item in inventory:
-		if item != null:
-			bonus = maxf(bonus, item.vision_bonus_tiles)
+	for item in equipped_items():
+		bonus = maxf(bonus, item.vision_bonus_tiles)
 	return bonus
+
+func get_equipped_attack_bonus() -> int:
+	var total := 0
+	for item in equipped_items():
+		total += item.attack_damage
+	return total
+
+func get_equipped_attack_speed_bonus() -> float:
+	var total := 0.0
+	for item in equipped_items():
+		total += item.attack_speed_bonus
+	return total
+
+# 가방에 든 것은 치지 않는다 (엘리베이터 탑승 허가처럼 "장착 중"이어야 하는 효과용)
+func is_equipped(item_id: String) -> bool:
+	return equipped_items().any(func(item): return item.id == item_id)
+
+func get_equipped_parry_bonus() -> float:
+	var total := 0.0
+	for item in equipped_items():
+		total += item.parrymul
+	return total
+
+# 장착한 보석 등이 검 타격에 거는 상태이상 (확률은 여기서 굴린다)
+func roll_equipped_hit_statuses() -> Array[StatusEffect]:
+	var out: Array[StatusEffect] = []
+	for item in equipped_items():
+		if item.hit_status != null and randf() < item.hit_status_chance:
+			out.append(item.hit_status)
+	return out
 
 func get_key_uses_for_slot(index: int) -> int:
 	if index < 0 or index >= inventory.size() or inventory[index] == null:
@@ -85,18 +181,44 @@ func to_save() -> Array:
 		out.append(null if item == null else {"id": item.id, "key_uses": key_uses_remaining[i]})
 	return out
 
-func load_from_save(slots: Array) -> void:
+# 가방과 장비 칸을 한 번에 불러온다 (inventory_changed는 한 번만).
+# equipment가 없으면(장비 칸이 없던 옛 세이브) 가방의 장착 아이템(랜턴 등)을 빈 장비 칸에 장착한다
+func load_from_save(slots: Array, equipment: Variant = null) -> void:
 	inventory.fill(null)
 	key_uses_remaining.fill(0)
+	accessories.fill(null)
+	gems.fill(null)
 	for i in range(mini(slots.size(), inventory.size())):
 		var slot = slots[i]
 		if typeof(slot) == TYPE_DICTIONARY and slot.has("id"):
 			inventory[i] = Database.get_item_by_id(slot["id"])
 			if inventory[i] != null:
 				key_uses_remaining[i] = maxi(1, int(slot.get("key_uses", inventory[i].key_uses)))
+	if equipment is Dictionary:
+		for pair in [[accessories, equipment.get("accessories", [])], [gems, equipment.get("gems", [])]]:
+			var equip_slots: Array[ItemData] = pair[0]
+			var ids: Array = pair[1]
+			for i in mini(ids.size(), equip_slots.size()):
+				if ids[i] is String:
+					equip_slots[i] = Database.get_item_by_id(ids[i])
+	else:
+		for i in inventory.size():
+			if inventory[i] != null and inventory[i].equip_slot != ItemData.EquipSlot.NONE and _equip_into_free_slot(inventory[i]):
+				inventory[i] = null
+				key_uses_remaining[i] = 0
 	inventory_changed.emit()
 
 func reset() -> void:
 	inventory.fill(null)
 	key_uses_remaining.fill(0)
+	accessories.fill(null)
+	gems.fill(null)
 	inventory_changed.emit()
+
+# 장비 칸 저장: {"accessories": [id 또는 null, ...], "gems": [...]}
+func equipment_to_save() -> Dictionary:
+	return {
+		"accessories": accessories.map(func(item): return null if item == null else item.id),
+		"gems": gems.map(func(item): return null if item == null else item.id),
+	}
+

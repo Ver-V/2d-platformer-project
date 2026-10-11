@@ -17,6 +17,12 @@ class_name GroundEnemy
 @export var ledge_check_offset: float = 14.0 # 몸 앞쪽 몇 px 아래에 바닥이 없으면 낭떠러지로 본다 (가시 타일도 낭떠러지)
 @export var room_edge_margin: float = 12.0
 @export var sprite_faces_left: bool = true # 스프라이트 원본이 왼쪽을 보고 있으면 켠다 (오른쪽으로 갈 때 flip_h)
+@export_group("Water")
+# 물 타일(WaterTileMap) 안에서는 플레이어처럼 느려진다: 이동 배율·중력 배율·낙하 상한. 걷기 동작은 멈춰 있어도 계속(허우적거림)
+@export var water_move_mult: float = 0.5
+@export var water_gravity_mult: float = 0.25
+@export var water_max_fall_speed: float = 50.0
+@export_group("Ground Movement")
 @export var detect_radius: float = 0.0 # 0보다 크면 DetectArea 원 반지름을 이 값으로 바꾼다
 
 @export_group("Melee Attack")
@@ -28,6 +34,7 @@ class_name GroundEnemy
 
 var dir: int = -1
 var is_attacking: bool = false
+var in_water: bool = false
 
 @onready var _hitbox_shape: CollisionShape2D = get_node_or_null("Hitbox/CollisionShape2D")
 var _hitbox_default_pos: Vector2 = Vector2.ZERO
@@ -61,7 +68,11 @@ func _physics_process(delta: float) -> void:
 	if not _active:
 		return
 
-	velocity.y = minf(velocity.y + gravity * delta, max_fall_speed)
+	in_water = WaterTileMap.is_water_at(get_tree(), global_position)
+	if in_water:
+		velocity.y = minf(velocity.y + gravity * water_gravity_mult * delta, water_max_fall_speed)
+	else:
+		velocity.y = minf(velocity.y + gravity * delta, max_fall_speed)
 
 	# 죽은 뒤에도 시체는 계속 떨어진다 (공중에서 죽으면 그 자리에 멈춰 있던 문제)
 	if hp <= 0:
@@ -79,14 +90,18 @@ func _physics_process(delta: float) -> void:
 			if wants_attack():
 				_start_attack()
 		blocked = _is_blocked_ahead()
-		if is_attacking or idling:
+		var forced := forced_ground_speed()
+		var water_mult := water_move_mult if in_water else 1.0
+		if not is_nan(forced):
+			velocity.x = forced * water_mult
+		elif is_attacking or idling or wants_hold_position():
 			velocity.x = move_toward(velocity.x, 0.0, acceleration * delta)
 		elif blocked:
 			velocity.x = 0.0
 			if target == null:
 				dir = -dir # 순찰 중이면 방향 전환
 		else:
-			var speed := move_speed * (chase_speed_multiplier if target != null else 1.0)
+			var speed := move_speed * (chase_speed_multiplier if target != null else 1.0) * water_mult
 			velocity.x = move_toward(velocity.x, dir * speed, acceleration * delta)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, air_drag * delta)
@@ -102,7 +117,15 @@ func _physics_process(delta: float) -> void:
 	if is_attacking:
 		_update_attack_hitbox()
 	else:
-		play_move_animation(absf(velocity.x) > 1.0)
+		play_move_animation(in_water or absf(velocity.x) > 1.0)
+
+# 하위 몹이 땅 위 가로 속도를 직접 정할 때 (예: 쥐의 달려들기). NAN이면 평소대로. 낭떠러지·방 경계 확인은 하위 몹이 직접 한다
+func forced_ground_speed() -> float:
+	return NAN
+
+# 하위 몹이 제자리에 서 있고 싶을 때 (예: 원거리 쥐가 쏘는 동안). 서 있어도 타겟 쪽을 바라본다
+func wants_hold_position() -> bool:
+	return false
 
 func _is_blocked_ahead() -> bool:
 	if room_rect.size != Vector2.ZERO:

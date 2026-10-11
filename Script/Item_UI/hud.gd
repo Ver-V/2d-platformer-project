@@ -81,6 +81,7 @@ func _ready() -> void:
 	_setup_damage_vignette()
 	_setup_status_tint()
 	_setup_boss_health_bar()
+	_setup_pickup_log()
 	_setup_ui()
 
 func _setup_damage_vignette() -> void:
@@ -178,6 +179,7 @@ func _input(event):
 			hide_timer.start()
 
 func _process(_delta: float) -> void:
+	_update_pickup_log()
 	_update_damage_vignette()
 	_update_status_tint()
 	if boss_target == null:
@@ -240,7 +242,7 @@ func _on_hide_timer_timeout():
 	fade_tween = create_tween()
 	fade_tween.tween_property(ui_root, "modulate:a", 0.0, 1.5)
 	fade_tween.tween_callback(func():
-		if not _is_boss_health_visible():
+		if not _is_boss_health_visible() and not _has_pickups():
 			visible = false
 	)
 
@@ -384,6 +386,142 @@ func _update_boss_health_bar() -> void:
 	
 	boss_bar_fill.offset_right = 2.0 + (BOSS_BAR_SIZE.x - 4.0) * ratio
 	boss_bar_label.text = "%d / %d" % [current_value, max_value]
+
+# -------------------------------------------------------------------------
+# 획득 목록: 인벤토리·골드로 들어온 것(상자, 박스 드롭, 필드 아이템, 코인, 보스 보상, 상점 구매)을
+# 왼쪽 위(골드 아래)에 한 줄씩 띄운다. 거의 동시에 들어온 것(PICKUP_GROUP_WINDOW 안)은 한 묶음으로 같이 떠오르고,
+# 연달아 줍는 골드(PICKUP_GOLD_MERGE 안)는 한 줄로 합쳐 금액만 늘린다.
+# 묶음마다 마지막으로 바뀐 뒤 pickup_lifetime초가 지나면 흐려지며 사라진다. HUD가 자동으로 숨는 중에도 끝까지 보인다
+# -------------------------------------------------------------------------
+const PICKUP_LOG_POS := Vector2(4.0, 40.0) # 골드 표시 바로 아래 (스케일 전 HUD 좌표)
+const PICKUP_FONT_SIZE := 8
+const PICKUP_RISE := 6.0 # 떠오르는 거리(px)
+const PICKUP_MAX_GROUPS := 5 # 이보다 많으면 오래된 묶음부터 지운다
+const PICKUP_GROUP_WINDOW := 0.3 # 이 시간(초) 안에 들어온 것은 같은 묶음
+const PICKUP_GOLD_MERGE := 1.5 # 이 시간(초) 안에 들어온 골드는 한 줄로 합친다
+const PICKUP_FADE := 0.5
+var pickup_lifetime: float = 10.0
+var pickup_log: VBoxContainer
+var _pickup_settings: LabelSettings
+var _pickup_group: Control = null # 지금 채우는 묶음
+var _pickup_group_time: float = -INF
+var _pickup_gold_label: Label = null # 합치는 중인 골드 줄
+var _pickup_gold_total: int = 0
+var _pickup_gold_time: float = -INF
+
+func _setup_pickup_log() -> void:
+	var holder := Control.new() # ui_root와 같은 크기의 틀 (페이드되는 ui_root 밖에 둔다)
+	holder.name = "PickupLayer"
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.anchor_right = 1.0
+	holder.anchor_bottom = 1.0
+	holder.offset_right = ui_root.offset_right
+	holder.offset_bottom = ui_root.offset_bottom
+	add_child(holder)
+	pickup_log = VBoxContainer.new()
+	pickup_log.name = "PickupLog"
+	pickup_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pickup_log.position = PICKUP_LOG_POS
+	pickup_log.add_theme_constant_override("separation", 2)
+	holder.add_child(pickup_log)
+	_pickup_settings = LabelSettings.new()
+	_pickup_settings.font = interact_text.label_settings.font if interact_text and interact_text.label_settings else null
+	_pickup_settings.font_size = PICKUP_FONT_SIZE
+	_pickup_settings.outline_size = 3
+	_pickup_settings.outline_color = Color.BLACK
+
+func _has_pickups() -> bool:
+	return pickup_log != null and pickup_log.get_child_count() > 0
+
+func _now() -> float:
+	return Time.get_ticks_msec() / 1000.0
+
+func log_pickup_gold(amount: int) -> void:
+	if amount <= 0 or pickup_log == null:
+		return
+	var now := _now()
+	if is_instance_valid(_pickup_gold_label) and now - _pickup_gold_time < PICKUP_GOLD_MERGE:
+		_pickup_gold_total += amount
+		_pickup_gold_label.text = tr(&"PICKUP_GOLD") % _pickup_gold_total
+		_pickup_gold_time = now
+		_touch_group(_pickup_gold_label.get_parent().get_parent())
+		return
+	_pickup_gold_total = amount
+	_pickup_gold_time = now
+	_pickup_gold_label = _add_pickup_line(tr(&"PICKUP_GOLD") % amount)
+
+func log_pickup_item(item: ItemData) -> void:
+	if item == null:
+		return
+	_add_pickup_line(tr(&"PICKUP_ITEM") % tr(item.name))
+
+# 이미 번역된 문구들을 새 묶음으로 띄운다
+func show_pickups(lines: Array) -> void:
+	_pickup_group_time = -INF
+	for line in lines:
+		_add_pickup_line(str(line))
+
+func _add_pickup_line(text: String) -> Label:
+	if pickup_log == null:
+		return null
+	show_hud_temporarily()
+	visible = true
+	var now := _now()
+	if not is_instance_valid(_pickup_group) or _pickup_group.get_meta("fading", false) or now - _pickup_group_time >= PICKUP_GROUP_WINDOW:
+		_pickup_group = _new_pickup_group()
+	_pickup_group_time = now
+	var label := Label.new()
+	label.text = text
+	label.label_settings = _pickup_settings
+	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED # 이미 번역된 문구
+	_pickup_group.get_child(0).add_child(label)
+	_touch_group(_pickup_group)
+	return label
+
+func _new_pickup_group() -> Control:
+	while pickup_log.get_child_count() >= PICKUP_MAX_GROUPS:
+		var oldest := pickup_log.get_child(0)
+		pickup_log.remove_child(oldest)
+		oldest.queue_free()
+	var group := MarginContainer.new()
+	group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var column := VBoxContainer.new()
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_theme_constant_override("separation", 0)
+	group.add_child(column)
+	pickup_log.add_child(group)
+	# 아래에서 살짝 떠오르며 나타난다
+	group.modulate.a = 0.0
+	group.add_theme_constant_override("margin_top", int(PICKUP_RISE))
+	var tween := group.create_tween().set_parallel(true)
+	tween.tween_property(group, "modulate:a", 1.0, 0.25)
+	tween.tween_method(func(v: float): group.add_theme_constant_override("margin_top", int(v)), PICKUP_RISE, 0.0, 0.25)
+	return group
+
+# 묶음의 사라질 시각을 지금부터 pickup_lifetime 뒤로 미룬다
+func _touch_group(group: Node) -> void:
+	if is_instance_valid(group) and not group.get_meta("fading", false):
+		group.set_meta("expire_at", _now() + pickup_lifetime)
+
+func _update_pickup_log() -> void:
+	if pickup_log == null:
+		return
+	var now := _now()
+	for group in pickup_log.get_children():
+		if group.get_meta("fading", false) or now < float(group.get_meta("expire_at", INF)):
+			continue
+		group.set_meta("fading", true)
+		var tween := group.create_tween()
+		tween.tween_property(group, "modulate:a", 0.0, PICKUP_FADE)
+		tween.tween_callback(_remove_pickup_group.bind(group))
+
+func _remove_pickup_group(group: Control) -> void:
+	if is_instance_valid(group) and group.get_parent() == pickup_log:
+		pickup_log.remove_child(group)
+		group.queue_free()
+	# 마지막 묶음이 사라졌고 HUD도 이미 흐려져 있으면 숨긴다
+	if not _has_pickups() and ui_root.modulate.a <= 0.01 and not _is_boss_health_visible():
+		visible = false
 
 func _is_boss_health_visible() -> bool:
 	return boss_bar_root != null and boss_bar_root.visible

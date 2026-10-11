@@ -28,6 +28,8 @@ func run_checks() -> void:
 	await check_effects_carry_to_next_scene()
 	await check_save_round_trip()
 	check_player_status_bars()
+	check_breath_effect()
+	await check_player_water()
 	await create_timer(0.5).timeout
 	fixture.queue_free()
 	await process_frame
@@ -311,3 +313,85 @@ func check_player_status_bars() -> void:
 	p.clear_status_effects()
 	check(p.visuals.get_status_bar_rects().is_empty(), "bars should disappear when effects clear")
 	p.queue_free()
+
+# 호흡: 물속에서 10초 버티고, 그 뒤 초당 5 피해. 30% 아래 깜빡임. 물 밖에선 2초 만에 가득 차고 사라진다
+func check_breath_effect() -> void:
+	var b := make_body(100)
+	var e = b.apply_status_effect(load("res://resources/status_effects/breath.tres"))
+	check(e is BreathEffect and e.bar_color.b > e.bar_color.r and e.bar_color.b > e.bar_color.g and e.bar_color.v < 0.8, "Breath bar should be dark blue")
+	e.submerged = true
+	e.advance(6.0)
+	check(is_equal_approx(e.get_progress(), 0.4) and not e.is_bar_warning(), "Breath at 40%% should not blink")
+	e.advance(1.5)
+	check(e.is_bar_warning(), "Breath under 30%% should blink")
+	check(b.hp == 100, "No damage while breath remains")
+	e.advance(3.5) # 10초가 지나고 1초 더
+	check(b.hp == 95, "After 10s underwater it should deal 5 per second (hp %d)" % b.hp)
+	e.advance(1.0)
+	check(b.hp == 90, "Drowning keeps dealing 5 per second (hp %d)" % b.hp)
+	e.submerged = false
+	e.advance(1.0)
+	check(is_equal_approx(e.get_progress(), 0.5) and not e.is_finished(), "Out of water, breath should refill halfway in 1s")
+	e.advance(1.0)
+	check(is_equal_approx(e.get_progress(), 1.0) and e.is_finished(), "Out of water, breath should be full in 2s and the gauge should go away")
+	b.queue_free()
+
+# 물 타일 안의 플레이어: 이동 0.5배, 중력 0.25배, 낙하 50 상한, 점프 키를 누르면 떠오름, 물 밖으로 나올 때 한 칸 높이만큼 솟음
+func check_player_water() -> void:
+	var gm = root.get_node("GameManager")
+	gm.carried_status_effects.clear()
+	var water = load("res://Scenes/Stage/WaterTileMap.tscn").instantiate()
+	fixture.add_child(water)
+	for x in range(28, 35):
+		for y in range(22, 27):
+			water.set_cell(Vector2i(x, y), 0, Vector2i(1, 0))
+	var p = spawn_player()
+	await process_frame
+	await physics_frame
+	await physics_frame # get_gravity()는 물리 단계를 한 번 거친 뒤에야 값이 있다
+	check(p.get_gravity().y > 0.0, "Test needs real gravity")
+	var dt := 1.0 / 60.0
+	p._update_water()
+	var breath = p.get_status_effects().get_effect(&"breath")
+	check(p.in_water and breath != null and breath.submerged, "Player in a water tile should swim and get a breath gauge")
+	check(p.visuals.get_status_bar_rects().size() == 1, "Breath gauge should show like a status effect bar")
+	p.change_state(p.State.FALL)
+	p._update_animation(0.0)
+	check(p.anim_player.current_animation == "Run", "Swimming should keep playing the walk animation (flailing)")
+	p._apply_run(1.0, dt)
+	check(is_equal_approx(p.velocity.x, p.movespeed * 0.5), "Swimming should halve move speed (vx %.1f)" % p.velocity.x)
+	p.velocity = Vector2.ZERO
+	p.apply_gravity(dt)
+	check(is_equal_approx(p.velocity.y, p.get_gravity().y * 0.25 * dt), "Water gravity should be 0.25x")
+	p.velocity.y = 500.0
+	p.apply_gravity(dt)
+	check(is_equal_approx(p.velocity.y, 50.0), "Water fall speed should cap at 50")
+	Input.action_press("jump")
+	p.velocity.y = 0.0
+	for i in 60:
+		p.apply_gravity(dt)
+	check(is_equal_approx(p.velocity.y, p.jumpforce * 0.25), "Holding jump in water should rise at 0.25x jump speed (vy %.1f)" % p.velocity.y)
+	p._jump_buffer_timer = 1.0
+	p._coyote_timer = 1.0
+	p._try_jump()
+	check(is_equal_approx(p.velocity.y, p.jumpforce * 0.25), "A jump in water should be 0.25x")
+	p.global_position = Vector2(500, 300) # 수면 위로
+	p._update_water()
+	var expected: float = -sqrt(2.0 * p.get_gravity().y * p.water_exit_jump_height)
+	check(not p.in_water and is_equal_approx(p.velocity.y, expected) and not breath.submerged,
+		"Rising out of the water while holding jump should pop up about one tile (vy %.1f)" % p.velocity.y)
+	check(p.anim_player.current_animation == "Jump", "Leaving the water mid-air should switch back to the jump animation")
+	var peak: float = p.velocity.y * p.velocity.y / (2.0 * p.get_gravity().y)
+	check(peak >= 16.0 and peak < 32.0, "Water exit should reach a one-tile ledge but not a full jump (%.1f px)" % peak)
+	Input.action_release("jump")
+	p.global_position = Vector2(500, 400)
+	p._update_water()
+	p.velocity.y = -40.0
+	p.global_position = Vector2(500, 300)
+	p._update_water()
+	check(is_equal_approx(p.velocity.y, -40.0), "Leaving the water without holding jump should not boost")
+	p.clear_status_effects()
+	p.queue_free()
+	water.queue_free()
+	await process_frame
+

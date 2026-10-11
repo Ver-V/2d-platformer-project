@@ -1,4 +1,4 @@
-[gd_scene load_steps=60 format=3 uid="uid://cssceudukavu"]
+[gd_scene load_steps=61 format=3 uid="uid://cssceudukavu"]
 
 [ext_resource type="PackedScene" uid="uid://bl288730bkpt" path="res://Scenes/Entitites/Boss.tscn" id="1_3230w"]
 [ext_resource type="PackedScene" uid="uid://d888233uuktt" path="res://Scenes/Entitites/ShooterComponent.tscn" id="2_nrtuv"]
@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://b8dljuwvuryc4" path="res://Assets/sprites/stage1boss_blackmagician/Idle.png" id="5_sxivi"]
 [ext_resource type="AudioStream" uid="uid://bok2v5j830v0a" path="res://resources/Music/Jigging.mp3" id="6_hy2bf"]
 [ext_resource type="PackedScene" uid="uid://ymvgdewahhcm" path="res://Scenes/Projectile/projectilefire.tscn" id="9_q4xqk"]
+[ext_resource type="Resource" path="res://resources/items/gatekeepers_token.tres" id="10_token"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7n545"]
 atlas = ExtResource("2_skxjc")
@@ -359,12 +360,14 @@ script = ExtResource("2_sxivi")
 bgm_player = NodePath("BGMPlayer")
 boss_sprite = NodePath("AnimatedSprite2D")
 drop_gold_amount = 300
+reward_item = ExtResource("10_token")
 coin_scene = ExtResource("3_7n545")
 persist_id = &"bosss1"
 max_hp_base = 350
 contact_damage_base = 20
 move_speed_base = 0.0
 knockback_resist = 10000000.0
+phase2_speech_key = "BOSS1_PHASE2_SPEECH"
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 sprite_frames = SubResource("SpriteFrames_vlss1")

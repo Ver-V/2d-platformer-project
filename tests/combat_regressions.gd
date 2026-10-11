@@ -50,6 +50,8 @@ func run_checks() -> void:
 	await check_sword_inactive_enemy()
 	await check_sword_kills_enemy()
 	await check_sword_hits_box()
+	await check_cracked_wall()
+	await check_heavy_attack()
 	await check_hazard()
 	await check_physics_layers()
 	await check_wait_stops_with_node()
@@ -208,7 +210,7 @@ func check_perfect_guard_projectile() -> void:
 	check(p.hp == 100, "perfect guard should block all damage")
 	check(proj.is_queued_for_deletion(), "perfect-guarded projectile should be consumed")
 	check(p.combat.has_perfect_guard_bonus, "perfect guard should grant the counter bonus")
-	check(p.is_invulnerable() and p._invuln_left <= 0.2 + 0.001, "perfect guard should give short i-frames")
+	check(p.is_invulnerable() and p._invuln_left <= p.guard.PERFECT_GUARD_INVULN + 0.001, "perfect guard should give short i-frames")
 	check(p.current_state == p.State.GUARD, "perfect guard should keep guarding")
 	var again := spawn_projectile(20, Vector2.LEFT * 150)
 	check(HitData.deliver(p, again._make_hit(p, Vector2(-150, 0))) == HitData.Result.INVULNERABLE, "right after a perfect guard the player is invulnerable")
@@ -319,6 +321,7 @@ func check_contact_status_only_on_hit() -> void:
 # -------------------------------------------------------------------------
 
 func check_sword_hits_enemy() -> void:
+	await wait_hitstop_clear()
 	var p = spawn_player()
 	var mob = spawn_slime(p.global_position + Vector2(20, 0))
 	var hp0: int = mob.hp
@@ -327,9 +330,23 @@ func check_sword_hits_enemy() -> void:
 	check(mob.knockback_vel.x > 0.0, "sword knockback should push the enemy away")
 	check(mob.is_invulnerable(), "enemy should get i-frames after a sword hit")
 	check(Engine.time_scale < 1.0, "sword hit should start hitstop")
+	var left := hitstop_left_ms()
+	check(left > 0 and left <= 100, "plain sword hit hitstop should be 0.1s (left %d ms)" % left)
 	await cleanup([p, mob])
 
+# 앞선 검사의 히트스탑이 끝날 때까지 (겹치면 더 늦게 끝나는 쪽을 따르므로 측정 전에 비운다)
+func wait_hitstop_clear() -> void:
+	while hitstop_left_ms() > 0:
+		await create_timer(0.05, true, false, true).timeout
+	Engine.time_scale = 1.0
+
+# 지금 걸린 히트스탑이 끝날 때까지 남은 시간(ms, 실제 시간)
+func hitstop_left_ms() -> int:
+	var gm = root.get_node("GameManager")
+	return gm._hitstop_end_ms - Time.get_ticks_msec() if gm._hitstop_end_ms > 0 else 0
+
 func check_sword_counter_bonus() -> void:
+	await wait_hitstop_clear()
 	var p = spawn_player()
 	var mob = spawn_slime(p.global_position + Vector2(20, 0))
 	var hp0: int = mob.hp
@@ -338,7 +355,17 @@ func check_sword_counter_bonus() -> void:
 	check(mob.hp == hp0 - 20, "counter bonus should add 10 damage (hp=%d)" % mob.hp)
 	check(not p.combat.has_perfect_guard_bonus, "counter bonus should be consumed on hit")
 	check(p.status_label.text == TranslationServer.translate(&"COMBAT_COUNTER_HIT"), "counter hit popup should show")
+	var left := hitstop_left_ms()
+	check(left > 120 and left <= 200, "counter hit hitstop should be doubled to 0.2s (left %d ms)" % left)
 	await cleanup([p, mob])
+	# 카운터 패리도 패링 히트스탑(0.2초)의 2배
+	await wait_hitstop_clear()
+	var p2 = spawn_player()
+	p2.combat._hitstop(p2.combat.PARRY_HITSTOP, true)
+	left = hitstop_left_ms()
+	check(left > 350 and left <= 400, "counter parry hitstop should be doubled to 0.4s (left %d ms)" % left)
+	await create_timer(0.5, true, false, true).timeout
+	await cleanup([p2])
 
 func check_sword_enemy_invulnerable() -> void:
 	var p = spawn_player()
@@ -393,6 +420,91 @@ func check_sword_hits_box() -> void:
 	await hit_with_sword(p, box)
 	check(box.hp == hp0 - 10, "sword should damage breakable boxes (hp=%d)" % box.hp)
 	await cleanup([p, box])
+
+# 금 간 벽: 그냥 칼로는 막히고(반격 보너스는 그대로, 힌트), 강공격으로만 부서지며 세이브에 남는다
+func check_cracked_wall() -> void:
+	await wait_hitstop_clear()
+	gm.reset_data()
+	var p = spawn_player()
+	var wall = load("res://Scenes/System/CrackedWall.tscn").instantiate()
+	wall.persist_id = "W-combattest"
+	fixture.add_child(wall)
+	wall.global_position = p.global_position + Vector2(20, 0)
+	check(PersistIdAssigner.prefix_for(wall) == "W", "Cracked walls should get W- persist ids")
+	check(wall.get_node("Hurtbox").collision_layer == 512 and wall.get_node("CollisionShape2D").shape.size == wall.size()
+		and wall.get_node("Hurtbox/CollisionShape2D").shape.size == wall.size(),
+		"Cracked wall should be hittable (enemy_hurtbox layer) with body and hurtbox matching width_tiles x height_tiles")
+	await hit_with_sword(p, wall)
+	check(is_instance_valid(wall) and not wall.is_queued_for_deletion(), "A normal sword hit should not break a cracked wall")
+	check(p.status_label.text == TranslationServer.translate(&"WALL_NEEDS_COUNTER"), "Hitting a cracked wall should show the hint")
+	p.combat.has_perfect_guard_bonus = true
+	var plain := HitData.new(10, Vector2.ZERO, p)
+	check(wall.receive_hit(plain) == HitData.Result.GUARDED and p.combat.has_perfect_guard_bonus, "A blocked hit should not use up the counter bonus")
+	await hit_with_sword(p, wall) # 반격 보너스가 있어도 강공격이 아니면 안 부서진다
+	check(is_instance_valid(wall) and not wall.is_queued_for_deletion(), "A counter hit that is not heavy should not break the wall")
+	p.combat.is_heavy_attack = true
+	await hit_with_sword(p, wall)
+	check(not is_instance_valid(wall) or wall.is_queued_for_deletion(), "A heavy attack should break the cracked wall")
+	check(gm.collected_items.has("wall:W-combattest"), "Breaking the wall should be saved")
+	await process_frame
+	var again = load("res://Scenes/System/CrackedWall.tscn").instantiate()
+	again.persist_id = "W-combattest"
+	fixture.add_child(again)
+	check(again.is_queued_for_deletion(), "A broken wall should stay broken after reload")
+	await create_timer(0.5, true, false, true).timeout
+	await cleanup([p])
+	gm.reset_data()
+
+# 강공격: 배우기 전엔 바로 일반 공격. 배운 뒤엔 누르는 동안 칼 든 자세로 멈춰 모으고(CHARGE),
+# 0.75초 전에 떼면 일반 공격, 다 모이면 번쩍이고 떼면 강공격(피해 2.5배·판정 확대). 맞으면 모으기가 끊긴다
+func check_heavy_attack() -> void:
+	await wait_hitstop_clear()
+	gm.reset_data()
+	var p = spawn_player()
+	p._menu_exit_cooldown = 0.0
+	check(not p.combat.can_charge(), "Heavy attack should be locked on a new game")
+	gm.heavy_attack_unlocked = true
+	check(p.combat.can_charge(), "Unlocked heavy attack should allow charging")
+	var dt := 1.0 / 60.0
+	Input.action_press("attack")
+	p.change_state(p.State.CHARGE)
+	check(p.current_state == p.State.CHARGE and not p.anim_player.is_playing() and p.sprite.animation == &"Attack" and p.sprite.frame == 1,
+		"Charging should hold the raised-sword frame (frame %d)" % p.sprite.frame)
+	for i in 6:
+		p._process_charge(dt)
+	Input.action_release("attack")
+	p._process_charge(dt)
+	check(p.current_state == p.State.ATTACK and not p.combat.is_heavy_attack, "A short press should swing a normal attack")
+	p.change_state(p.State.IDLE)
+	p.combat.cooldown_left = 0.0
+
+	Input.action_press("attack")
+	p.change_state(p.State.CHARGE)
+	for i in roundi(p.combat.HEAVY_CHARGE_TIME / dt) + 3:
+		p._process_charge(dt)
+	check(p.combat.is_charge_ready() and p.visuals._charge_flash, "A full charge should be ready and flash")
+	Input.action_release("attack")
+	p._process_charge(dt)
+	check(p.current_state == p.State.ATTACK and p.combat.is_heavy_attack and p.combat.sword_shape.scale == p.combat.HEAVY_REACH_SCALE and not p.visuals._charge_flash,
+		"Releasing a full charge should swing a heavy attack with a bigger hitbox")
+	var mob = spawn_slime(p.global_position + Vector2(20, 0))
+	var hp0: int = mob.hp
+	await hit_with_sword(p, mob)
+	check(mob.hp == hp0 - int(round(10 * p.combat.HEAVY_DAMAGE_MULT)), "Heavy attack should deal 2.5x damage (hp=%d)" % mob.hp)
+	await wait_hitstop_clear()
+	p.change_state(p.State.IDLE)
+	p.combat.cooldown_left = 0.0
+
+	Input.action_press("attack")
+	p.change_state(p.State.CHARGE)
+	for i in roundi(p.combat.HEAVY_CHARGE_TIME / dt) + 3:
+		p._process_charge(dt)
+	take_hit(p, 5)
+	Input.action_release("attack")
+	check(p.current_state != p.State.CHARGE and not p.combat.is_charging and not p.visuals._charge_flash, "Getting hit should cancel the charge")
+	await wait_hitstop_clear()
+	await cleanup([p, mob])
+	gm.reset_data()
 
 # -------------------------------------------------------------------------
 # 가시 타일

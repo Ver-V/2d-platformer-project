@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=4 uid="uid://djm13n0lh006k"]
+[gd_scene load_steps=22 format=4 uid="uid://djm13n0lh006k"]
 
 [ext_resource type="Script" uid="uid://dwuhj8dnf17t2" path="res://Script/stage/stage_02.gd" id="1_joehr"]
 [ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="2_3j8uf"]
@@ -14,6 +14,7 @@
 [ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="11_ltk23"]
 [ext_resource type="PackedScene" uid="uid://cepa2x7wfxccs" path="res://Scenes/Entitites/MerchantNPC.tscn" id="14_14nk3"]
 [ext_resource type="PackedScene" path="res://Scenes/System/ShortcutDoor.tscn" id="15_g52kn"]
+[ext_resource type="PackedScene" uid="uid://bsk7g0n03nub1" path="res://Scenes/System/CrackedWall.tscn" id="15_pkwd7"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_4yoej"]
 texture = ExtResource("6_v87du")
@@ -342,7 +343,7 @@ texture = ExtResource("7_3j8uf")
 visible = false
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(7442, 468)
+position = Vector2(7488, 471)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(2, 2)
@@ -387,7 +388,7 @@ parameters/looping = true
 [node name="Item" type="Node" parent="."]
 
 [node name="Chest" parent="Item" instance=ExtResource("10_4yoej")]
-position = Vector2(7091, 699)
+position = Vector2(7091, 704)
 reward_item = ExtResource("11_ltk23")
 reward_gold = 150
 persist_id = "C-26c39ef5"
@@ -411,6 +412,10 @@ link_id = "stage2_cave1"
 side = 0
 partner_scene = ""
 persist_id = "D-775855da"
+
+[node name="CrackedWall" parent="Entities" instance=ExtResource("15_pkwd7")]
+position = Vector2(7015, 704)
+persist_id = "W-a4cba03b"
 
 [node name="Boss" type="Node" parent="."]
 

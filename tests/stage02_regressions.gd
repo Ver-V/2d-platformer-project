@@ -73,9 +73,8 @@ func check_vision_limit() -> void:
 		check(vision._shown_radius > 64.0 and vision._shown_radius < goal, "Vision radius should grow gradually")
 		vision._process(10.0)
 		check(is_equal_approx(vision._shown_radius, goal), "Vision radius should reach the lantern radius")
-	for i in inv().inventory.size(): # 테스트로 넣은 랜턴만 치운다 (신호로 시야도 갱신)
-		if inv().inventory[i] != null and inv().inventory[i] == lantern:
-			inv().remove_item_at(i)
+	check(inv().accessories.count(lantern) == 2, "Lanterns should be equipped into accessory slots")
+	inv().reset() # 테스트로 넣은 랜턴을 치운다 (신호로 시야도 갱신)
 	check(is_equal_approx(vision.get_radius(), 64.0), "Vision radius should shrink back without the lantern")
 	vision.free()
 
@@ -316,6 +315,24 @@ func check_world_ui_above_darkness() -> void:
 	fixture.add_child(mob)
 	var bar: Node2D = mob.get_node_or_null("HealthBarLayer")
 	check(bar != null and not bar.z_as_relative and bar.z_index > dark_z, "Mob health bar should draw above the darkness")
+
+	# 체력바는 빛 안에서만 보인다 (어둠 속 몹은 눈만). 시야 제한이 없는 스테이지에선 항상 보인다
+	mob.set_active(true)
+	mob._update_health_bar_light()
+	check(bar.visible, "Without darkness the health bar should always show")
+	var vision = load("res://Script/System/vision_limit.gd").new()
+	vision.radius_tiles = 5.0
+	vision.target = player
+	fixture.add_child(vision)
+	player.global_position = Vector2.ZERO
+	await process_frame
+	mob.global_position = Vector2(30, 0)
+	mob._update_health_bar_light()
+	check(bar.visible, "A mob inside the light should show its health bar")
+	mob.global_position = Vector2(400, 0)
+	mob._update_health_bar_light()
+	check(not bar.visible, "A mob in the dark should hide its health bar")
+	vision.queue_free()
 	player.queue_free()
 	mob.queue_free()
 	await process_frame

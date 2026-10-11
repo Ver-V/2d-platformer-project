@@ -191,11 +191,13 @@ func _play_hit_effects() -> void:
 	if node and node.material is ShaderMaterial:
 		# 단순히 외곽선(is_active)만 켜는 게 아니라, 몸 전체를 하얗게(flash_modifier) 만듭니다.
 		node.material.set_shader_parameter("flash_modifier", 1.0)
-		# 아주 짧은 시간(0.1초) 후 원래대로 복구
-		get_tree().create_timer(0.1).timeout.connect(func():
-			if is_instance_valid(node) and node.material is ShaderMaterial:
-				node.material.set_shader_parameter("flash_modifier", 0.0)
-		)
+		_end_hit_flash(node)
+
+# 아주 짧은 시간(0.1초) 후 원래대로 복구. 트리 타이머 대신 Wait — 몸이 먼저 사라지면 코루틴도 같이 멈춘다
+func _end_hit_flash(node: CanvasItem) -> void:
+	await Wait.seconds(self, 0.1)
+	if is_instance_valid(node) and node.material is ShaderMaterial:
+		node.material.set_shader_parameter("flash_modifier", 0.0)
 
 # --- 물리 프로세스 (넉백 감소) ---
 func update_knockback(delta: float) -> Vector2:

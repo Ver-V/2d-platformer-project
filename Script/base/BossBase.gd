@@ -9,9 +9,24 @@ var current_state = State.INTRO
 @export var bgm_player : AudioStreamPlayer
 @export var boss_sprite : AnimatedSprite2D
 @export var boss_door_group: String = "boss_doors" # 보스 방 문들이 속한 그룹 이름
+@export var reward_item: ItemData # 처치 보상 아이템 (비우면 골드만)
 
+@export_group("Phase 2")
+@export_range(0.0, 1.0) var phase2_hp_ratio: float = 0.5 # 체력이 이 비율 아래로 떨어지면 페이즈 2 (0이면 페이즈 2 없음)
+@export var phase2_shake: float = 4.0 # 페이즈 2 진입 때 화면 흔들림 세기
+@export var phase2_speech_key: String = "" # 페이즈 2 진입 대사 (ui.csv 키). 비우면 대사 없음
+
+@export_group("Speech")
+@export var speech_offset: Vector2 = Vector2(0, -50) # 대사 아랫변 가운데 위치 (보스 원점 기준)
+@export var speech_duration: float = 2.5 # 대사가 떠 있는 시간 (그 뒤 사라진다)
+
+const FIELD_ITEM_SCENE: PackedScene = preload("res://Scenes/Item/field_item.tscn")
+const SPEECH_FADE_TIME := 0.4
 
 var boss_started: bool = false # 인트로/전투 시작 여부 확인용
+var phase: int = 1
+var _speech_label: Label
+var _speech_tween: Tween
 
 func _ready() -> void:
 	super._ready() # 부모(EnemyBase)의 _ready 실행 (체력 설정 등)
@@ -23,7 +38,9 @@ func _ready() -> void:
 	var id = get_persist_id()
 	
 	if id != "" and GameManager.defeated_bosses.get(id, false):
-
+		# 보상 아이템이 생기기 전에 잡은 세이브: 다시 올 때 한 번 채워 준다
+		if reward_item != null and not Inventory.has_item(reward_item.id):
+			Inventory.add_item(reward_item)
 		queue_free()
 		return
 
@@ -166,15 +183,78 @@ func receive_hit(hit: HitData) -> HitData.Result:
 		boss_sprite.play("gethit")
 	if HitData.landed(result) and HUD.has_method("show_boss_health"):
 		HUD.show_boss_health(self)
+	if HitData.landed(result):
+		_check_phase()
 	return result
 
 func _on_status_damaged(amount: int) -> void:
 	super._on_status_damaged(amount)
 	if HUD.has_method("show_boss_health"):
 		HUD.show_boss_health(self)
+	_check_phase()
+
+# --- 페이즈 ---
+func _check_phase() -> void:
+	if phase != 1 or phase2_hp_ratio <= 0.0 or hp <= 0 or current_state == State.DEAD:
+		return
+	if float(hp) < float(max_hp) * phase2_hp_ratio:
+		_enter_phase_2()
+
+func _enter_phase_2() -> void:
+	phase = 2
+	var stage := get_tree().current_scene
+	if phase2_shake > 0.0 and stage and stage.has_method("apply_camera_shake"):
+		stage.apply_camera_shake(phase2_shake)
+	if phase2_speech_key != "":
+		say(tr(phase2_speech_key))
+	_on_phase_2()
+
+# 보스별 페이즈 2 연출·변화 (패턴 속도 등)
+func _on_phase_2() -> void:
+	pass
+
+func reset_to_home(reset_hp: bool = true) -> void:
+	super.reset_to_home(reset_hp)
+	if reset_hp:
+		phase = 1
+		_hide_speech()
+
+# --- 머리 위 대사 ---
+# 보스 머리 위에 한 줄 대사를 띄운다. duration < 0이면 speech_duration을 쓴다.
+func say(text: String, duration: float = -1.0) -> void:
+	if text == "":
+		return
+	if _speech_label == null:
+		_speech_label = Label.new()
+		var settings := LabelSettings.new()
+		settings.outline_size = 4
+		settings.outline_color = Color.BLACK
+		_speech_label.label_settings = settings
+		_speech_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_speech_label.z_index = 10
+		add_child(_speech_label)
+	if _speech_tween:
+		_speech_tween.kill()
+	_speech_label.text = text
+	_speech_label.reset_size()
+	_speech_label.position = speech_offset - Vector2(_speech_label.size.x * 0.5, _speech_label.size.y)
+	_speech_label.modulate.a = 1.0
+	_speech_label.visible = true
+	_speech_tween = create_tween()
+	_speech_tween.tween_interval(speech_duration if duration < 0.0 else duration)
+	_speech_tween.tween_property(_speech_label, "modulate:a", 0.0, SPEECH_FADE_TIME)
+	_speech_tween.tween_callback(_hide_speech)
+
+func _hide_speech() -> void:
+	if _speech_tween:
+		_speech_tween.kill()
+		_speech_tween = null
+	if _speech_label:
+		_speech_label.visible = false
 
 func _on_death() -> void:
 	current_state = State.DEAD
+	_hide_speech()
 	if HUD.has_method("hide_boss_health"):
 		HUD.hide_boss_health(self)
 	
@@ -191,7 +271,22 @@ func _on_death() -> void:
 
 	# died 신호가 자동 저장을 실행하므로 보상을 먼저 반영한다.
 	GameManager.update_gold(drop_gold_amount)
+	HUD.log_pickup_gold(drop_gold_amount)
+	_give_reward_item()
 	super._on_death()
+
+# 보상 아이템은 바로 넣는다 (장비면 빈 장비 칸에 장착). 가방·장비 칸이 가득 차면 그 자리에 떨어뜨린다.
+func _give_reward_item() -> void:
+	if reward_item == null:
+		return
+	if Inventory.add_item(reward_item):
+		HUD.log_pickup_item(reward_item)
+		return
+	var drop = FIELD_ITEM_SCENE.instantiate()
+	drop.id = "boss_reward:" + str(get_persist_id())
+	drop.item_resource = reward_item
+	drop.position = get_parent().to_local(global_position)
+	get_parent().add_child.call_deferred(drop)
 
 # 보스는 코인을 뿌리지 않고 바로 GameManager.update_gold로 지급하므로 부모의 spawn_gold를 덮어씁니다.
 func spawn_gold() -> void:

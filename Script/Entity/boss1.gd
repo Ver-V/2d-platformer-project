@@ -16,6 +16,11 @@ const SND_EXPLOSION = preload("res://Assets/sounds/explosion.wav")
 const SND_POWER_UP = preload("res://Assets/sounds/power_up.wav")
 const Fire_projectile = preload("res://Scenes/Projectile/projectilefire.tscn")
 
+const TELEPORT_INTERVAL := 3.0
+const PHASE2_SPEED := 1.5 # 페이즈 2에서 패턴(대기 시간)이 빨라지는 배율
+const SPLIT_FIRST_ANGLES: Array[float] = [-15.0, 15.0] # 4번 패턴 첫 분열 (2갈래)
+const SPLIT_SECOND_ANGLES: Array[float] = [-30.0, 0.0, 30.0] # 4번 패턴 두 번째 분열 (3갈래)
+
 func _ready() -> void:
 	super._ready()
 	rng.randomize() # 보스 랜덤 시드 초기화
@@ -59,9 +64,16 @@ func _teleport_state(delta:float) -> void:
 	if is_attacking: return # 텔레포트 연출 중 중복 실행 방지
 	
 	teleport_timer += delta
-	if teleport_timer >= 3.0:
+	if teleport_timer >= TELEPORT_INTERVAL / _speed():
 		teleport_timer = 0.0
 		_execute_teleport_sequence()
+
+func _speed() -> float:
+	return PHASE2_SPEED if phase >= 2 else 1.0
+
+# 패턴 사이 대기 — 페이즈 2에서는 짧아진다
+func _wait(t: float) -> void:
+	await _wait(t / _speed())
 
 # 대기 중에 보스가 쓰러지면(사망 연출 중) 남은 패턴을 이어가지 않는다
 func _still_fighting() -> bool:
@@ -76,8 +88,8 @@ func _execute_teleport_sequence() -> void:
 
 	if boss_sprite and boss_sprite.material:
 		var tween = create_tween()
-		tween.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 1.0, 0.15)
-		await Wait.seconds(self, 0.2)
+		tween.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 1.0, 0.15 / _speed())
+		await _wait(0.2)
 		if not _still_fighting(): return
 		
 	var candidate_markers: Array[Node] = []
@@ -94,8 +106,8 @@ func _execute_teleport_sequence() -> void:
 	
 	if boss_sprite and boss_sprite.material:
 		var tween2 = create_tween()
-		tween2.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 0.0, 0.15)
-		await Wait.seconds(self, 0.2)
+		tween2.tween_property(boss_sprite.material, "shader_parameter/flash_modifier", 0.0, 0.15 / _speed())
+		await _wait(0.2)
 		if not _still_fighting(): return
 
 	is_attacking = false
@@ -111,20 +123,16 @@ func _attack_state(_delta:float) -> void:
 		action_sfx.stream = SND_EXPLOSION
 		action_sfx.play()
 
-	var pattern = rng.randi_range(0, 3) # 보스 전용 RNG 사용
-		
 	if boss_sprite:
 		boss_sprite.play("attack")
-		
-	match pattern:
-		0:
-			await _attack_pattern_1()
-		1:
-			await _attack_pattern_2()
-		2:
-			await _attack_pattern_3()
-		3:
-			await _attack_pattern_4()
+
+	# 페이즈 1: 4개 중 하나. 페이즈 2: 1번 패턴 + (2·3·4번 중 하나)
+	if phase >= 2:
+		await _attack_pattern_1()
+		if _still_fighting():
+			await _run_pattern(rng.randi_range(1, 3))
+	else:
+		await _run_pattern(rng.randi_range(0, 3)) # 보스 전용 RNG 사용
 	if not _still_fighting():
 		return
 	
@@ -133,6 +141,17 @@ func _attack_state(_delta:float) -> void:
 
 	is_attacking = false
 	current_state1 = CombatState.TELEPORT
+
+func _run_pattern(index: int) -> void:
+	match index:
+		0:
+			await _attack_pattern_1()
+		1:
+			await _attack_pattern_2()
+		2:
+			await _attack_pattern_3()
+		3:
+			await _attack_pattern_4()
 
 func _attack_pattern_1() -> void:
 	if not shooter: return
@@ -147,7 +166,7 @@ func _attack_pattern_1() -> void:
 				else:
 					p.set_parryable_mode(false)
 					
-		await Wait.seconds(self, 0.5)
+		await _wait(0.5)
 		if not _still_fighting(): return
 
 func _attack_pattern_2() -> void:
@@ -157,10 +176,10 @@ func _attack_pattern_2() -> void:
 		var p: Projectile = shooter.shoot(self, target, global_position) as Projectile
 		if p != null:
 			p.set_parryable_mode(false)
-			p.scale = Vector2(2.5, 2.5)
+			p.scale = Vector2(2.0, 2.0)
 			if "damage" in p:
 				p.damage = 35
-	await Wait.seconds(self, 0.5)
+	await _wait(0.5)
 	if not _still_fighting(): return
 	
 func _attack_pattern_3() -> void:
@@ -173,7 +192,7 @@ func _attack_pattern_3() -> void:
 			var dir = Vector2.RIGHT.rotated(deg_to_rad(angle_deg))
 			shooter.shoot_dir(self, dir, global_position)
 		
-		await Wait.seconds(self, 0.8)
+		await _wait(0.8)
 		if not _still_fighting(): return
 
 	# 2. 22.5도를 틀어서 8방향으로 2번 발사 (간격 0.8초)
@@ -182,59 +201,44 @@ func _attack_pattern_3() -> void:
 			var dir = Vector2.RIGHT.rotated(deg_to_rad(angle_deg + 22.5))
 			shooter.shoot_dir(self, dir, global_position)
 		
-		await Wait.seconds(self, 0.8)
+		await _wait(0.8)
 		if not _still_fighting(): return
 	
+# 조준탄 하나가 멈춘 자리에서 2갈래로, 다시 각각 3갈래로 갈라진다 (갈래마다 패링 탄 하나)
 func _attack_pattern_4() -> void:
 	if not shooter or target == null: return
 	shooter.projectile_scene = Fire_projectile
-	
+
 	var p1 = shooter.shoot(self, target, global_position) as Projectile
 	if p1:
 		p1.set_parryable_mode(false)
-	
-	await Wait.seconds(self, 0.5)
+
+	await _wait(0.5)
 	if not _still_fighting(): return
-	
-	var p2_list: Array[Node] = []
-	if is_instance_valid(p1) :
-		var pos1 = p1.global_position
-		p1.queue_free()
-		
-		if is_instance_valid(target):
-			var target_pos1 = target.global_position + Vector2(0,-10)
-			var dir1 = (target_pos1 - pos1).normalized()
-			
-			var parry_idx1 = rng.randi_range(0, 2)
-			var idx1 = 0
-			for angle_deg in [-30, 0, 30]:
-				var dir = dir1.rotated(deg_to_rad(angle_deg))
-				var p = shooter.shoot_dir(self, dir, pos1) as Projectile
-				if p != null:
-					p.set_parryable_mode(idx1 == parry_idx1, shooter.parry_cue_color)
-					p2_list.append(p)
-				idx1 += 1
-	
-	await Wait.seconds(self, 0.6)
+
+	var first := _split_toward_target([p1], SPLIT_FIRST_ANGLES)
+
+	await _wait(0.6)
 	if not _still_fighting(): return
-	
-	for p2 in p2_list:
-		if is_instance_valid(p2):
-			var pos2 = p2.global_position
-			p2.queue_free()
-			if is_instance_valid(target):
-				var target_pos2 = target.global_position + Vector2(0,-10)
-				var dir2 = (target_pos2 - pos2).normalized()
-				
-				var parry_idx2 = rng.randi_range(0, 2)
-				var idx2 = 0
-				for angle_deg in [-30, 0, 30]:
-					var dir = dir2.rotated(deg_to_rad(angle_deg))
-					var p = shooter.shoot_dir(self, dir, pos2) as Projectile
-					if p != null:
-						p.set_parryable_mode(idx2 == parry_idx2, shooter.parry_cue_color)
-					idx2 += 1
-				
-	
-	
-	
+
+	_split_toward_target(first, SPLIT_SECOND_ANGLES)
+
+# 살아 있는 탄마다 그 자리에서 사라지고, 플레이어를 향해 angles만큼 벌어진 탄들로 갈라진다.
+# 갈라진 무리마다 하나는 패링 가능. 새로 만든 탄들을 돌려준다.
+func _split_toward_target(sources: Array, angles: Array[float]) -> Array[Node]:
+	var spawned: Array[Node] = []
+	for src in sources:
+		if not is_instance_valid(src):
+			continue
+		var pos: Vector2 = src.global_position
+		src.queue_free()
+		if not is_instance_valid(target):
+			continue
+		var aim := (target.global_position + Vector2(0, -10) - pos).normalized()
+		var parry_idx := rng.randi_range(0, angles.size() - 1)
+		for i in angles.size():
+			var p = shooter.shoot_dir(self, aim.rotated(deg_to_rad(angles[i])), pos) as Projectile
+			if p != null:
+				p.set_parryable_mode(i == parry_idx, shooter.parry_cue_color)
+				spawned.append(p)
+	return spawned

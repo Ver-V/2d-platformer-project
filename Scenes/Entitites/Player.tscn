@@ -125,7 +125,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"Jump",
-"speed": 3.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -142,7 +142,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"Run",
-"speed": 4.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -192,7 +192,7 @@ animations = [{
 
 [sub_resource type="Animation" id="Animation_6roe8"]
 resource_name = "Attack"
-length = 0.3
+length = 0.25
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -234,7 +234,7 @@ tracks/2/keys = {
 
 [sub_resource type="Animation" id="Animation_et6w4"]
 resource_name = "Jump"
-length = 0.7
+length = 0.375
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -254,7 +254,7 @@ tracks/1/path = NodePath("PlayerAni:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.06666667, 0.6),
+"times": PackedFloat32Array(0, 0.125, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [0, 1, 2]
@@ -303,7 +303,7 @@ tracks/1/keys = {
 
 [sub_resource type="Animation" id="Animation_hqcmm"]
 resource_name = "Run"
-length = 0.52
+length = 0.4
 loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -324,7 +324,7 @@ tracks/1/path = NodePath("PlayerAni:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.2, 0.36666667, 0.5),
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3),
 "transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 1,
 "values": [0, 1, 2, 3]
@@ -336,7 +336,7 @@ tracks/2/path = NodePath("SFXPlayer")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.5),
+"times": PackedFloat32Array(0, 0.2),
 "transitions": PackedFloat32Array(1, 1),
 "values": [{
 "args": [],
@@ -464,7 +464,7 @@ size = Vector2(10, 20.225)
 size = Vector2(18.111095, 26.550129)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_guard"]
-size = Vector2(18, 24.5)
+size = Vector2(8, 24.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_im3yb"]
 size = Vector2(10, 3.375)
@@ -524,7 +524,7 @@ collision_layer = 0
 collision_mask = 64
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackPivot/GuardArea"]
-position = Vector2(11, -2.75)
+position = Vector2(8, -2.75)
 shape = SubResource("RectangleShape2D_guard")
 disabled = true
 

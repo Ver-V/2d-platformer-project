@@ -1,0 +1,28 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Entitites/rat.tscn" id="1_rat"]
+[ext_resource type="Shader" path="res://resources/Shaders/enemy_tint.gdshader" id="2_tint"]
+[ext_resource type="Resource" path="res://resources/status_effects/rat_bleed.tres" id="3_bleed"]
+[ext_resource type="Texture2D" path="res://Assets/sprites/redeye.png" id="9_eyetex"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tint"]
+shader = ExtResource("2_tint")
+shader_parameter/tint_color = Color(1, 0.2, 0.2, 1)
+shader_parameter/tint_strength = 1.0
+shader_parameter/tint_brightness = 3.2
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0
+shader_parameter/dissolve_value = 0.0
+
+[node name="RatRed" instance=ExtResource("1_rat")]
+drop_gold_amount = 20
+max_hp_base = 60
+contact_status = ExtResource("3_bleed")
+contact_status_chance = 1.0
+mutation_enabled = false
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+material = SubResource("ShaderMaterial_tint")
+
+[node name="GlowEyes" parent="." index="7"]
+texture = ExtResource("9_eyetex")

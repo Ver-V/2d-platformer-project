@@ -166,6 +166,13 @@ func get_blink_node() -> CanvasItem: return sprite
 func can_tick_status_effects() -> bool: return _active and hp > 0
 func _on_status_damaged(_amount: int) -> void: queue_redraw()
 
+# 시야 제한(어둠)이 있는 스테이지에서는 체력바가 빛 안에 있을 때만 보인다 (어둠 속에서는 GlowEyes 눈만 보이도록)
+func _update_health_bar_light() -> void:
+	if not is_instance_valid(_health_bar_layer):
+		return
+	var vision := get_tree().get_first_node_in_group(VisionLimit.GROUP) as VisionLimit
+	_health_bar_layer.visible = vision == null or vision.is_lit(to_global(_get_health_bar_center()))
+
 # 몸을 다시 그릴 때(queue_redraw) 체력바 노드도 같이 다시 그린다
 func _draw() -> void:
 	if is_instance_valid(_health_bar_layer):
@@ -397,6 +404,7 @@ func _apply_death_flip(t: float) -> void:
 func _process(delta: float) -> void:
 	super._process(delta) 
 	if not _active: return
+	_update_health_bar_light()
 
 	if contact_damage > 0 and contact_tick > 0.0:
 		var removed_keys := []

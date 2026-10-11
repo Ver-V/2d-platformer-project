@@ -288,5 +288,7 @@ name = "ITEM_LANTERN_NAME"
 icon = SubResource("AtlasTexture_exd58")
 price = 500
 description = "ITEM_LANTERN_DESCRIPTION"
+type = 2
 anim_frames = SubResource("SpriteFrames_3wnup")
 vision_bonus_tiles = 4.0
+equip_slot = 1

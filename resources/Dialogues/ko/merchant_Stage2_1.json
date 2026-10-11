@@ -1,0 +1,37 @@
+[
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_idle",
+		"name": "동생 토끼",
+		"text": "언니, 또 왔네!"
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_surprise",
+		"name": "동생 토끼",
+		"text": "아, 맞아. 여기 뭔가 금이 간 벽들이 있던데. 뭔가 강하게 치면 부술 수 있을 것 같았어."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_smile",
+		"name": "동생 토끼",
+		"text": "나중에 알아두면 유용할 거야!"
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_smile",
+		"right_image": "LittleBunny_smile",
+		"name": "분홍 토끼",
+		"text": "아, 그래? 알았어. 알려줘서 고마워."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_idle",
+		"name": "동생 토끼",
+		"text": "필요한 거 있어?"
+	}
+]

@@ -1,0 +1,37 @@
+[
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_idle",
+		"name": "Little Bunny",
+		"text": "Sis, you're back!"
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_surprise",
+		"name": "Little Bunny",
+		"text": "Oh, right. I saw some cracked walls around here. Looked like you could break them if you hit them really hard."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_smile",
+		"name": "Little Bunny",
+		"text": "That might come in handy later!"
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_smile",
+		"right_image": "LittleBunny_smile",
+		"name": "Pink Bunny",
+		"text": "Oh, really? Got it. Thanks for letting me know."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_idle",
+		"name": "Little Bunny",
+		"text": "Need anything?"
+	}
+]

@@ -50,7 +50,7 @@ func _ready() -> void:
 		_apply_texture(closed_sprite, closed_texture)
 		_apply_texture(opened_sprite, opened_texture)
 		return
-	add_to_group("object")
+	add_to_group("minimap_door")
 	lock_overlay = LockOverlay.new()
 	add_child(lock_overlay)
 	trigger.body_entered.connect(_on_body_entered)
@@ -179,6 +179,9 @@ func _try_use_door(body: Player) -> void:
 	_show_prompt()
 	if is_instance_valid(body) and body == _player:
 		call_deferred("_teleport_player", body)
+
+func is_open() -> bool:
+	return _opened
 
 func _open() -> void:
 	_opened = true

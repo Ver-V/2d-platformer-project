@@ -78,11 +78,13 @@ func _on_body_entered(body: Node):
 		# [분기 1] 돈일 경우
 		if gold_amount > 0:
 			GameManager.update_gold(gold_amount)
+			HUD.log_pickup_gold(gold_amount)
 			collected_success = true
 			
 		# [분기 2] 아이템일 경우
 		elif item_resource != null:
 			if Inventory.add_item(item_resource):
+				HUD.log_pickup_item(item_resource)
 				collected_success = true
 			else:
 				if body.has_method("show_status"):

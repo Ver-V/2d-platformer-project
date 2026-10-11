@@ -20,9 +20,10 @@ locked_texture = ExtResource("4_7x7e7")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
 texture = ExtResource("2_5pbly")
+offset = Vector2(0, -6)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -1)
+position = Vector2(0, -6)
 shape = SubResource("RectangleShape2D_range")
 
 [node name="OpenSound" type="AudioStreamPlayer2D" parent="."]

@@ -30,6 +30,9 @@ const POPUP_END_Y := -75.0
 const POPUP_SCREEN_MARGIN := 4.0 # 카메라 화면 가장자리와 띄울 간격
 var _squash_tween: Tween
 var _base_sprite_scale: Vector2 = Vector2.ONE
+var _charge_flash: bool = false
+const CHARGE_FLASH_PERIOD := 0.16 # 강공격 준비 완료 깜빡임 주기(초)
+const CHARGE_FLASH_STRENGTH := 0.7
 
 func setup(p: Player) -> void:
 	player = p
@@ -55,6 +58,21 @@ func _process(_delta: float) -> void:
 		var bonus := player.combat.has_perfect_guard_bonus
 		sprite.material.set_shader_parameter("glow_active", bonus)
 		sprite.material.set_shader_parameter("glow_intensity", 2.0 if bonus else 0.0)
+		# 강공격이 다 모이면 몸 전체가 하얗게 번쩍인다
+		if _charge_flash:
+			var on := fmod(Time.get_ticks_msec() / 1000.0, CHARGE_FLASH_PERIOD) < CHARGE_FLASH_PERIOD * 0.5
+			sprite.material.set_shader_parameter("flash_modifier", CHARGE_FLASH_STRENGTH if on else 0.0)
+
+# 강공격 다 모임 번쩍임. 켜는 순간 한 번 크게 번쩍이고, 그 뒤로 키를 뗄 때까지 깜빡인다
+func set_charge_flash(on: bool) -> void:
+	if on == _charge_flash:
+		return
+	_charge_flash = on
+	if on:
+		apply_squash(1.15, 0.9)
+		player.shake_camera(1.5)
+	if sprite and sprite.material is ShaderMaterial:
+		sprite.material.set_shader_parameter("flash_modifier", 1.0 if on else 0.0)
 
 # --- 팝업 ---
 func show_popup(text: String, color: Color = Color.YELLOW) -> void:

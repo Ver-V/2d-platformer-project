@@ -230,12 +230,23 @@ func check_player_guard() -> void:
 	player.change_state(player.State.GUARD)
 	check(is_zero_approx(player.guard.get_recharge_ratio()), "Guard-active bar should start empty")
 	player.change_state(player.State.IDLE)
-	check(is_equal_approx(player.guard.cooldown_timer, 1.5), "Guard cooldown not started")
-	player.guard.cooldown_timer = 0.75
+	check(is_equal_approx(player.guard.cooldown_timer, player.guard.COOLDOWN_TIME), "Guard cooldown not started")
+	player.guard.cooldown_timer = player.guard.COOLDOWN_TIME * 0.5
 	check(is_equal_approx(player.guard.get_recharge_ratio(), 0.5), "Cooldown bar did not fill halfway")
 	check(player.visuals.get_guard_bar_center().y > 0.0, "Guard bar is not below the player")
 	player.guard.cooldown_timer = 0.0
 	check(is_equal_approx(player.guard.get_recharge_ratio(), 1.0), "Ready guard bar not full")
+	# 퍼펙트 가드에 성공한 가드는 끝나도 재사용 대기시간이 없다
+	player.change_state(player.State.GUARD)
+	player.guard._perfect_guard()
+	player.change_state(player.State.IDLE)
+	check(is_zero_approx(player.guard.cooldown_timer) and player.guard.can_start(), "Perfect guard should skip the guard cooldown")
+	player.change_state(player.State.GUARD)
+	player.change_state(player.State.IDLE)
+	check(is_equal_approx(player.guard.cooldown_timer, player.guard.COOLDOWN_TIME), "Perfect-guard flag carried over to the next guard")
+	player.guard.cooldown_timer = 0.0
+	player._invuln_left = 0.0 # _perfect_guard가 준 무적·반격 보너스는 아래 검사에 남기지 않는다
+	player.combat.has_perfect_guard_bonus = false
 	# 가드 후딜 캔슬: 누르고 있던 방향키로는 안 풀리고, 새로 누른 이동 입력에 풀린다
 	player._menu_exit_cooldown = 0.0
 	for action in ["left", "right"]:

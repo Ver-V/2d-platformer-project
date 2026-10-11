@@ -124,6 +124,30 @@ func _is_text(value: Variant) -> bool:
 	return value is String or value is StringName
 
 # 변이체 보상 상자 {씬 경로: {상자 id: [x, y]}}
+# {씬 경로: {"w": 정수, "h": 정수, "bits": base64 문자열}}
+func _valid_seen_tiles(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	for scene_path in value:
+		var t: Variant = value[scene_path]
+		if not scene_path is String or not t is Dictionary:
+			return false
+		if not _is_integer(t.get("w")) or not _is_integer(t.get("h")) or t.w <= 0 or t.h <= 0 or not t.get("bits") is String:
+			return false
+	return true
+
+# {씬 경로: [오브젝트 키 문자열, ...]}
+func _valid_seen_map_objects(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	for scene_path in value:
+		if not scene_path is String or not value[scene_path] is Array:
+			return false
+		for key in value[scene_path]:
+			if not key is String:
+				return false
+	return true
+
 func _valid_mutant_chests(value: Variant) -> bool:
 	if not value is Dictionary:
 		return false
@@ -133,6 +157,17 @@ func _valid_mutant_chests(value: Variant) -> bool:
 		for chest_id in value[scene_path]:
 			var pos: Variant = value[scene_path][chest_id]
 			if not chest_id is String or not pos is Array or pos.size() != 2 or not _is_number(pos[0]) or not _is_number(pos[1]):
+				return false
+	return true
+
+func _valid_equipment(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	for key in ["accessories", "gems"]:
+		if not value.get(key, []) is Array:
+			return false
+		for entry in value.get(key, []):
+			if entry != null and not entry is String:
 				return false
 	return true
 
@@ -193,9 +228,15 @@ func _is_valid_game(data: Variant) -> bool:
 			return false
 	if data.get("flask_current", 1) > data.get("flask_max", 1):
 		return false
+	if data.has("heavy_attack") and not data.heavy_attack is bool:
+		return false
 	if data.has("loot_seed") and (not _is_integer(data.loot_seed) or data.loot_seed < 0):
 		return false
 	if data.has("mutation_epoch") and (not _is_integer(data.mutation_epoch) or data.mutation_epoch < 0):
+		return false
+	if data.has("seen_map_objects") and not _valid_seen_map_objects(data.seen_map_objects):
+		return false
+	if data.has("seen_tiles") and not _valid_seen_tiles(data.seen_tiles):
 		return false
 	if data.has("mutant_chests") and not _valid_mutant_chests(data.mutant_chests):
 		return false
@@ -237,6 +278,9 @@ func _is_valid_game(data: Variant) -> bool:
 			return false
 		if slot.has("key_uses") and (not _is_integer(slot.key_uses) or slot.key_uses < 0):
 			return false
+	# 장비 칸 {"accessories": [id|null], "gems": [id|null]} (없으면 옛 세이브)
+	if data.has("equipment") and not _valid_equipment(data.equipment):
+		return false
 	# 저장 당시 걸려 있던 상태이상 (없으면 옛 세이브)
 	# 이어 하기 위치 {scene, x, y} (비어 있으면 없음)
 	if data.has("resume") and not _valid_resume(data.resume):

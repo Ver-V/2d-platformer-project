@@ -4,7 +4,7 @@ class_name Player
 # 플레이어 본체: 상태 전환(FSM), 이동·점프, 피격·사망, 상태이상 이어받기.
 # 공격·패링은 Combat, 가드는 Guard, 팝업·먼지·게이지 같은 연출은 Visuals 자식 노드가 맡는다.
 
-enum State { IDLE, RUN, JUMP, FALL, ATTACK, GUARD, DEAD }
+enum State { IDLE, RUN, JUMP, FALL, ATTACK, GUARD, DEAD, CHARGE }
 var current_state: State = State.IDLE
 
 @onready var combat: PlayerCombat = $Combat
@@ -36,10 +36,23 @@ var current_state: State = State.IDLE
 @export var coyote_time: float = 0.2     # 절벽에서 떨어져도 점프 가능한 시간
 @export var jump_buffer_time: float = 0.15 # 바닥에 닿기 전 미리 점프 입력받는 시간
 
+@export_group("Water")
+# 물 타일(WaterTileMap) 안: 이동·점프·중력이 느려지고, 점프 키를 누르고 있으면 떠오른다. 호흡 게이지(BreathEffect)가 생긴다
+@export var water_move_mult: float = 0.5
+@export var water_jump_mult: float = 0.25    # 점프 힘·떠오르는 속도 배율 (jumpforce 기준)
+@export var water_gravity_mult: float = 0.25
+@export var water_max_fall_speed: float = 50.0
+@export var water_rise_accel: float = 600.0  # 점프 키를 누르는 동안 떠오르는 속도까지 붙는 가속
+@export var water_exit_jump_height: float = 24.0 # 떠오르며 수면을 벗어날 때 수면 위로 솟는 높이(px) — 한 칸 높이 턱을 오를 수 있게
+
 @export_group("Hurt")
 @export var invuln_time: float = 0.8
 @export var blink_interval: float = 0.05
 @export var knockback_decay: float = 1800.0
+
+const BREATH_EFFECT: StatusEffect = preload("res://resources/status_effects/breath.tres")
+const WATER_SENSE_OFFSET := Vector2(0, -10) # 몸 가운데 (발 원점에서 위로)
+var in_water: bool = false
 
 const CORNER_CORRECTION_PX: int = 4    # 모서리 보정 최대 픽셀 거리 (몸 폭 10px의 40%)
 const KNOCKBACK_COOLDOWN: float = 0.7  # 넉백을 다시 받을 수 있기까지 (짧을수록 금방 다시 움직임)
@@ -100,11 +113,16 @@ func change_state(new_state: State) -> void:
 	if current_state == new_state: return
 
 	# 1. 이전 상태 종료(Exit) 처리
+	var from_charge := current_state == State.CHARGE
+	var heavy := from_charge and combat.is_charge_ready()
 	match current_state:
 		State.ATTACK:
 			combat.end_attack()
 		State.GUARD:
 			guard.end()
+		State.CHARGE:
+			combat.end_charge()
+			visuals.set_charge_flash(false)
 
 	current_state = new_state
 
@@ -112,8 +130,16 @@ func change_state(new_state: State) -> void:
 	match current_state:
 		State.ATTACK:
 			# 끝은 animation_finished("Attack")에서
+			anim_player.play("Attack", -1, combat.attack_speed_mult)
+			if from_charge: # 모으던 자세(칼을 든 프레임)에서 이어서 휘두른다
+				anim_player.seek(PlayerCombat.HEAVY_POSE_TIME, true)
+			combat.begin_attack(heavy)
+		State.CHARGE:
+			# 공격 키를 누르는 동안 휘두르기 직전 자세로 멈춰 있다. 끝은 키를 뗄 때(_process_charge)
 			anim_player.play("Attack")
-			combat.begin_attack()
+			anim_player.seek(PlayerCombat.HEAVY_POSE_TIME, true)
+			anim_player.pause()
+			combat.begin_charge()
 		State.GUARD:
 			# 끝은 animation_finished("guard")에서
 			velocity.x = 0
@@ -184,7 +210,7 @@ func _after_damaged(result: HitData.Result) -> void:
 	HUD.show_hud_temporarily()
 	HUD.show_damage_vignette(hp, max_hp)
 	GameManager.apply_hitstop(0.25, 0.2)
-	if current_state == State.ATTACK or current_state == State.GUARD:
+	if current_state == State.ATTACK or current_state == State.GUARD or current_state == State.CHARGE:
 		change_state(State.IDLE if is_on_floor() else State.FALL)
 
 # 상태이상 틱은 빨간 피격 비네트 대신 상태이상별 화면 점멸(screen_tint)로 표시한다
@@ -202,8 +228,36 @@ func _exit_tree() -> void:
 func _on_death() -> void:
 	change_state(State.DEAD)
 
+# --- 물 ---
+# 몸 가운데가 물 칸 안이면 수영. 떠오르며 물 밖으로 나오는 순간 수면 위로 water_exit_jump_height만큼 솟게 한다
+func _update_water() -> void:
+	var now := WaterTileMap.is_water_at(get_tree(), global_position + WATER_SENSE_OFFSET)
+	if in_water and not now:
+		if velocity.y < 0.0 and Input.is_action_pressed("jump") and not GameManager.is_menu_open:
+			var exit_speed := -sqrt(2.0 * get_gravity().y * water_exit_jump_height)
+			velocity.y = minf(velocity.y, exit_speed)
+		# 물속 허우적 동작(Run)을 끝내고 공중 동작으로
+		if current_state == State.JUMP or current_state == State.FALL:
+			anim_player.play("Jump")
+	in_water = now
+	var breath := get_status_effects().get_effect(&"breath") as BreathEffect
+	if in_water and breath == null and hp > 0:
+		breath = apply_status_effect(BREATH_EFFECT) as BreathEffect
+	if breath != null:
+		breath.submerged = in_water
+
+# 물속: 중력이 약하고 낙하 속도 상한이 낮다. 점프 키를 누르고 있으면 천천히 떠오른다
+func _apply_water_gravity(delta: float) -> void:
+	velocity.y += get_gravity().y * water_gravity_mult * delta
+	if not GameManager.is_menu_open and hp > 0 and Input.is_action_pressed("jump"):
+		velocity.y = move_toward(velocity.y, jumpforce * water_jump_mult, water_rise_accel * delta)
+	velocity.y = minf(velocity.y, water_max_fall_speed)
+
 # --- 이동 ---
 func apply_gravity(delta: float) -> void:
+	if in_water:
+		_apply_water_gravity(delta)
+		return
 	if is_on_floor(): return
 
 	var g := get_gravity()
@@ -244,6 +298,7 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	_update_water()
 	# 공통 타이머 감소
 	combat.tick(delta)
 	guard.tick(delta)
@@ -256,7 +311,7 @@ func _physics_process(delta: float) -> void:
 		if current_state == State.FALL or current_state == State.JUMP:
 			change_state(State.IDLE)
 
-	if not is_on_floor() and current_state != State.ATTACK and current_state != State.GUARD:
+	if not is_on_floor() and current_state != State.ATTACK and current_state != State.GUARD and current_state != State.CHARGE:
 		if velocity.y > 0:
 			change_state(State.FALL)
 		elif current_state != State.JUMP: # 점프 중이 아닐 때만 전환
@@ -275,6 +330,9 @@ func _physics_process(delta: float) -> void:
 			_process_attack(delta)
 		State.GUARD:
 			_process_guard(delta)
+		State.CHARGE:
+			_handle_corner_correction(delta)
+			_process_charge(delta)
 		State.DEAD:
 			pass
 
@@ -317,7 +375,8 @@ func _process_movement(delta: float) -> void:
 
 	# 상태 전이 (공격, 가드)
 	if Input.is_action_just_pressed("attack") and combat.can_attack() and _menu_exit_cooldown <= 0.0:
-		change_state(State.ATTACK)
+		# 강공격을 배웠으면 누르는 동안 모으고, 떼는 순간 휘두른다 (짧게 누르면 일반 공격)
+		change_state(State.CHARGE if combat.can_charge() else State.ATTACK)
 		return
 
 	if Input.is_action_just_pressed("guard") and is_on_floor() and guard.can_start():
@@ -351,6 +410,28 @@ func _process_attack(delta: float) -> void:
 	_face(dir_input)
 	move_with_knockback(delta)
 
+# 강공격 모으기: 키를 떼면 휘두른다 (HEAVY_CHARGE_TIME 이상 모았으면 강공격). 점프·가드로 취소, 이동은 느리게
+func _process_charge(delta: float) -> void:
+	if not Input.is_action_pressed("attack"):
+		change_state(State.ATTACK)
+		return
+	if _menu_exit_cooldown <= 0.0 and Input.is_action_just_pressed("jump"):
+		change_state(State.IDLE if is_on_floor() else State.FALL)
+		_process_movement(delta)
+		return
+	if Input.is_action_just_pressed("guard") and is_on_floor() and guard.can_start():
+		change_state(State.GUARD)
+		return
+	var was_ready := combat.is_charge_ready()
+	combat.tick_charge(delta)
+	if combat.is_charge_ready() and not was_ready:
+		visuals.set_charge_flash(true)
+	apply_gravity(delta)
+	var dir_input := Input.get_axis("left", "right")
+	_face(dir_input)
+	velocity.x = dir_input * movespeed * PlayerCombat.CHARGE_MOVE_RATIO
+	move_with_knockback(delta)
+
 func _process_guard(delta: float) -> void:
 	# 가드 후딜 캔슬: 가드 중 이동/점프를 새로 누르면 즉시 풀고 그 입력을 이번 프레임에 처리한다
 	# (누르고 있던 방향키는 캔슬하지 않고 아래에서 느리게 걷기로 처리 — 달리다 가드해도 바로 풀리지 않게)
@@ -371,7 +452,7 @@ func _process_guard(delta: float) -> void:
 func _try_jump() -> void:
 	if _jump_buffer_timer <= 0.0 or _coyote_timer <= 0.0:
 		return
-	velocity.y = jumpforce
+	velocity.y = jumpforce * (water_jump_mult if in_water else 1.0)
 	_jump_buffer_timer = 0.0
 	_coyote_timer = 0.0
 	sfx_player.play_jump()
@@ -386,7 +467,7 @@ func _face(dir_input: float) -> void:
 
 # 바닥에선 가감속, 공중에선 즉시 목표 속도
 func _apply_run(dir_input: float, delta: float) -> void:
-	var target_speed := dir_input * movespeed
+	var target_speed := dir_input * movespeed * (water_move_mult if in_water else 1.0)
 	if not is_on_floor():
 		velocity.x = target_speed
 	elif dir_input != 0:
@@ -413,6 +494,11 @@ func _handle_corner_correction(delta: float) -> void:
 
 # 애니메이션 관리 전용 함수 (ATTACK·GUARD·DEAD·JUMP·FALL은 change_state에서 재생)
 func _update_animation(dir_input: float) -> void:
+	# 물속에서는 서 있든 떠 있든 걷기 동작을 계속 (허우적거림)
+	if in_water:
+		if anim_player.current_animation != "Run":
+			anim_player.play("Run")
+		return
 	match current_state:
 		State.RUN:
 			if dir_input != 0 and anim_player.current_animation != "Run":

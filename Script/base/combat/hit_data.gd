@@ -21,6 +21,7 @@ var is_projectile: bool = false              # 가드는 투사체만 막는다 
 var ignore_knockback_cooldown: bool = false
 var invuln_time: float = -1.0                # 0 이상이면 맞은 쪽 무적시간을 이 값으로 (가시 등)
 var status_effects: Array[StatusEffect] = [] # HIT일 때만 건다
+var is_heavy: bool = false                   # 플레이어 강공격 (금 간 벽은 이것만 부서진다)
 
 func _init(p_amount: int = 0, p_knockback: Vector2 = Vector2.ZERO, p_source: Node = null) -> void:
 	amount = p_amount
@@ -33,6 +34,7 @@ func duplicate_hit() -> HitData:
 	h.ignore_knockback_cooldown = ignore_knockback_cooldown
 	h.invuln_time = invuln_time
 	h.status_effects = status_effects.duplicate()
+	h.is_heavy = is_heavy
 	return h
 
 # 맞을 수 있는 대상(receive_hit을 가진 노드)에게 전달. 그 외 대상은 IGNORED.

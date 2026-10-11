@@ -88,6 +88,20 @@
 	  ]
 	}
   ],
+  "locked": [
+	{
+		"name": "고대 석판",
+		"text": "낡은 석판이 공중에 떠 있다. 표면에 글귀가 새겨져 있다. \n'문지기의 징표를 지닌 자여, 원하는 곳으로 데려다주겠다.'",
+		"left_image": "HeroBunny_idle",
+		"speaker": "left"
+	},
+	{
+		"name": "고대 석판",
+		"text": "허가받지 않은 자는 탑승할 수 없다.",
+		"left_image": "HeroBunny_idle",
+		"speaker": "left"
+	}
+  ],
   "B1": [
 	{
 	  "name": "분홍 토끼",

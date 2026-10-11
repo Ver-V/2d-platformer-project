@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ymvgdewahhcm" path="res://Scenes/Projectile/projectilefire.tscn" id="1_fire"]
+[ext_resource type="Shader" path="res://resources/Shaders/water_projectile.gdshader" id="2_water"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
+shader = ExtResource("2_water")
+shader_parameter/water_color = Color(0.3, 0.65, 1, 1)
+shader_parameter/brightness = 1.6
+
+[node name="Projectile" instance=ExtResource("1_fire")]
+z_index = 4096
+z_as_relative = false
+damage = 15
+
+[node name="AnimatedSprite2D" parent="." index="1"]
+material = SubResource("ShaderMaterial_water")

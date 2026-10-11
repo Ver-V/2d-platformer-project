@@ -1,0 +1,21 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Script/System/water_tilemap.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/sprites/water_tiles.png" id="2_tex"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_water"]
+texture = ExtResource("2_tex")
+0:0/0 = 0
+0:0/0/custom_data_0 = true
+1:0/0 = 0
+1:0/0/custom_data_0 = true
+
+[sub_resource type="TileSet" id="TileSet_water"]
+custom_data_layer_0/name = "water"
+custom_data_layer_0/type = 1
+sources/0 = SubResource("TileSetAtlasSource_water")
+
+[node name="WaterTileMap" type="TileMapLayer"]
+z_index = 5
+tile_set = SubResource("TileSet_water")
+script = ExtResource("1_script")

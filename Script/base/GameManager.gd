@@ -6,6 +6,7 @@ var gold: int = 0
 var player_max_hp: int = 100
 var player_current_hp: int = 100
 var player_damage: int = 10
+var heavy_attack_unlocked: bool = false # 강공격 (수상한 과학자의 약물을 마시면 해금)
 var player_parry_damage_multifac: float = 1.5
 var defeated_bosses: Dictionary = {} # 영구 사망 보스 목록
 var talked_bosses: Dictionary = {}   # [추가] 보스 대화 완료 목록
@@ -28,6 +29,10 @@ var mutation_epoch: int = 0
 var mutant_chests: Dictionary = {}
 var current_slot: int = 1 # 지금 플레이 중인 세이브 슬롯 (메인 메뉴에서 고름). 저장·불러오기는 이 슬롯 파일로
 var visited_rooms_by_scene: Dictionary = {} # 씬 경로별 미니맵 방문 기록
+var seen_map_objects: Dictionary = {} # 씬 경로별로 플레이어가 가까이 가 본 미니맵 오브젝트 키 (MinimapUI.map_object_key)
+# 씬 경로별 미니맵 지형 기록: {"w", "h", "bits"} — 맵 타일 한 칸당 1비트 (플레이어 주변 몇 칸 안에 들어온 칸)
+var seen_tiles: Dictionary = {}
+var _fog_from_rooms: Array = [] # 지형 기록이 없던 옛 세이브: 처음 열 때 다녀간 방 전체를 본 걸로 채울 씬들
 var active_ui_count: int = 0
 var _ui_owners: Dictionary = {}
 var flask_max_charges: int = 1
@@ -165,6 +170,13 @@ func add_defeated_boss(id: String) -> void:
 	if not defeated_bosses.has(id):
 		defeated_bosses[id] = true
 
+# 강공격 해금: 한 번만 안내(튜토리얼 팝업)를 띄운다
+func unlock_heavy_attack() -> void:
+	if heavy_attack_unlocked:
+		return
+	heavy_attack_unlocked = true
+	TutorialPopup.display(&"TUTORIAL_HEAVY_ATTACK")
+
 func add_player_damage(amount: int) -> void:
 	player_damage += amount
 	stats_changed.emit()
@@ -247,6 +259,53 @@ func visit_room(scene_path: String, room: Vector2i) -> void:
 	if not rooms.has(room):
 		rooms.append(room)
 
+func has_seen_map_object(scene_path: String, key: String) -> bool:
+	return seen_map_objects.has(scene_path) and seen_map_objects[scene_path].has(key)
+
+func see_map_object(scene_path: String, key: String) -> void:
+	if not seen_map_objects.has(scene_path):
+		seen_map_objects[scene_path] = []
+	if not seen_map_objects[scene_path].has(key):
+		seen_map_objects[scene_path].append(key)
+
+# 씬의 지형 기록 (크기가 바뀐 맵이면 새로 만든다)
+func map_fog(scene_path: String, w: int, h: int) -> Dictionary:
+	var fog: Dictionary = seen_tiles.get(scene_path, {})
+	if fog.get("w", 0) != w or fog.get("h", 0) != h:
+		var bits := PackedByteArray()
+		bits.resize((w * h + 7) / 8)
+		fog = {"w": w, "h": h, "bits": bits}
+		seen_tiles[scene_path] = fog
+	return fog
+
+# 옛 세이브에서 넘어온 씬이면 true를 한 번만 돌려준다 (그때 다녀간 방을 채운다)
+func take_fog_from_rooms(scene_path: String) -> bool:
+	if not _fog_from_rooms.has(scene_path):
+		return false
+	_fog_from_rooms.erase(scene_path)
+	return true
+
+static func fog_index(fog: Dictionary, cell: Vector2i) -> int:
+	if cell.x < 0 or cell.y < 0 or cell.x >= fog.w or cell.y >= fog.h:
+		return -1
+	return cell.y * fog.w + cell.x
+
+static func is_tile_seen(fog: Dictionary, cell: Vector2i) -> bool:
+	var i := fog_index(fog, cell)
+	return i >= 0 and (fog.bits[i >> 3] & (1 << (i & 7))) != 0
+
+static func reveal_tile(fog: Dictionary, cell: Vector2i) -> void:
+	var i := fog_index(fog, cell)
+	if i >= 0:
+		fog.bits[i >> 3] |= 1 << (i & 7)
+
+func _seen_tiles_for_save() -> Dictionary:
+	var result: Dictionary = {}
+	for path in seen_tiles:
+		var fog: Dictionary = seen_tiles[path]
+		result[path] = {"w": fog.w, "h": fog.h, "bits": Marshalls.raw_to_base64(fog.bits)}
+	return result
+
 func _visited_rooms_for_save() -> Dictionary:
 	var result: Dictionary = {}
 	for path in visited_rooms_by_scene:
@@ -275,6 +334,7 @@ func get_data_for_save() -> Dictionary:
 		"current_hp": player_current_hp,
 		"max_hp": player_max_hp,
 		"damage": player_damage,
+		"heavy_attack": heavy_attack_unlocked,
 		"parrydamage": player_parry_damage_multifac,
 		"defeated_bosses": defeated_bosses,
 		"talked_bosses": talked_bosses,
@@ -287,12 +347,15 @@ func get_data_for_save() -> Dictionary:
 		"pos_x": last_checkpoint_pos.x,
 		"pos_y": last_checkpoint_pos.y,
 		"inventory": Inventory.to_save(),
+		"equipment": Inventory.equipment_to_save(),
 		"collected_items": collected_items,
 		"loot_seed": loot_seed,
 		"mutation_epoch": mutation_epoch,
 		"mutant_chests": mutant_chests,
 		"shop_sold": shop_sold,
 		"visited_rooms_by_scene": _visited_rooms_for_save(),
+		"seen_map_objects": seen_map_objects.duplicate(true),
+		"seen_tiles": _seen_tiles_for_save(),
 		"flask_max": flask_max_charges,
 		"flask_current": flask_current_charges,
 		"status_effects": _status_effects_for_save(),
@@ -329,6 +392,7 @@ func load_data_from_save(data: Dictionary) -> void:
 	player_current_hp = data.get("current_hp", 100)
 	player_max_hp = data.get("max_hp", 100)
 	player_damage = data.get("damage", 10)
+	heavy_attack_unlocked = data.get("heavy_attack", false) == true
 	player_parry_damage_multifac = data.get("parrydamage", 1.5)
 	defeated_mobs = data.get("defeated_mobs", [])
 	defeated_bosses = data.get("defeated_bosses", {})
@@ -367,8 +431,26 @@ func load_data_from_save(data: Dictionary) -> void:
 	for path in saved_rooms:
 		for r in saved_rooms[path]:
 			visit_room(str(path), Vector2i(int(r["x"]), int(r["y"])))
+	seen_map_objects.clear()
+	var saved_seen: Dictionary = data.get("seen_map_objects", {}) # 없던 옛 세이브는 빈 기록 (다가가면 다시 기록된다)
+	for path in saved_seen:
+		for key in saved_seen[path]:
+			see_map_object(str(path), str(key))
+	seen_tiles.clear()
+	_fog_from_rooms.clear()
+	if data.has("seen_tiles"):
+		var saved_tiles: Dictionary = data["seen_tiles"]
+		for path in saved_tiles:
+			var t: Dictionary = saved_tiles[path]
+			var w := int(t["w"])
+			var h := int(t["h"])
+			var bits: PackedByteArray = Marshalls.base64_to_raw(str(t["bits"]))
+			if bits.size() == (w * h + 7) / 8:
+				seen_tiles[str(path)] = {"w": w, "h": h, "bits": bits}
+	else:
+		_fog_from_rooms = visited_rooms_by_scene.keys() # 지형 기록 전 세이브: 다녀간 방은 다 본 걸로
 	
-	Inventory.load_from_save(data.get("inventory", []))
+	Inventory.load_from_save(data.get("inventory", []), data.get("equipment")) # 장비 칸이 없던 옛 세이브는 랜턴 등을 자동 장착
 	
 	last_checkpoint_pos = Vector2(data.get("pos_x", 0.0), data.get("pos_y", 0.0))
 	is_respawning = false
@@ -432,6 +514,7 @@ func reset_data() -> void:
 	player_current_hp = 100
 	player_max_hp = 100
 	player_damage = 10
+	heavy_attack_unlocked = false
 	player_parry_damage_multifac = 1.5
 	has_checkpoint = false
 	last_checkpoint_pos = Vector2.ZERO
@@ -444,6 +527,9 @@ func reset_data() -> void:
 	defeated_mobs.clear()
 	collected_items.clear()
 	visited_rooms_by_scene.clear()
+	seen_map_objects.clear()
+	seen_tiles.clear()
+	_fog_from_rooms.clear()
 	loot_seed = new_loot_seed()
 	mutation_epoch = 0
 	mutant_chests.clear()

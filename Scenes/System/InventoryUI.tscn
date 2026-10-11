@@ -32,6 +32,22 @@ font_size = 8
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h82ei"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_accessory"]
+bg_color = Color(0, 0, 0, 0.35)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.75, 0.55, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gem"]
+bg_color = Color(0, 0, 0, 0.35)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.7, 0.45, 0.95, 1)
+
 [node name="InventoryUI" type="CanvasLayer"]
 scale = Vector2(2, 2)
 transform = Transform2D(2, 0, 0, 2, 0, 0)
@@ -58,12 +74,13 @@ texture = ExtResource("2_bjrlb")
 
 [node name="GridContainer" type="GridContainer" parent="Control/TextureRect"]
 layout_mode = 0
-offset_left = 8.0
-offset_top = 6.5
-offset_right = 185.5
-offset_bottom = 114.5
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
+offset_left = 5.7361
+offset_top = 3.4951
+offset_right = 163.7361
+offset_bottom = 97.4951
+scale = Vector2(1.147222, 1.165049)
+theme_override_constants/h_separation = 2
+theme_override_constants/v_separation = 2
 columns = 5
 
 [node name="Slot" parent="Control/TextureRect/GridContainer" instance=ExtResource("2_d7s18")]
@@ -172,6 +189,56 @@ layout_mode = 2
 text = "INVENTORY_PARRY_LABEL"
 label_settings = SubResource("LabelSettings_p7xya")
 
+[node name="AccessorySlots" type="HBoxContainer" parent="Control/TextureRect/Panel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 4.0
+offset_top = 8.0
+offset_right = 112.0
+offset_bottom = 32.0
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Accessory1" parent="Control/TextureRect/Panel/AccessorySlots" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_accessory")
+
+[node name="Accessory2" parent="Control/TextureRect/Panel/AccessorySlots" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_accessory")
+
+[node name="Accessory3" parent="Control/TextureRect/Panel/AccessorySlots" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_accessory")
+
+[node name="Accessory4" parent="Control/TextureRect/Panel/AccessorySlots" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_accessory")
+
+[node name="GemSlots" type="VBoxContainer" parent="Control/TextureRect/Panel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 110.0
+offset_top = 40.0
+offset_right = 134.0
+offset_bottom = 92.0
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Gem1" parent="Control/TextureRect/Panel/GemSlots" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_gem")
+
+[node name="Gem2" parent="Control/TextureRect/Panel/GemSlots" instance=ExtResource("2_d7s18")]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_gem")
+
 [node name="ItemInfo" type="Panel" parent="Control/TextureRect"]
 layout_mode = 0
 offset_left = -140.0
@@ -188,13 +255,17 @@ offset_right = 340.0
 offset_bottom = 14.0
 label_settings = SubResource("LabelSettings_nwg6v")
 
-[node name="DescLabel" type="Label" parent="Control/TextureRect/ItemInfo"]
+[node name="DescLabel" type="RichTextLabel" parent="Control/TextureRect/ItemInfo"]
 layout_mode = 0
 offset_left = 6.0
 offset_top = 16.0
 offset_right = 340.0
 offset_bottom = 47.0
-label_settings = SubResource("LabelSettings_jos1c")
+mouse_filter = 2
+theme_override_fonts/normal_font = ExtResource("3_d7s18")
+theme_override_font_sizes/normal_font_size = 8
+bbcode_enabled = true
+scroll_active = false
 autowrap_mode = 3
 
 [node name="Button" type="Button" parent="Control"]

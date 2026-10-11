@@ -1,0 +1,58 @@
+[
+	{
+		"speaker": "left", 
+		"left_image": "HeroBunny_surprise",
+		"right_image": "LittleBunny_idle",
+		"name": "분홍 토끼",
+		"text": "아, 깜짝아! 놀랐잖아."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_surprise",
+		"right_image": "LittleBunny_smile",
+		"name": "동생 토끼",
+		"text": "언니! 또 보네. 쥐들의 영역까지는 무슨 일로 온거야?"
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_smile",
+		"name": "분홍 토끼",
+		"text": "음... 어쩌다보니, 여기밖에 올 곳이 없더라고."
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_idle",
+		"right_image": "LittleBunny_smile",
+		"name": "동생 토끼",
+		"text": "그래? 우연이네!"
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_embarrassed",
+		"right_image": "LittleBunny_smile",
+		"name": "분홍 토끼",
+		"text": "으음. 그러게. 그나저나 여기 너무 어두워서 위험할 것 같은데. 넌 괜찮아?"
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_embarrassed",
+		"right_image": "LittleBunny_smile",
+		"name": "동생 토끼",
+		"text": "아하하. 언니! 이런 어두운 곳을 랜턴도 없이 다니면 어떡해? 싸게 팔테니까. 하나 가져가!"
+	},
+	{
+		"speaker": "left",
+		"left_image": "HeroBunny_tired",
+		"right_image": "LittleBunny_smile",
+		"name": "분홍 토끼",
+		"text": "윽, 알았어. 공짜로 줄 수는 없는거야?"
+	},
+	{
+		"speaker": "right",
+		"left_image": "HeroBunny_tired",
+		"right_image": "LittleBunny_smile",
+		"name": "동생 토끼",
+		"text": "언니. 나도 먹고 살아야지!"
+	}
+]

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BreathEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Script/base/status/breath_effect.gd" id="1_breath"]
+
+[resource]
+script = ExtResource("1_breath")
+max_breath = 10.0
+refill_time = 2.0
+drown_damage = 5
+drown_interval = 1.0
+warn_below = 0.3

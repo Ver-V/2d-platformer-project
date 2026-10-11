@@ -231,6 +231,7 @@ func buy_item():
 		
 		if is_added:
 			GameManager.update_gold(-price)
+			HUD.log_pickup_item(item_resource)
 			# 재고 1개 감소 (저장되는 판매 기록도 함께 갱신)
 			item_data["stock"] -= 1
 			GameManager.record_shop_purchase(current_shop_id, item_resource.id)

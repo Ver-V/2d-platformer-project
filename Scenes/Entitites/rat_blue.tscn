@@ -1,0 +1,40 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Entitites/rat.tscn" id="1_rat"]
+[ext_resource type="Shader" path="res://resources/Shaders/enemy_tint.gdshader" id="2_tint"]
+[ext_resource type="PackedScene" uid="uid://d888233uuktt" path="res://Scenes/Entitites/ShooterComponent.tscn" id="3_shooter"]
+[ext_resource type="PackedScene" path="res://Scenes/Projectile/projectile_water.tscn" id="4_water"]
+[ext_resource type="Texture2D" path="res://Assets/sprites/blueeye.png" id="9_eyetex"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tint"]
+shader = ExtResource("2_tint")
+shader_parameter/tint_color = Color(0.3, 0.55, 1, 1)
+shader_parameter/tint_strength = 1.0
+shader_parameter/tint_brightness = 3.2
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0
+shader_parameter/dissolve_value = 0.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 160.0
+
+[node name="RatBlue" instance=ExtResource("1_rat")]
+drop_gold_amount = 25
+contact_damage_base = 10
+move_speed_base = 40.0
+detect_radius = 160.0
+mutation_enabled = false
+shoot_range = 150.0
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+material = SubResource("ShaderMaterial_tint")
+
+[node name="CollisionShape2D" parent="DetectArea" index="0"]
+shape = SubResource("CircleShape2D_detect")
+
+[node name="ShooterComponent" parent="." instance=ExtResource("3_shooter")]
+projectile_scene = ExtResource("4_water")
+projectile_damage = 15
+
+[node name="GlowEyes" parent="." index="7"]
+texture = ExtResource("9_eyetex")

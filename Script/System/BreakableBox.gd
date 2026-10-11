@@ -28,7 +28,6 @@ func _ready() -> void:
 		queue_free()
 		return
 	add_to_group("breakables")
-	add_to_group("object")
 	hp = max_hp
 	_update_damage_texture()
 
