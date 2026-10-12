@@ -12,8 +12,8 @@ var rng = RandomNumberGenerator.new()
 @onready var shooter: ShooterComponent = $ShooterComponent
 @onready var action_sfx: AudioStreamPlayer2D = $ActionSFX
 
-const SND_EXPLOSION = preload("res://Assets/sounds/explosion.wav")
-const SND_POWER_UP = preload("res://Assets/sounds/power_up.wav")
+const SND_EXPLOSION = preload("res://Assets/sounds/boss/boss01/explosion.wav")
+const SND_POWER_UP = preload("res://Assets/sounds/environment/power_up.wav")
 const Fire_projectile = preload("res://Scenes/Projectile/projectilefire.tscn")
 
 const TELEPORT_INTERVAL := 3.0
@@ -73,7 +73,7 @@ func _speed() -> float:
 
 # 패턴 사이 대기 — 페이즈 2에서는 짧아진다
 func _wait(t: float) -> void:
-	await _wait(t / _speed())
+	await Wait.seconds(self, t / _speed())
 
 # 대기 중에 보스가 쓰러지면(사망 연출 중) 남은 패턴을 이어가지 않는다
 func _still_fighting() -> bool:

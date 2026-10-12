@@ -2,7 +2,7 @@
   "start": [
 	{
 	  "name": "Ancient tablet",
-	  "text": "A weathered stone tablet floats in mid-air. An inscription is carved onto its surface. \n'If you possess the Gatekeeper's Token, I shall take you wherever you desire.'",
+	  "text": "A weathered stone tablet floats in mid-air. An inscription is carved onto its surface. \n'If you possess the Gatekeeper's Ring, I shall take you wherever you desire.'",
 	  "left_image": "HeroBunny_idle",
 	  "speaker": "left",
 	  "choices": [
@@ -54,9 +54,8 @@
 		},
 		{
 		  "text": "B8",
-		  "next": "B8",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "scene_path": "res://Scenes/Stage/Stage_03.tscn",
+		  "next": "B8"
 		},
 		{
 		  "text": "B9",
@@ -92,7 +91,7 @@
   "locked": [
 	{
 		"name": "Ancient tablet",
-		"text": "A weathered stone tablet floats in mid-air. An inscription is carved onto its surface. \n'If you possess the Gatekeeper's Token, I shall take you wherever you desire.'",
+		"text": "A weathered stone tablet floats in mid-air. An inscription is carved onto its surface. \n'If you possess the Gatekeeper's Ring, I shall take you wherever you desire.'",
 		"left_image": "HeroBunny_idle",
 		"speaker": "left"
 	},
@@ -116,6 +115,15 @@
 	{
 	  "name": "Pink Bunny",
 	  "text": "I think this is the fourth floor.",
+	  "left_image": "HeroBunny_surprise",
+	  "speaker": "left",
+	  "next" : "start"
+	}
+  ],
+  "B8": [
+	{
+	  "name": "Pink Bunny",
+	  "text": "This is already B8.",
 	  "left_image": "HeroBunny_surprise",
 	  "speaker": "left",
 	  "next" : "start"

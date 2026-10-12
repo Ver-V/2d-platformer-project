@@ -1,17 +1,19 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://csvo1tat21ts4"]
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://csvo1tat21ts4"]
 
-[ext_resource type="Texture2D" uid="uid://citog4m28u5un" path="res://Assets/sprites/#2 - Transparent & Drop Shadow.png" id="1_onvmg"]
+[ext_resource type="SpriteFrames" uid="uid://clty3q6bfmsbm" path="res://resources/items/frames/health_flask_frames.tres" id="1_vbwi5"]
+[ext_resource type="Texture2D" uid="uid://ckq2dfsj68oeg" path="res://Assets/sprites/potion/health_flask.png" id="2_8a5l7"]
 [ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="2_vbwi5"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_8a5l7"]
-atlas = ExtResource("1_onvmg")
-region = Rect2(384, 288, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_bbpxc"]
+atlas = ExtResource("2_8a5l7")
+region = Rect2(0, 0, 15, 30)
 
 [resource]
 script = ExtResource("2_vbwi5")
 id = "health_flask"
 name = "ITEM_HEALTH_FLASK_NAME"
-icon = SubResource("AtlasTexture_8a5l7")
+icon = SubResource("AtlasTexture_bbpxc")
 description = "ITEM_HEALTH_FLASK_DESCRIPTION"
 type = 1
+anim_frames = ExtResource("1_vbwi5")
 heal_amount = 30

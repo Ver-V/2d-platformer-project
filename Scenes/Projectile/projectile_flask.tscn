@@ -1,0 +1,272 @@
+[gd_scene load_steps=40 format=3]
+
+[ext_resource type="Script" path="res://Script/base/flask_projectile.gd" id="1_flask"]
+[ext_resource type="Texture2D" uid="uid://bgt2eata0bnku" path="res://Assets/sprites/potion/flask_red.png" id="2_red"]
+[ext_resource type="Texture2D" uid="uid://bnlma2hv5yfvf" path="res://Assets/sprites/potion/flask_purple.png" id="3_purple"]
+[ext_resource type="Texture2D" uid="uid://bk2a7w7okxamf" path="res://Assets/sprites/potion/flask_orange.png" id="4_orange"]
+[ext_resource type="Texture2D" uid="uid://c5jaufqnwjkl4" path="res://Assets/sprites/potion/flask_turquoise.png" id="5_turquoise"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleed_0"]
+atlas = ExtResource("2_red")
+region = Rect2(0, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleed_1"]
+atlas = ExtResource("2_red")
+region = Rect2(22, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleed_2"]
+atlas = ExtResource("2_red")
+region = Rect2(44, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleed_3"]
+atlas = ExtResource("2_red")
+region = Rect2(66, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleed_4"]
+atlas = ExtResource("2_red")
+region = Rect2(88, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleed_5"]
+atlas = ExtResource("2_red")
+region = Rect2(110, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleed_6"]
+atlas = ExtResource("2_red")
+region = Rect2(132, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleed_7"]
+atlas = ExtResource("2_red")
+region = Rect2(154, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_poison_0"]
+atlas = ExtResource("3_purple")
+region = Rect2(0, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_poison_1"]
+atlas = ExtResource("3_purple")
+region = Rect2(22, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_poison_2"]
+atlas = ExtResource("3_purple")
+region = Rect2(44, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_poison_3"]
+atlas = ExtResource("3_purple")
+region = Rect2(66, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_poison_4"]
+atlas = ExtResource("3_purple")
+region = Rect2(88, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_poison_5"]
+atlas = ExtResource("3_purple")
+region = Rect2(110, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_poison_6"]
+atlas = ExtResource("3_purple")
+region = Rect2(132, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_poison_7"]
+atlas = ExtResource("3_purple")
+region = Rect2(154, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_0"]
+atlas = ExtResource("4_orange")
+region = Rect2(0, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_1"]
+atlas = ExtResource("4_orange")
+region = Rect2(22, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_2"]
+atlas = ExtResource("4_orange")
+region = Rect2(44, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_3"]
+atlas = ExtResource("4_orange")
+region = Rect2(66, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_4"]
+atlas = ExtResource("4_orange")
+region = Rect2(88, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_5"]
+atlas = ExtResource("4_orange")
+region = Rect2(110, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_6"]
+atlas = ExtResource("4_orange")
+region = Rect2(132, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_7"]
+atlas = ExtResource("4_orange")
+region = Rect2(154, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acid_0"]
+atlas = ExtResource("5_turquoise")
+region = Rect2(0, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acid_1"]
+atlas = ExtResource("5_turquoise")
+region = Rect2(22, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acid_2"]
+atlas = ExtResource("5_turquoise")
+region = Rect2(44, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acid_3"]
+atlas = ExtResource("5_turquoise")
+region = Rect2(66, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acid_4"]
+atlas = ExtResource("5_turquoise")
+region = Rect2(88, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acid_5"]
+atlas = ExtResource("5_turquoise")
+region = Rect2(110, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acid_6"]
+atlas = ExtResource("5_turquoise")
+region = Rect2(132, 0, 22, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acid_7"]
+atlas = ExtResource("5_turquoise")
+region = Rect2(154, 0, 22, 37)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_flask"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleed_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleed_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleed_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleed_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleed_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleed_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleed_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleed_7")
+}],
+"loop": true,
+"name": &"bleed",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_poison_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_poison_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_poison_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_poison_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_poison_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_poison_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_poison_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_poison_7")
+}],
+"loop": true,
+"name": &"poison",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_7")
+}],
+"loop": true,
+"name": &"fire",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_acid_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_acid_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_acid_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_acid_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_acid_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_acid_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_acid_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_acid_7")
+}],
+"loop": true,
+"name": &"acid",
+"speed": 12.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_flask"]
+radius = 5.0
+
+[node name="FlaskProjectile" type="Area2D"]
+collision_layer = 64
+collision_mask = 257
+script = ExtResource("1_flask")
+life_time = 6.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_flask")
+animation = &"bleed"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_flask")

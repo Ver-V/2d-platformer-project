@@ -7,6 +7,7 @@ var player_max_hp: int = 100
 var player_current_hp: int = 100
 var player_damage: int = 10
 var heavy_attack_unlocked: bool = false # 강공격 (수상한 과학자의 약물을 마시면 해금)
+var double_jump_unlocked: bool = false # 더블 점프 (해금 아이템을 쓰면 영구 해금)
 var player_parry_damage_multifac: float = 1.5
 var defeated_bosses: Dictionary = {} # 영구 사망 보스 목록
 var talked_bosses: Dictionary = {}   # [추가] 보스 대화 완료 목록
@@ -52,7 +53,7 @@ var is_respawning: bool = false
 
 # --- [추가] 전역 SFX 플레이어 (UI 전용) ---
 var _ui_sfx_player: AudioStreamPlayer
-const SND_UI_CLICK = preload("res://Assets/sounds/UIC.wav")
+const SND_UI_CLICK = preload("res://Assets/sounds/system/UIC.wav")
 
 func _ready() -> void:
 	loot_seed = new_loot_seed() # 세이브 없이 바로 시작해도 시드가 있도록. 불러오면 세이브 값으로 덮어씀
@@ -176,6 +177,13 @@ func unlock_heavy_attack() -> void:
 		return
 	heavy_attack_unlocked = true
 	TutorialPopup.display(&"TUTORIAL_HEAVY_ATTACK")
+
+# 더블 점프 해금: 한 번만 안내(튜토리얼 팝업)를 띄운다
+func unlock_double_jump() -> void:
+	if double_jump_unlocked:
+		return
+	double_jump_unlocked = true
+	TutorialPopup.display(&"TUTORIAL_DOUBLE_JUMP")
 
 func add_player_damage(amount: int) -> void:
 	player_damage += amount
@@ -335,6 +343,7 @@ func get_data_for_save() -> Dictionary:
 		"max_hp": player_max_hp,
 		"damage": player_damage,
 		"heavy_attack": heavy_attack_unlocked,
+		"double_jump": double_jump_unlocked,
 		"parrydamage": player_parry_damage_multifac,
 		"defeated_bosses": defeated_bosses,
 		"talked_bosses": talked_bosses,
@@ -393,6 +402,7 @@ func load_data_from_save(data: Dictionary) -> void:
 	player_max_hp = data.get("max_hp", 100)
 	player_damage = data.get("damage", 10)
 	heavy_attack_unlocked = data.get("heavy_attack", false) == true
+	double_jump_unlocked = data.get("double_jump", false) == true
 	player_parry_damage_multifac = data.get("parrydamage", 1.5)
 	defeated_mobs = data.get("defeated_mobs", [])
 	defeated_bosses = data.get("defeated_bosses", {})
@@ -515,6 +525,7 @@ func reset_data() -> void:
 	player_max_hp = 100
 	player_damage = 10
 	heavy_attack_unlocked = false
+	double_jump_unlocked = false
 	player_parry_damage_multifac = 1.5
 	has_checkpoint = false
 	last_checkpoint_pos = Vector2.ZERO

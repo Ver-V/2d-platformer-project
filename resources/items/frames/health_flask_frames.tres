@@ -1,0 +1,60 @@
+[gd_resource type="SpriteFrames" load_steps=9 format=3 uid="uid://clty3q6bfmsbm"]
+
+[ext_resource type="Texture2D" uid="uid://ckq2dfsj68oeg" path="res://Assets/sprites/potion/health_flask.png" id="1_st1kd"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uqsf5"]
+atlas = ExtResource("1_st1kd")
+region = Rect2(0, 0, 15, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_goau2"]
+atlas = ExtResource("1_st1kd")
+region = Rect2(15, 0, 15, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aot7y"]
+atlas = ExtResource("1_st1kd")
+region = Rect2(30, 0, 15, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u0moy"]
+atlas = ExtResource("1_st1kd")
+region = Rect2(45, 0, 15, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tuitm"]
+atlas = ExtResource("1_st1kd")
+region = Rect2(60, 0, 15, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oherh"]
+atlas = ExtResource("1_st1kd")
+region = Rect2(75, 0, 15, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0rpdv"]
+atlas = ExtResource("1_st1kd")
+region = Rect2(90, 0, 15, 30)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uqsf5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_goau2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aot7y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u0moy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tuitm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oherh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0rpdv")
+}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]

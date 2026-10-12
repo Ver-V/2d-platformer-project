@@ -35,6 +35,13 @@ func apply(template: StatusEffect) -> StatusEffect:
 	_drop_if_finished(effect)
 	return effect
 
+# 걸려 있는 상태이상들의 공격력 보정 합 (산성 등)
+func get_attack_modifier() -> int:
+	var total := 0
+	for effect in _effects.values():
+		total += effect.attack_modifier
+	return total
+
 func has(id: StringName) -> bool:
 	return _effects.has(id)
 

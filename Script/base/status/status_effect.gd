@@ -15,6 +15,7 @@ const SAVE_SCRIPT_DIR := "res://Script/base/status/" # 세이브에서 불러올
 @export var tick_interval: float = 0.0           # 0 이하면 틱 없음
 @export var screen_tint: Color = Color(0, 0, 0, 0) # 플레이어가 걸려 있는 동안 화면 가장자리 점멸 색 (알파 0이면 없음)
 @export var bar_color: Color = Color.WHITE        # 플레이어 옆 상태이상 게이지 색 (get_progress 만큼 채움)
+@export var attack_modifier: int = 0              # 걸려 있는 동안 플레이어 검 공격력에 더한다 (산성 디버프 = -5)
 
 var host: CombatBody2D
 var elapsed: float = 0.0

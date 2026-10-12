@@ -31,13 +31,14 @@ func run_checks() -> void:
 	await check_chest_ground_and_vanish(manager)
 	await check_pickup_log(manager)
 	await check_equipment(manager, saver)
-	check_gatekeepers_token(manager)
+	check_gatekeepers_ring(manager)
 	await check_inventory_item_info(manager)
 	await check_item_animation(manager)
 	await check_door_lock(manager)
 	await check_minimap_markers(manager)
 	check_chest_key_dialogue()
 	await check_heavy_attack_drug(manager)
+	await check_double_jump_item(manager)
 	check_world_map(manager)
 	await check_shortcut_door(manager)
 	await check_resume_on_quit(manager, saver)
@@ -574,16 +575,16 @@ func check_inventory_item_info(manager) -> void:
 	check(ui.info_name_label.text == "", "Closing the action menu with nothing hovered should clear the info")
 	check(ui.grid.get_child(0).tooltip_text == "", "Slots should no longer use the default tooltip")
 	# 장착 아이템은 이름 아래에 장착 효과를 한 줄씩, 그다음 설명
-	var token = db().get_item_by_id("gatekeepers_token")
-	inv().add_item(token)
+	var ring = db().get_item_by_id("gatekeepers_ring")
+	inv().add_item(ring)
 	ui.hovered_equip = [1, 0]
 	ui._update_item_info()
 	var expected := "
 ".join([TranslationServer.translate(&"ITEM_EFFECT_ATTACK").format({"value": "+ 5"}),
-		TranslationServer.translate(&"ITEM_EFFECT_ATTACK_SPEED").format({"value": "+ 10"}), TranslationServer.translate(token.description)])
+		TranslationServer.translate(&"ITEM_EFFECT_ATTACK_SPEED").format({"value": "+ 10"}), TranslationServer.translate(ring.description)])
 	check(ui.info_desc_label.get_parsed_text() == expected, "Equipment info should list its effects under the name, then the description")
 	check(ui.info_desc_label.text.begins_with("[color=#%s]" % ui.EFFECT_BUFF_COLOR.to_html(false)), "Stat increases should be shown in the buff color")
-	var cursed = token.duplicate()
+	var cursed = ring.duplicate()
 	cursed.attack_damage = -3
 	check(not cursed.effect_lines()[0]["buff"] and cursed.effect_lines()[0]["text"] == TranslationServer.translate(&"ITEM_EFFECT_ATTACK").format({"value": "- 3"}),
 		"Stat decreases should be marked as debuffs")
@@ -599,11 +600,11 @@ func check_inventory_item_info(manager) -> void:
 func check_item_animation(manager) -> void:
 	manager.reset_data()
 	var key = db().get_item_by_id("red_lighted_silver_key")
-	var potion = db().get_item_by_id("health_potion")
+	var still = db().get_item_by_id("pink_key") # 애니메이션 없는 아이템 (체력 포션은 이제 애니메이션이 있다)
 	check(key != null and key.has_animation() and key.anim_frames.get_frame_count(key.anim_name) == 18, "Red-lit silver key should have an 18-frame animation")
-	check(not db().get_item_by_id("pink_key").has_animation(), "Pink key should stay a still icon")
+	check(not still.has_animation(), "Pink key should stay a still icon")
 	check(key.get_frame_at(0.0) != key.get_frame_at(0.15), "Animated item frame should change over time")
-	check(potion.get_frame_at(1.0) == potion.icon, "Item without animation should use its icon")
+	check(still.get_frame_at(1.0) == still.icon, "Item without animation should use its icon")
 
 	var field = load("res://Scenes/Item/field_item.tscn").instantiate()
 	field.id = "test:anim_key"
@@ -615,22 +616,21 @@ func check_item_animation(manager) -> void:
 	field.queue_free()
 
 	inv().add_item(key)
-	inv().add_item(potion)
+	inv().add_item(still)
 	var ui = load("res://Scenes/System/InventoryUI.tscn").instantiate()
 	root.add_child(ui)
 	await process_frame
 	ui.open()
 	var key_slot = ui.grid.get_child(0)
-	var potion_slot = ui.grid.get_child(1)
+	var still_slot = ui.grid.get_child(1)
 	var top_before = key_slot.icon.offset_top
 	var frame_before = key_slot.icon.texture
 	key_slot._process(0.15)
 	check(key_slot.icon.texture != frame_before, "Inventory slot should advance the item animation")
 	check(key_slot.icon.offset_top != top_before, "Inventory slot icon should bob")
-	check(not potion_slot.is_processing() and potion_slot.icon.texture == potion_slot._trimmed(potion, potion.icon), "Slot without animation should keep the icon still")
-	var pink = db().get_item_by_id("pink_key")
-	var used: Rect2i = pink.icon.get_image().get_used_rect()
-	var shown: Texture2D = potion_slot._trimmed(pink, pink.icon)
+	check(not still_slot.is_processing() and still_slot.icon.texture == still_slot._trimmed(still, still.icon), "Slot without animation should keep the icon still")
+	var used: Rect2i = still.icon.get_image().get_used_rect()
+	var shown: Texture2D = still_slot._trimmed(still, still.icon)
 	check(Vector2i(shown.get_size()) == used.size, "Slot icon should be trimmed to the drawn pixels so it sits centered")
 	check(key_slot.icon.texture.get_size() == key_slot._trimmed(key, key.get_frame_at(0.0)).get_size(), "Animated icons should be trimmed to one shared area")
 	check(key_slot.get_node("AmountLabel").visible == false, "Keys should not show their remaining uses")
@@ -650,6 +650,10 @@ func check_boss_bar_centered() -> void:
 
 # 지름길 문: A는 B를 한 번 쓰기 전엔 잠김. B를 쓰면 A로 이동하며 개방(세이브 기록), 그 뒤로 A→B도 된다.
 # 다른 씬의 짝으로 갈 때는 도착 정보를 남기고, 다음 스테이지가 플레이어를 그 문 앞에 소환한다.
+# 지금 재생 중인 문 소리 (문이 루트에 만들어 둔 AudioStreamPlayer)
+func door_sound_count() -> int:
+	return root.get_children().filter(func(n): return n is AudioStreamPlayer and n.stream != null 		and n.stream.resource_path.ends_with("opendoor_closedoor.wav")).size()
+
 func check_shortcut_door(manager) -> void:
 	manager.reset_data()
 	var door_scene = load("res://Scenes/System/ShortcutDoor.tscn")
@@ -667,6 +671,7 @@ func check_shortcut_door(manager) -> void:
 	root.add_child(a)
 	root.add_child(b)
 	player.global_position = a.arrival_position()
+	var sounds_before := door_sound_count() # 헤드리스에선 소리가 끝나지 않아 앞 검사의 문 소리가 남아 있다
 
 	a._try_use_door(player)
 	await process_frame
@@ -677,11 +682,13 @@ func check_shortcut_door(manager) -> void:
 	await process_frame
 	check(a.is_unlocked() and b.is_unlocked() and manager.collected_items.has("shortcut:test_link"), "Using B should unlock the shortcut and save it")
 	check(player.global_position.is_equal_approx(a.arrival_position()), "Using B should move the player to A")
+	check(door_sound_count() == sounds_before + 1, "Opening and passing through a door at once should play the door sound once")
 
 	player.set_meta("key_door_teleport_until", 0)
 	a._try_use_door(player)
 	await process_frame
 	check(player.global_position.is_equal_approx(b.arrival_position()), "After unlocking, A should take the player to B")
+	check(door_sound_count() == sounds_before + 2, "Every trip through a door should play the door sound")
 
 	var a_again = door_scene.instantiate()
 	a_again.link_id = "test_link"
@@ -980,14 +987,14 @@ func check_pickup_log(manager) -> void:
 	print("Pickup log: chest/field item/coin listed top-left, one group per moment, gold merges, disappears after its time")
 
 # 장비 칸 (보조 4, 보석 2): 장착 아이템은 칸이 비면 바로 장착, 가방과 장비 칸 사이를 오가며, 장착한 것만 효과가 있다
-# 1스테이지 보스 보상 "문지기의 징표": 공격력·공격 속도 보너스, 장착 중에만 엘리베이터 탑승
-func check_gatekeepers_token(manager) -> void:
+# 1스테이지 보스 보상 "문지기의 반지": 공격력·공격 속도 보너스, 장착 중에만 엘리베이터 탑승
+func check_gatekeepers_ring(manager) -> void:
 	manager.reset_data()
-	var token = db().get_item_by_id("gatekeepers_token")
-	check(token != null and token.equip_slot == 1 and token.attack_damage == 5 and is_equal_approx(token.attack_speed_bonus, 0.1),
-		"Gatekeeper's Token should be an accessory with +5 attack and +10% attack speed")
+	var ring = db().get_item_by_id("gatekeepers_ring")
+	check(ring != null and ring.equip_slot == 1 and ring.attack_damage == 5 and is_equal_approx(ring.attack_speed_bonus, 0.1),
+		"Gatekeeper's Ring should be an accessory with +5 attack and +10% attack speed")
 	var boss = load("res://Scenes/Entitites/boss_stage_1.tscn").instantiate()
-	check(boss.reward_item == token, "Stage 1 boss should reward the Gatekeeper's Token")
+	check(boss.reward_item == ring, "Stage 1 boss should reward the Gatekeeper's Ring")
 	boss.free()
 	for locale in ["en", "ko"]:
 		var data = JSON.parse_string(FileAccess.get_file_as_string("res://resources/Dialogues/%s/elevator_block.json" % locale))
@@ -999,18 +1006,18 @@ func check_gatekeepers_token(manager) -> void:
 	player.set_physics_process(false)
 	var base_damage: int = player.combat.attack_damage
 	var elevator = load("res://Script/System/elevator_block.gd").new()
-	check(elevator.dialogue_block() == "locked", "Elevator should refuse without the token")
-	inv().add_item(token)
-	check(inv().is_equipped("gatekeepers_token"), "Token should auto-equip into a free accessory slot")
-	check(elevator.dialogue_block() == "start", "Elevator should open the floor choices while the token is equipped")
+	check(elevator.dialogue_block() == "locked", "Elevator should refuse without the ring")
+	inv().add_item(ring)
+	check(inv().is_equipped("gatekeepers_ring"), "Ring should auto-equip into a free accessory slot")
+	check(elevator.dialogue_block() == "start", "Elevator should open the floor choices while the ring is equipped")
 	check(player.combat.attack_damage == base_damage + 5 and is_equal_approx(player.combat.attack_speed_mult, 1.1),
-		"Equipped token should add attack and attack speed")
+		"Equipped ring should add attack and attack speed")
 	player.combat.begin_attack()
 	check(is_equal_approx(player.combat.cooldown_left, player.combat.attack_cooldown / 1.1), "Attack speed should shorten the attack cooldown")
 	player.combat.end_attack()
 	inv().unequip(1, 0)
-	check(inv().has_item("gatekeepers_token") and elevator.dialogue_block() == "locked", "A token only carried in the bag should not open the elevator")
-	check(is_equal_approx(player.combat.attack_speed_mult, 1.0), "Unequipping the token should remove the attack speed bonus")
+	check(inv().has_item("gatekeepers_ring") and elevator.dialogue_block() == "locked", "A ring only carried in the bag should not open the elevator")
+	check(is_equal_approx(player.combat.attack_speed_mult, 1.0), "Unequipping the ring should remove the attack speed bonus")
 	elevator.free()
 	player.queue_free()
 	manager.reset_data()
@@ -1213,6 +1220,33 @@ func check_chest_key_dialogue() -> void:
 		var data = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
 		check(data is Dictionary and data.has(chest.block_without_item), "Chest no-key dialogue missing in %s (%s)" % [locale, path])
 	chest.free()
+
+# 더블 점프 해금 아이템: 쓰면 영구 해금(안내 팝업 한 번), 세이브에 남는다
+func check_double_jump_item(manager) -> void:
+	manager.reset_data()
+	var saver = root.get_node("SaveManager")
+	var popup = root.get_node("TutorialPopup")
+	while popup.is_active: # 앞 검사의 팝업이 닫히는 애니메이션이 끝날 때까지 (안 그러면 대기열에 쌓여 나중에 열린다)
+		await process_frame
+	var feather = db().get_item_by_id("double_jump_feather")
+	check(feather != null and feather.type == 1 and feather.unlocks_double_jump, "The double jump item should be a consumable that unlocks the double jump")
+	check(not manager.double_jump_unlocked, "Double jump should start locked")
+	feather.use(null)
+	await process_frame
+	check(manager.double_jump_unlocked and popup.visible, "Using the item should unlock the double jump and explain it")
+	popup.hide_popup()
+	while popup.is_active:
+		await process_frame
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data) and data["double_jump"] == true, "Double jump unlock should be saved")
+	manager.reset_data()
+	check(not manager.double_jump_unlocked, "New game should lock the double jump again")
+	manager.load_data_from_save(data)
+	check(manager.double_jump_unlocked, "Double jump unlock should load back")
+	var bad := data.duplicate(true)
+	bad["double_jump"] = 1
+	check(not saver._is_valid_game(bad), "Invalid double jump flag should fail validation")
+	manager.reset_data()
 
 # 수상한 과학자의 약물: 마시면 강공격 해금(안내 팝업 한 번), 세이브에 남는다
 func check_heavy_attack_drug(manager) -> void:

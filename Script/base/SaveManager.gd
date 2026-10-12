@@ -230,6 +230,8 @@ func _is_valid_game(data: Variant) -> bool:
 		return false
 	if data.has("heavy_attack") and not data.heavy_attack is bool:
 		return false
+	if data.has("double_jump") and not data.double_jump is bool:
+		return false
 	if data.has("loot_seed") and (not _is_integer(data.loot_seed) or data.loot_seed < 0):
 		return false
 	if data.has("mutation_epoch") and (not _is_integer(data.mutation_epoch) or data.mutation_epoch < 0):

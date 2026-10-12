@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://brjfmf4agleju"]
+
+[ext_resource type="Texture2D" uid="uid://citog4m28u5un" path="res://Assets/sprites/#2 - Transparent & Drop Shadow.png" id="1_esqqn"]
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hy50o"]
+atlas = ExtResource("1_esqqn")
+region = Rect2(160, 256, 32, 32)
+
+[resource]
+script = ExtResource("1_script")
+id = "gatekeepers_ring"
+name = "ITEM_GATEKEEPERS_RING_NAME"
+icon = SubResource("AtlasTexture_hy50o")
+description = "ITEM_GATEKEEPERS_RING_DESCRIPTION"
+type = 2
+equip_slot = 1
+attack_damage = 5
+attack_speed_bonus = 0.1

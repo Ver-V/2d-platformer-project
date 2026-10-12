@@ -40,7 +40,7 @@ func run_checks() -> void:
 	await check_guard_does_not_block_contact()
 	await check_projectile_vs_player()
 	await check_projectile_same_team()
-	await check_reflected_projectile_waits_for_enemy()
+	await check_reflected_projectile_absorbed_by_invulnerable_enemy()
 	await check_enemy_contact()
 	await check_contact_status_only_on_hit()
 	await check_sword_hits_enemy()
@@ -254,8 +254,8 @@ func check_projectile_vs_player() -> void:
 	check(p.hp == 80 and not third.is_queued_for_deletion(), "enemy projectile should pass through a dodging player")
 	await cleanup([p, proj, second, third])
 
-# 반사탄은 적이 무적이면 사라지지 않고, 무적이 끝난 뒤 명중한다 (패링이 헛되지 않도록)
-func check_reflected_projectile_waits_for_enemy() -> void:
+# 반사탄도 무적인 적에게 닿으면 데미지 없이 흡수된다 (무적 타이밍의 반사는 헛친다)
+func check_reflected_projectile_absorbed_by_invulnerable_enemy() -> void:
 	var mob = spawn_slime(Vector2(300, 400))
 	var hp0: int = mob.hp
 	mob.start_invuln(1.0)
@@ -264,12 +264,19 @@ func check_reflected_projectile_waits_for_enemy() -> void:
 	proj.is_parryable = true
 	proj.attempt_parry(proj.global_position + Vector2(10, 0))
 	hit_with_projectile(proj, mob)
-	check(mob.hp == hp0 and not proj.is_queued_for_deletion(), "reflected projectile should not vanish on an invulnerable enemy")
-	mob.reset_combat_state()
-	hit_with_projectile(proj, mob)
-	check(mob.hp < hp0 and proj.is_queued_for_deletion(), "reflected projectile should hit once the enemy is vulnerable")
+	check(mob.hp == hp0 and proj.is_queued_for_deletion(), "reflected projectile should be absorbed by an invulnerable enemy")
 	await cleanup([mob, proj])
-	# 기다리는 건 패링된 탄만: 처음부터 플레이어 팀인 탄(나중의 무기 탄 등)은 무적인 적에게 흡수된다
+	# 무적이 아니면 반사탄이 명중한다
+	var mob3 = spawn_slime(Vector2(300, 400))
+	var hp3: int = mob3.hp
+	var proj3 := spawn_projectile(20, Vector2.LEFT * 150)
+	proj3.shooter = mob3
+	proj3.is_parryable = true
+	proj3.attempt_parry(proj3.global_position + Vector2(10, 0))
+	hit_with_projectile(proj3, mob3)
+	check(mob3.hp < hp3 and proj3.is_queued_for_deletion(), "reflected projectile should hit a vulnerable enemy")
+	await cleanup([mob3, proj3])
+	# 처음부터 플레이어 팀인 탄(나중의 무기 탄 등)도 무적인 적에게 흡수된다
 	var mob2 = spawn_slime(Vector2(300, 400))
 	mob2.start_invuln(1.0)
 	var shot := spawn_projectile(10, Vector2.RIGHT * 150)

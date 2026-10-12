@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://d0gowbrfv5wum" path="res://Script/System/SavePoint.gd" id="1_kksam"]
 [ext_resource type="Texture2D" uid="uid://dh2okk5r5icwk" path="res://Assets/sprites/save_point_anim_strip_9.png" id="2_bm0t3"]
-[ext_resource type="AudioStream" uid="uid://1dfib3v3ns1w" path="res://Assets/sounds/power_up.wav" id="3_73muu"]
+[ext_resource type="AudioStream" uid="uid://1dfib3v3ns1w" path="res://Assets/sounds/environment/power_up.wav" id="3_73muu"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fi6uy"]
 atlas = ExtResource("2_bm0t3")

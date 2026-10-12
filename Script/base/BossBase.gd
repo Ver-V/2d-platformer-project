@@ -28,7 +28,17 @@ var phase: int = 1
 var _speech_label: Label
 var _speech_tween: Tween
 
+# 보스는 절대 변이하지 않는다 (씬의 mutation_enabled 값·그룹 등록 순서와 상관없이)
+func _can_mutate() -> bool:
+	return false
+
+func apply_mutation(kind: MobMutation.Kind) -> void:
+	if kind != MobMutation.Kind.NONE:
+		return
+	super.apply_mutation(kind)
+
 func _ready() -> void:
+	mutation_enabled = false
 	super._ready() # 부모(EnemyBase)의 _ready 실행 (체력 설정 등)
 	DialogueManager.dialogue_event.connect(_on_dialogue_event)
 	# 코드에서도 다시 한번 그룹 확인

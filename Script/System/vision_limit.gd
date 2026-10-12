@@ -4,6 +4,7 @@ class_name VisionLimit
 # 플레이어 주변 원 안만 보이게 하는 시야 제한.
 # 월드 공간에 그리므로 HUD·상점·인벤토리 등 CanvasLayer UI는 가려지지 않는다.
 # BaseStage.vision_radius_tiles > 0 이면 스테이지가 자동으로 붙인다.
+# LIGHT_GROUP 노드(켜진 횃불 등: get_light_center() / get_light_radius())의 원 안도 밝힌다 — 화면 근처 MAX_LIGHTS개까지.
 
 const SHADER: Shader = preload("res://resources/Shaders/vision_limit.gdshader")
 const Z_INDEX: int = RenderingServer.CANVAS_ITEM_Z_MAX - 1
@@ -23,6 +24,11 @@ var _bonus_tiles: float = 0.0 # 갖고 있는 아이템의 시야 보너스 (인
 var _eye: Vector2 = Vector2.ZERO # 빛의 중심 (플레이어 몸 중앙)
 
 const GROUP := &"vision_limit"
+const LIGHT_GROUP := &"vision_light"
+const MAX_LIGHTS := 16 # vision_limit.gdshader의 배열 크기와 같아야 한다
+
+var _light_centers := PackedVector2Array()
+var _light_radii := PackedFloat32Array()
 
 func _ready() -> void:
 	add_to_group(GROUP)
@@ -57,7 +63,12 @@ func get_radius() -> float:
 
 # 이 위치가 빛 안에 있는가 (지금 그려지는 반지름 기준). 어둠 위에 그리는 몹 체력바가 빛 밖에서는 숨는 데 쓴다
 func is_lit(world_pos: Vector2) -> bool:
-	return world_pos.distance_to(_eye) <= _shown_radius
+	if world_pos.distance_to(_eye) <= _shown_radius:
+		return true
+	for i in _light_centers.size():
+		if world_pos.distance_to(_light_centers[i]) <= _light_radii[i]:
+			return true
+	return false
 
 func _update() -> void:
 	if not is_instance_valid(target):
@@ -82,3 +93,31 @@ func _update() -> void:
 	_material.set_shader_parameter("radius", _shown_radius)
 	_material.set_shader_parameter("softness", edge_softness)
 	_material.set_shader_parameter("darkness", darkness)
+	_update_lights(Rect2(_rect.global_position, cover))
+
+# 화면(cover)에 걸치는 빛만 가까운 순으로 MAX_LIGHTS개 골라 셰이더에 넘긴다
+func _update_lights(view_rect: Rect2) -> void:
+	var found: Array = []
+	for node in get_tree().get_nodes_in_group(LIGHT_GROUP):
+		var r: float = node.get_light_radius()
+		if r <= 0.0:
+			continue
+		var c: Vector2 = node.get_light_center()
+		if view_rect.grow(r).has_point(c):
+			found.append([c.distance_squared_to(view_rect.get_center()), c, r])
+	if found.size() > MAX_LIGHTS:
+		found.sort_custom(func(a, b): return a[0] < b[0])
+		found.resize(MAX_LIGHTS)
+	_light_centers.resize(found.size())
+	_light_radii.resize(found.size())
+	for i in found.size():
+		_light_centers[i] = found[i][1]
+		_light_radii[i] = found[i][2]
+	# 셰이더 배열은 크기가 고정이라 남는 칸을 채워서 넘긴다
+	var centers := _light_centers.duplicate()
+	var radii := _light_radii.duplicate()
+	centers.resize(MAX_LIGHTS)
+	radii.resize(MAX_LIGHTS)
+	_material.set_shader_parameter("light_count", found.size())
+	_material.set_shader_parameter("light_centers", centers)
+	_material.set_shader_parameter("light_radii", radii)

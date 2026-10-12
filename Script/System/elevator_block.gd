@@ -4,7 +4,7 @@ extends Area2D
 @export var bounce_height: float = 10.0
 @export var bounce_speed: float = 0.2
 # 이 아이템을 "장착"하고 있어야 층 선택지가 나온다. 없으면 locked_block (석판 글귀 뒤에 탑승 거부)을 띄운다. 비우면 항상 탑승 가능
-@export var required_item_id: String = "gatekeepers_token"
+@export var required_item_id: String = "gatekeepers_ring"
 @export var locked_block: String = "locked"
 
 var is_active: bool = true

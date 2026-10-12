@@ -354,6 +354,7 @@ func check_player_water() -> void:
 	p._update_water()
 	var breath = p.get_status_effects().get_effect(&"breath")
 	check(p.in_water and breath != null and breath.submerged, "Player in a water tile should swim and get a breath gauge")
+	check(p._water_loop.stream == p.SND_IN_WATER and p._water_loop.playing, "Entering water should start the underwater loop sound")
 	check(p.visuals.get_status_bar_rects().size() == 1, "Breath gauge should show like a status effect bar")
 	p.change_state(p.State.FALL)
 	p._update_animation(0.0)
@@ -381,6 +382,7 @@ func check_player_water() -> void:
 	check(not p.in_water and is_equal_approx(p.velocity.y, expected) and not breath.submerged,
 		"Rising out of the water while holding jump should pop up about one tile (vy %.1f)" % p.velocity.y)
 	check(p.anim_player.current_animation == "Jump", "Leaving the water mid-air should switch back to the jump animation")
+	check(not p._water_loop.playing, "Leaving the water should stop the underwater loop sound")
 	var peak: float = p.velocity.y * p.velocity.y / (2.0 * p.get_gravity().y)
 	check(peak >= 16.0 and peak < 32.0, "Water exit should reach a one-tile ledge but not a full jump (%.1f px)" % peak)
 	Input.action_release("jump")

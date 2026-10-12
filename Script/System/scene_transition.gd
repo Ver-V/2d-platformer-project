@@ -26,10 +26,9 @@ func start_transition(action: Callable, duration: float = 1.0) -> void:
 	tween = create_tween()
 	tween.tween_property(color_rect, "modulate:a", 0.0, duration * 0.5)
 
-func start_elevator_transition(action: Callable, duration: float = 1.4, shake_amount: float = 7.0) -> void:
-	var current_scene = get_tree().current_scene
-	if current_scene and current_scene.has_method("apply_camera_shake"):
-		current_scene.apply_camera_shake(shake_amount)
+# 엘리베이터: 출발할 때 덜컹 흔들리며 어두워지고, 새 층에서 다시 덜컹 멈추는 흔들림과 함께 밝아진다 (Fade In)
+func start_elevator_transition(action: Callable, duration: float = 1.4, shake_amount: float = 7.0, arrival_shake: float = 9.0) -> void:
+	_shake_current_scene(shake_amount)
 	
 	var tween = create_tween()
 	tween.tween_property(color_rect, "modulate:a", 1.0, duration * 0.55)
@@ -40,5 +39,11 @@ func start_elevator_transition(action: Callable, duration: float = 1.4, shake_am
 	
 	await get_tree().create_timer(0.35).timeout
 	
+	_shake_current_scene(arrival_shake) # 바뀐 씬(도착한 층)의 카메라
 	tween = create_tween()
-	tween.tween_property(color_rect, "modulate:a", 0.0, duration * 0.45)
+	tween.tween_property(color_rect, "modulate:a", 0.0, duration * 0.6).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
+
+func _shake_current_scene(amount: float) -> void:
+	var scene := get_tree().current_scene
+	if scene and scene.has_method("apply_camera_shake"):
+		scene.apply_camera_shake(amount)

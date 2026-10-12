@@ -151,7 +151,8 @@ func _resolve_sword_hit(target: Node) -> void:
 
 	var knock_dir: Vector2 = (victim.global_position - player.global_position).normalized()
 	var heavy := is_heavy_attack
-	var base_damage := int(round(attack_damage * (HEAVY_DAMAGE_MULT if heavy else 1.0)))
+	var debuffed := maxf(1.0, attack_damage + player.get_status_effects().get_attack_modifier()) # 산성 디버프 등
+	var base_damage := int(round(debuffed * (HEAVY_DAMAGE_MULT if heavy else 1.0)))
 	var knock := Vector2(knock_dir.x * 400, -200) * (HEAVY_KNOCKBACK_MULT if heavy else 1.0)
 	var hit := HitData.new(base_damage + _counter_bonus(), knock, player)
 	hit.status_effects = Inventory.roll_equipped_hit_statuses() # 장착한 보석의 타격 상태이상

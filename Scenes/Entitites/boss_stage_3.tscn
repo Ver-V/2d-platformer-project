@@ -1,0 +1,78 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bl288730bkpt" path="res://Scenes/Entitites/Boss.tscn" id="1_boss"]
+[ext_resource type="PackedScene" uid="uid://d888233uuktt" path="res://Scenes/Entitites/ShooterComponent.tscn" id="2_shooter"]
+[ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="3_coin"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_boss"]
+animations = [{
+"frames": [],
+"loop": false,
+"name": &"attack",
+"speed": 10.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"dead",
+"speed": 10.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"gethit",
+"speed": 10.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"idle",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(24, 50)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(24, 50)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(24, 50)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 475.0
+
+[node name="Boss_stage3" node_paths=PackedStringArray("bgm_player", "boss_sprite") instance=ExtResource("1_boss")]
+bgm_player = NodePath("BGMPlayer")
+boss_sprite = NodePath("AnimatedSprite2D")
+drop_gold_amount = 300
+coin_scene = ExtResource("3_coin")
+max_hp_base = 350
+contact_damage_base = 20
+move_speed_base = 0.0
+knockback_resist = 10000000.0
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+sprite_frames = SubResource("SpriteFrames_boss")
+animation = &"idle"
+
+[node name="CollisionShape2D" parent="." index="1"]
+position = Vector2(-3, 1)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(-3, 1)
+shape = SubResource("RectangleShape2D_hurt")
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(-3, 1)
+shape = SubResource("RectangleShape2D_hit")
+
+[node name="CollisionShape2D" parent="DetectArea" index="0"]
+shape = SubResource("CircleShape2D_detect")
+
+[node name="BGMPlayer" parent="." index="6"]
+volume_db = -15.0
+parameters/looping = true
+
+[node name="ActionSFX" type="AudioStreamPlayer2D" parent="." index="7"]
+bus = &"SFX"
+
+[node name="ShooterComponent" parent="." index="8" instance=ExtResource("2_shooter")]

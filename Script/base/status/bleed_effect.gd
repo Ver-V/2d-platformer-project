@@ -8,6 +8,7 @@ class_name BleedEffect
 @export var threshold: float = 100.0
 @export var decay_per_sec: float = 10.0
 @export_range(0.0, 1.0) var burst_ratio: float = 0.2   # 터질 때 최대 HP 비율 피해
+@export_range(0.0, 1.0) var boss_burst_ratio: float = 0.1 # 보스("bosses" 그룹)가 터질 때는 이 비율 (체력이 커서 같은 비율이면 너무 세다)
 @export var burst_min_damage: int = 10
 @export var burst_popup_key: StringName = &"STATUS_BLEED_BURST"
 @export_range(0.0, 1.0) var warn_above: float = 0.7 # 게이지가 이 비율 이상이면 곧 터진다는 뜻으로 깜빡임
@@ -42,7 +43,9 @@ func is_bar_warning() -> bool:
 	return get_progress() >= warn_above
 
 func get_burst_damage() -> int:
-	return maxi(burst_min_damage, int(ceil(host.max_hp * burst_ratio)))
+	# Boss 클래스를 직접 쓰지 않는다 (상태이상 스크립트가 보스 쪽 의존성까지 끌고 와 컴파일이 깨짐) — BossBase가 넣는 그룹으로 구분
+	var ratio := boss_burst_ratio if host.is_in_group("bosses") else burst_ratio
+	return maxi(burst_min_damage, int(ceil(host.max_hp * ratio)))
 
 func _get_save_state() -> Dictionary:
 	var state := super._get_save_state()

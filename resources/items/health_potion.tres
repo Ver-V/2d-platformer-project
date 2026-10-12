@@ -1,19 +1,21 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://ccvylxygt88mc"]
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://ccvylxygt88mc"]
 
 [ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_4scv1"]
-[ext_resource type="Texture2D" uid="uid://citog4m28u5un" path="res://Assets/sprites/#2 - Transparent & Drop Shadow.png" id="1_47tnu"]
+[ext_resource type="SpriteFrames" uid="uid://c7wxv22fycx7b" path="res://resources/items/frames/health_potion_frames.tres" id="1_e7tso"]
+[ext_resource type="Texture2D" uid="uid://v5gd588eehg3" path="res://Assets/sprites/potion/health_potion.png" id="1_tip3f"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_47tnu"]
-atlas = ExtResource("1_47tnu")
-region = Rect2(0, 288, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_e7tso"]
+atlas = ExtResource("1_tip3f")
+region = Rect2(0, 0, 14, 24)
 
 [resource]
 script = ExtResource("1_4scv1")
 id = "health_potion"
 name = "ITEM_HEALTH_POTION_NAME"
-icon = SubResource("AtlasTexture_47tnu")
+icon = SubResource("AtlasTexture_e7tso")
 price = 150
 description = "ITEM_HEALTH_POTION_DESCRIPTION"
 type = 1
+anim_frames = ExtResource("1_e7tso")
 heal_amount = 40
 metadata/_custom_type_script = "uid://djy4vfexvhruh"

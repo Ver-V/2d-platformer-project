@@ -19,6 +19,12 @@ func _init() -> void:
 func _on_applied() -> void:
 	_popup(popup_key, popup_color)
 
+# 다시 걸리면 남은 시간과 새 독의 지속시간 중 긴 쪽으로 (짧은 스플래시 독이 긴 독을 줄이지 않게)
+func reapply(incoming: StatusEffect) -> void:
+	var remaining := duration - elapsed
+	super.reapply(incoming)
+	duration = maxf(remaining, incoming.duration)
+
 func _on_tick() -> void:
 	host.apply_status_damage(tick_damage)
 

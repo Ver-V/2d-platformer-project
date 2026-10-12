@@ -1,13 +1,30 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=6 format=3 uid="uid://dqocp1b1r3xus"]
 
-[ext_resource type="Script" path="res://Script/System/crumbling_block.gd" id="1_crumble"]
+[ext_resource type="Script" uid="uid://bw7upi8lrr2wj" path="res://Script/System/crumbling_block.gd" id="1_crumble"]
+[ext_resource type="Texture2D" uid="uid://cgpum4v6rh8hm" path="res://Assets/sprites/world_tileset.png" id="2_hpuih"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mfa5f"]
+atlas = ExtResource("2_hpuih")
+region = Rect2(128, 16, 16, 16)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
-size = Vector2(14, 4)
+size = Vector2(14, 3)
 
 [node name="CrumblingBlock" type="StaticBody2D"]
 collision_mask = 0
 script = ExtResource("1_crumble")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(8, 8)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = SubResource("AtlasTexture_mfa5f")
+centered = false
 
 [node name="Detector" type="Area2D" parent="."]
 collision_layer = 0
@@ -15,5 +32,5 @@ collision_mask = 2
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Detector"]
-position = Vector2(8, -2)
+position = Vector2(8, -0.5)
 shape = SubResource("RectangleShape2D_top")

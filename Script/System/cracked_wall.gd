@@ -26,7 +26,7 @@ const COLOR_CRACK := Color(0.12, 0.1, 0.14)
 	set(value):
 		texture = value
 		queue_redraw()
-@export var break_sound: AudioStream = preload("res://Assets/sounds/EH.wav")
+@export var break_sound: AudioStream = preload("res://Assets/sounds/environment/brokenwall.wav")
 @export var persist_id: String = ""
 
 const HIT_DUST_SHADER: Shader = preload("res://resources/Shaders/box_hit_dust.gdshader")

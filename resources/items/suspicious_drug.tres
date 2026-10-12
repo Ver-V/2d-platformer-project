@@ -1,11 +1,19 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://1xxeyte8rhon"]
 
+[ext_resource type="SpriteFrames" uid="uid://b03x1h3yqcual" path="res://resources/items/frames/suspicious_drug_frames.tres" id="1_73obn"]
 [ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://decv8c806tgy" path="res://Assets/sprites/potion/suspicious_drug.png" id="2_p60vi"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ro3ix"]
+atlas = ExtResource("2_p60vi")
+region = Rect2(0, 0, 24, 39)
 
 [resource]
 script = ExtResource("1_script")
 id = "suspicious_drug"
 name = "ITEM_SUSPICIOUS_DRUG_NAME"
+icon = SubResource("AtlasTexture_ro3ix")
 description = "ITEM_SUSPICIOUS_DRUG_DESCRIPTION"
 type = 1
+anim_frames = ExtResource("1_73obn")
 unlocks_heavy_attack = true

@@ -2,7 +2,7 @@ extends StaticBody2D
 class_name BreakableBox
 
 @export var max_hp: int = 40
-@export var hit_sound: AudioStream = preload("res://Assets/sounds/EH.wav")
+@export var hit_sound: AudioStream = preload("res://Assets/sounds/monster/EH.wav")
 
 # 체력 단계별 그림. [0] = 멀쩡(100%), 이후 체력이 줄수록 다음 그림.
 # 4장이면 75% 이하 → [1], 50% 이하 → [2], 25% 이하 → [3]. 비워두면 Sprite2D 그림 그대로

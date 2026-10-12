@@ -25,6 +25,7 @@ func run_checks() -> void:
 	await check_kind_effects(stage)
 	await check_bleed_and_poison_hits(stage)
 	await check_split(stage)
+	await check_bosses_never_mutate(stage)
 	var chest_id: String = await check_reward_chest(stage)
 	stage.queue_free()
 	await process_frame
@@ -33,6 +34,25 @@ func run_checks() -> void:
 	gm().reset_data()
 	print("Mutation regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
 	quit(0 if failures == 0 else 1)
+
+# 보스(1·2·3탄 씬)는 스테이지에 놓여도, mutation_enabled를 켜도, 변이를 직접 걸어도 변이하지 않는다
+func check_bosses_never_mutate(stage) -> void:
+	for path in ["res://Scenes/Entitites/boss_stage_1.tscn", "res://Scenes/Entitites/boss_stage_2.tscn", "res://Scenes/Entitites/boss_stage_3.tscn"]:
+		var boss = load(path).instantiate()
+		boss.mutation_enabled = true
+		boss.persist_id = &"test_boss_mutation"
+		boss.position = stage.player.global_position + Vector2(200, -10)
+		stage.get_node("Entities").add_child(boss)
+		stage.register_spawned_enemy(boss)
+		await process_frame
+		await process_frame
+		check(not boss.mutation_enabled and not boss._can_mutate() and boss.mutation == MobMutation.Kind.NONE, "%s should never roll a mutation" % path.get_file())
+		boss.apply_mutation(MobMutation.Kind.SPLIT)
+		boss.apply_mutation(MobMutation.Kind.TOUGH)
+		check(boss.mutation == MobMutation.Kind.NONE and boss.max_hp == boss.max_hp_base, "%s should ignore a forced mutation" % path.get_file())
+		boss.queue_free()
+		await process_frame
+	print("Bosses: never mutate (auto roll, mutation_enabled on, forced apply)")
 
 # EnemyBase·Chest는 오토로드(GameManager)에 의존해서 테스트에선 클래스 이름 대신 이렇게 확인한다
 func _is_mob(n: Node) -> bool:

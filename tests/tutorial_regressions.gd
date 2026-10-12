@@ -52,6 +52,7 @@ func run_checks() -> void:
 	await check_popup_queue()
 	await check_player_guard()
 	await check_corner_correction()
+	await check_double_jump()
 	await check_save_point_input()
 	await check_hitstop_overlap()
 	fixture.queue_free()
@@ -337,6 +338,70 @@ func check_corner_correction() -> void:
 		ceiling.free()
 	player.queue_free()
 	print("Corner correction: 1~4px overlaps cleared in one frame, real ceilings and falls untouched")
+
+# 더블 점프: 해금 후 공중에서 새로 누르면 같은 힘으로 한 번 더. 착지하기 전엔 한 번뿐, 코요테 점프는 따로 센다
+func check_double_jump() -> void:
+	var gm = root.get_node("GameManager")
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	fixture.add_child(player)
+	player.set_physics_process(false)
+	player.global_position = Vector2(6000, 3000)
+	var delta := 1.0 / 60.0
+	player._menu_exit_cooldown = 0.0
+	player._air_jump_available = true
+	gm.double_jump_unlocked = false
+	await air_jump_press(player, delta)
+	check(player.velocity.y > 0.0 and player._air_jump_available, "Locked double jump should not jump in mid-air")
+	gm.double_jump_unlocked = true
+	await air_jump_press(player, delta)
+	check(player.velocity.y < player.jumpforce * 0.9 and not player._air_jump_available and player.current_state == player.State.JUMP,
+		"Unlocked double jump should jump again with the full jump force")
+	await air_jump_press(player, delta)
+	check(player.velocity.y > 0.0, "Double jump should only work once before landing")
+	# 코요테 시간 안의 점프는 바닥 점프라 더블 점프를 쓰지 않는다
+	player._air_jump_available = true
+	player._coyote_timer = 0.1
+	await air_jump_press(player, delta)
+	check(player.velocity.y < 0.0 and player._air_jump_available, "A coyote jump should keep the double jump")
+	# 물속에서는 더블 점프 대신 헤엄친다
+	player._coyote_timer = 0.0
+	player.in_water = true
+	await air_jump_press(player, delta)
+	check(player._air_jump_available, "Double jump should not trigger in water")
+	player.in_water = false
+	# 착지하면 다시 쓸 수 있다
+	player._air_jump_available = false
+	player._jump_buffer_timer = 0.0 # 앞에서 누른 점프 선입력이 착지 순간 점프로 나가지 않게
+	var floor_body := StaticBody2D.new()
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(200, 16)
+	shape.shape = rect
+	floor_body.add_child(shape)
+	fixture.add_child(floor_body)
+	floor_body.global_position = player.global_position + Vector2(0, 12)
+	player.velocity = Vector2(0, 100)
+	player.set_physics_process(true)
+	for i in 30: # 착지할 때까지 (프레임 타이밍에 따라 다르다)
+		await physics_frame
+		if player.is_on_floor():
+			break
+	await physics_frame # 착지한 다음 물리 프레임에 다시 쓸 수 있게 된다
+	check(player._air_jump_available, "Landing should restore the double jump")
+	gm.double_jump_unlocked = false
+	floor_body.queue_free()
+	player.queue_free()
+	await process_frame
+	print("Double jump: locked/unlocked, once per air time, coyote jump and water excluded, refreshed on landing")
+
+# 공중에서 떨어지는 중에 점프를 새로 누른 한 프레임을 처리한다
+func air_jump_press(player, delta: float) -> void:
+	player.velocity = Vector2(0, 60)
+	Input.action_press("jump") # 누른 그 프레임에만 just_pressed라 기다리지 않고 바로 처리한다
+	player._process_movement(delta)
+	Input.action_release("jump")
+	await process_frame
+	await process_frame # 다음 누름이 "방금 뗌"(점프 컷)과 같은 프레임에 겹치지 않게
 
 func press_action(node: Node, action: StringName) -> void:
 	var event := InputEventAction.new()

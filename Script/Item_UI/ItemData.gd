@@ -30,6 +30,7 @@ enum EquipSlot { NONE, ACCESSORY, GEM }
 @export var damage_amount: int = 0
 @export var parry_multifactor: float = 0.0
 @export var unlocks_heavy_attack: bool = false # 마시면 강공격 해금 (수상한 과학자의 약물)
+@export var unlocks_double_jump: bool = false # 쓰면 더블 점프 영구 해금
 
 @export_group("Passive Setting")
 # 장착(equip_slot)하면 시야 제한(VisionLimit) 반지름이 이 타일 수만큼 넓어진다. 여러 개면 가장 큰 값만 적용.
@@ -114,6 +115,8 @@ func _use_consumable(player) -> void:
 		player.update_parry_ratio(parry_multifactor)
 	if unlocks_heavy_attack:
 		GameManager.unlock_heavy_attack()
+	if unlocks_double_jump:
+		GameManager.unlock_double_jump()
 
 # 장비일 때 실행될 로직 (나중에 구현)
 func _use_equipment(player) -> void:

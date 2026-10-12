@@ -22,13 +22,17 @@ func run_checks() -> void:
 	fixture = Node2D.new()
 	root.add_child(fixture)
 	await check_vision_limit()
+	check_torch()
 	await check_crumbling_block()
 	check_glow_eyes()
 	check_patrol_idle()
 	check_hit_squash_and_death_flip()
 	check_persist_ids()
 	check_elevator_floors()
+	await check_elevator_transition()
 	check_hazard_layers()
+	await check_cave_ambience()
+	await check_rat_room_sound()
 	await check_world_ui_above_darkness()
 	fixture.queue_free()
 	await process_frame
@@ -86,81 +90,128 @@ func check_vision_limit() -> void:
 	stage01.free()
 	print("Vision: 5-tile radius on Stage_02 only, lantern widens it gradually")
 
+const TORCH_SCENE := "res://Scenes/System/Torch.tscn"
+func check_torch() -> void:
+	var gm = root.get_node("GameManager")
+	var lantern = db().get_item_by_id("lantern")
+	var probe = load(TORCH_SCENE).instantiate()
+	check(PersistIdAssigner.prefix_for(probe) == "T", "Torches should get T- persist ids")
+	probe.free()
+
+	var vision := VisionLimit.new()
+	fixture.add_child(vision)
+	var torch = load(TORCH_SCENE).instantiate()
+	torch.persist_id = "T-torchtest"
+	torch.position = Vector2(600, 0)
+	fixture.add_child(torch)
+	check(not torch.lit and torch.get_light_radius() == 0.0, "A new torch should start unlit with no light")
+
+	# 랜턴 없이는 못 붙인다
+	torch._on_interact()
+	check(not torch.lit, "Torch should not light without the lantern equipped")
+
+	inv().add_item(lantern) # 장착 칸으로 들어간다
+	torch._on_interact()
+	check(torch.lit and gm.collected_items.has("torch:T-torchtest"), "Torch should light with the lantern and record it for saving")
+	check(not torch._can_interact(), "A lit torch should not be interactable again")
+	torch._process(0.1)
+	check(torch.get_light_radius() > 0.0 and torch.get_light_radius() < 150.0, "Torch light should spread gradually")
+	torch._process(10.0)
+	check(absf(torch.get_light_radius() - 160.0) <= torch.flicker_px + 0.01, "Torch should light a 10-tile radius")
+
+	# 시야 제한: 플레이어 원 밖이어도 횃불 원 안은 밝다
+	vision._process(0.0)
+	var c: Vector2 = torch.get_light_center()
+	check(vision.is_lit(c + Vector2(100, 0)), "Inside a lit torch's radius should count as lit")
+	check(not vision.is_lit(c + Vector2(400, 0)), "Outside every light should stay dark")
+	check(vision._light_centers.size() == 1, "Vision should pass the on-screen torch light to the shader")
+	torch.position = Vector2(50000, 0) # 화면에서 먼 빛은 넘기지 않는다
+	vision._process(0.0)
+	check(vision._light_centers.is_empty(), "Far off-screen torches should be skipped")
+	torch.free()
+
+	# 저장된 기록이 있으면 다시 들어왔을 때 처음부터 다 밝혀져 있다
+	var again = load(TORCH_SCENE).instantiate()
+	again.persist_id = "T-torchtest"
+	fixture.add_child(again)
+	check(again.lit and absf(again.get_light_radius() - 160.0) <= again.flicker_px + 0.01, "A saved lit torch should be fully lit on load")
+	again.free()
+
+	gm.collected_items.erase("torch:T-torchtest")
+	inv().reset()
+	vision.free()
+	print("Torch: needs the lantern, lights 10 tiles, saved via collected_items")
+
 const BLOCK_SCENE := preload("res://Scenes/System/CrumblingBlock.tscn")
 
-func make_block(width: int, independent: bool) -> CrumblingBlock:
+func make_block(x: float = 0.0) -> CrumblingBlock:
 	var block: CrumblingBlock = BLOCK_SCENE.instantiate()
-	block.width_tiles = width
-	block.independent_tiles = independent
 	block.crumble_delay = 0.05
 	block.respawn_delay = 0.1
 	fixture.add_child(block)
-	block.global_position = Vector2(0, 200)
+	block.global_position = Vector2(x, 200)
 	return block
 
-func states_of(block: CrumblingBlock) -> Array:
-	return block.tile_states.map(func(s): return ["SOLID", "SHAKING", "BROKEN"][s])
-
 func check_crumbling_block() -> void:
-	# --- 한 덩어리 모드 (기본) ---
-	var block := make_block(3, false)
+	var block := make_block()
 	await physics_frame
-	check(states_of(block) == ["SOLID", "SOLID", "SOLID"], "Block should start solid")
+	check(block.state == CrumblingBlock.State.SOLID and not block.body_shape.disabled, "Block should start solid")
+	check(block.body_shape.shape.get_rect().size == Vector2(16, 16) and block.body_shape.position == Vector2(8, 8),
+		"Block collision should be a real one-tile shape in the scene")
 
 	# 아래에서 점프해 올라가며 스치는 경우는 무너지지 않는다
 	var player := make_player_stub(Vector2(8, 180))
 	player.velocity = Vector2(0, -200)
 	block._try_step_on(player)
-	check(states_of(block) == ["SOLID", "SOLID", "SOLID"], "Block crumbled from a rising jump")
+	check(block.state == CrumblingBlock.State.SOLID, "Block crumbled from a rising jump")
 
-	# 한 칸만 밟아도 전부 같이 흔들리고 무너진다
+	# 밟으면 흔들리다가 무너지고 충돌이 꺼진다
 	player.velocity = Vector2.ZERO
 	block._try_step_on(player)
-	check(states_of(block) == ["SHAKING", "SHAKING", "SHAKING"], "Whole block did not shake together")
+	check(block.state == CrumblingBlock.State.SHAKING, "Block did not shake when stepped on")
 	await wait(0.1)
 	await physics_frame
-	check(states_of(block) == ["BROKEN", "BROKEN", "BROKEN"], "Whole block did not break after the delay")
+	check(block.state == CrumblingBlock.State.BROKEN and block.body_shape.disabled and not block.sprite.visible, "Block did not break after the delay")
 
 	# 다시 생길 때 그 자리에 플레이어가 있으면 비켜날 때까지 기다린다
-	player.global_position = Vector2(40, 208)
+	player.global_position = Vector2(8, 208)
 	await physics_frame
 	await physics_frame
 	await wait(0.2)
-	check(states_of(block) == ["BROKEN", "BROKEN", "BROKEN"], "Block respawned inside the player")
-	player.global_position = Vector2(40, 120)
+	check(block.state == CrumblingBlock.State.BROKEN, "Block respawned inside the player")
+	player.global_position = Vector2(8, 120)
 	await physics_frame
 	await physics_frame
 	await wait(0.35)
 	await physics_frame
-	check(states_of(block) == ["SOLID", "SOLID", "SOLID"], "Block did not respawn after the player left")
+	check(block.state == CrumblingBlock.State.SOLID and not block.body_shape.disabled and block.sprite.visible, "Block did not respawn after the player left")
 	block.queue_free()
 
-	# --- 칸마다 따로 모드 ---
-	block = make_block(5, true)
-	await physics_frame
-	# 2번 칸 가운데에 선 플레이어 (폭 10px): 2번 칸만 무너진다
-	player.global_position = Vector2(40, 192)
-	block._try_step_on(player)
-	check(states_of(block) == ["SOLID", "SOLID", "SHAKING", "SOLID", "SOLID"], "Independent mode should only shake the stepped tile")
-	# 2·3번 칸 경계에 걸쳐 서면 둘 다 (이미 흔들리는 2번은 그대로, 3번이 새로 흔들린다)
-	player.global_position = Vector2(48, 192)
-	block._try_step_on(player)
-	check(states_of(block) == ["SOLID", "SOLID", "SHAKING", "SHAKING", "SOLID"], "Standing across a tile border should shake both tiles")
+	# 한 칸씩 이어 붙인 블록: 실제 감지 영역으로 한 칸을 밟으면 맞붙은 블록이 전부 같이 무너진다.
+	# 한 칸 떨어진 블록, crumble_alone 블록은 묶이지 않는다
+	var a := make_block(0.0)
+	var b := make_block(16.0)
+	var c := make_block(32.0)
+	var gap := make_block(64.0)
+	var alone := make_block(48.0)
+	alone.crumble_alone = true
+	player.global_position = Vector2(6, 199)
+	player.velocity = Vector2.ZERO
+	for i in 3:
+		await physics_frame
+	check(a.state == CrumblingBlock.State.SHAKING and b.state == CrumblingBlock.State.SHAKING and c.state == CrumblingBlock.State.SHAKING,
+		"Blocks placed side by side should crumble together")
+	check(alone.state == CrumblingBlock.State.SOLID and gap.state == CrumblingBlock.State.SOLID,
+		"A crumble_alone block and a block past it should not join the chain")
 	await wait(0.1)
 	await physics_frame
-	check(states_of(block) == ["SOLID", "SOLID", "BROKEN", "BROKEN", "SOLID"], "Independent tiles did not break")
+	check(a.state == CrumblingBlock.State.BROKEN and c.state == CrumblingBlock.State.BROKEN, "The linked blocks should break together")
 
-	# 칸 수를 바꾸면 크기·충돌이 다시 만들어지고 모두 멀쩡해진다
-	block.width_tiles = 2
-	check(block.tile_states.size() == 2 and states_of(block) == ["SOLID", "SOLID"], "Changing width_tiles did not rebuild the tiles")
-	check(is_equal_approx(block.detector_shape.shape.size.x, 30.0), "Detector did not resize with width_tiles")
-	await wait(0.3)
-	check(states_of(block) == ["SOLID", "SOLID"], "Old crumble timers touched the rebuilt block")
-
-	block.queue_free()
+	for n in [a, b, c, gap, alone]:
+		n.queue_free()
 	player.queue_free()
 	await process_frame
-	print("Crumbling block: whole/independent modes, rising jumps ignored, respawns only when clear, width rebuild")
+	print("Crumbling block: one tile with real collision, side-by-side tiles crumble together, rising jumps ignored, respawns only when clear")
 
 # Slime은 GameManager autoload에 의존하므로 실행 중에 로드한다 (테스트 스크립트 컴파일 시점엔 autoload가 없음)
 const SLIME_SCRIPT := "res://Script/Entity/slime.gd"
@@ -364,9 +415,9 @@ func check_hazard_layers() -> void:
 	spikes_s1.get_parent().free()
 	print("Hazards: HazardTileMap is a TileMapLayer and every spike layer uses the damage tileset")
 
-# 엘리베이터 석판: 지하 1층 = Stage_02, 지하 4층 = Stage_01 (en·ko 같게). 지금 있는 층을 고르면 이동하지 않고 "이미 그 층" 블록
+# 엘리베이터 석판: 지하 1층 = Stage_02, 지하 4층 = Stage_01, 지하 8층 = Stage_03 (en·ko 같게). 지금 있는 층을 고르면 이동하지 않고 "이미 그 층" 블록
 func check_elevator_floors() -> void:
-	var floors := {"B1": "res://Scenes/Stage/Stage_02.tscn", "B4": "res://Scenes/Stage/Stage_01.tscn"}
+	var floors := {"B1": "res://Scenes/Stage/Stage_02.tscn", "B4": "res://Scenes/Stage/Stage_01.tscn", "B8": "res://Scenes/Stage/Stage_03.tscn"}
 	for lang in ["en", "ko"]:
 		var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://resources/Dialogues/%s/elevator_block.json" % lang))
 		var choices: Array = data["start"][0]["choices"]
@@ -383,7 +434,95 @@ func check_elevator_floors() -> void:
 	check(dm._is_current_scene(floors["B1"]) and not dm._is_current_scene(floors["B4"]), "Elevator should know which floor it is on")
 	current_scene = null
 	stage.free()
-	print("Elevator: B1 -> Stage_02, B4 -> Stage_01, current floor stays")
+	print("Elevator: B1 -> Stage_02, B4 -> Stage_01, B8 -> Stage_03, current floor stays")
+
+class ShakeRecorder extends Node:
+	var shakes: Array[float] = []
+	func apply_camera_shake(amount: float) -> void:
+		shakes.append(amount)
+
+# 엘리베이터 전환: 출발 층이 흔들리며 어두워지고, 도착 층도 흔들리며 다시 밝아진다 (Fade In)
+func check_elevator_transition() -> void:
+	var transition = root.get_node("SceneTransition")
+	var from := ShakeRecorder.new()
+	var to := ShakeRecorder.new()
+	root.add_child(from)
+	root.add_child(to)
+	current_scene = from
+	transition.start_elevator_transition(func(): current_scene = to)
+	check(from.shakes.size() == 1 and from.shakes[0] > 0.0, "Elevator should shake the floor you leave")
+	await wait(0.9)
+	check(transition.color_rect.modulate.a > 0.99 and current_scene == to, "Screen should be black when the floor changes")
+	await wait(0.5)
+	check(to.shakes.size() == 1 and to.shakes[0] > 0.0, "Elevator should shake the floor you arrive at")
+	await wait(1.0)
+	check(transition.color_rect.modulate.a < 0.01, "Screen should fade back in on the new floor")
+	current_scene = null
+	from.free()
+	to.free()
+	print("Elevator transition: shake + fade out, arrival shake + fade in")
+
+# Stage_02 환경음: incave1·2를 번갈아 끝없이, 매번 피치 ±10%, 에코(리버브·딜레이)가 걸린 Ambient 버스 → SFX
+func check_cave_ambience() -> void:
+	var bus := AudioServer.get_bus_index(&"Ambient")
+	check(bus >= 0 and AudioServer.get_bus_send(bus) == &"SFX", "Ambient bus should exist and send to SFX")
+	var kinds := []
+	for i in AudioServer.get_bus_effect_count(bus):
+		kinds.append(AudioServer.get_bus_effect(bus, i).get_class())
+	check(kinds.has("AudioEffectReverb") and kinds.has("AudioEffectDelay"), "Ambient bus should add echo (reverb + delay)")
+	var stage = load("res://Scenes/Stage/Stage_02.tscn").instantiate()
+	var amb = stage.get_node("CaveAmbience")
+	check(amb is AmbientLoop and amb.effective_bus() == &"Ambient" and amb.streams.size() == 2, "Stage_02 should have the cave ambience on the Ambient bus")
+	var names: Array = amb.streams.map(func(s): return s.resource_path.get_file())
+	check(names == ["incave1.wav", "incave2.wav"], "Cave ambience should use incave1 and incave2")
+	stage.free()
+	var stage01 = load("res://Scenes/Stage/Stage_01.tscn").instantiate()
+	var forest = stage01.get_node("ForestAmbience")
+	check(forest is AmbientLoop and forest.effective_bus() == &"SFX" and forest.streams.size() == 1 and forest.streams[0].resource_path.ends_with("inforest1.wav"),
+		"Stage_01 should loop inforest1 on the SFX bus (no echo)")
+	stage01.free()
+	var loop := AmbientLoop.new()
+	loop.streams = [AudioStreamWAV.new(), AudioStreamWAV.new()]
+	fixture.add_child(loop)
+	var order := [loop.stream]
+	var pitches := [loop.pitch_scale]
+	for i in 3:
+		loop.play_next()
+		order.append(loop.stream)
+		pitches.append(loop.pitch_scale)
+	check(order[0] == loop.streams[0] and order[1] == loop.streams[1] and order[2] == loop.streams[0] and order[3] == loop.streams[1],
+		"Ambience should alternate the two sounds")
+	check(pitches.all(func(p): return p >= 0.9 - 0.0001 and p <= 1.1 + 0.0001), "Ambience pitch should vary within 10%")
+	loop.queue_free()
+	await process_frame
+	print("Ambience: Stage_02 incave1/2 alternate on the Ambient bus (reverb + delay -> SFX), Stage_01 inforest1 on SFX, pitch +-10% each time")
+
+# 쥐 소리: 플레이어 방(활성)에 쥐가 있으면 15초마다 ratsound1/2 중 하나, 여러 마리여도 한 번
+func rat_sound_count() -> int:
+	return root.get_children().filter(func(n): return n is AudioStreamPlayer and n.stream != null 		and n.stream.resource_path.get_file().begins_with("ratsound")).size()
+
+func check_rat_room_sound() -> void:
+	var rat_script = load("res://Script/Entity/rat.gd")
+	var rat_scene = load("res://Scenes/Entitites/rat.tscn")
+	var a = rat_scene.instantiate()
+	var b = rat_scene.instantiate()
+	fixture.add_child(a)
+	fixture.add_child(b)
+	check(rat_script.ROOM_SOUNDS.size() == 2 and is_equal_approx(rat_script.ROOM_SOUND_INTERVAL, 15.0), "Rats should share two room sounds every 15 seconds")
+	await physics_frame
+	var before := rat_sound_count()
+	rat_script._room_sound_timer = 15.0
+	rat_script._room_sound_frame = -1
+	a._tick_room_sound(14.0)
+	check(rat_sound_count() == before, "No rat sound before 15 seconds")
+	await physics_frame
+	a._tick_room_sound(1.0)
+	b._tick_room_sound(1.0) # 같은 프레임의 다른 쥐는 세지 않는다
+	check(rat_sound_count() == before + 1 and is_equal_approx(rat_script._room_sound_timer, 15.0), "One rat sound after 15 seconds, even with several rats")
+	a.queue_free()
+	b.queue_free()
+	await process_frame
+	print("Rat room sound: one of ratsound1/2 every 15s while rats are in the player's room")
 
 # 몹·박스·상자·문 persist_id: 빈 칸 배정, 중복 시 뒤쪽 재발급, 기존 값 유지, 씬 루트 제외
 func check_persist_ids() -> void:

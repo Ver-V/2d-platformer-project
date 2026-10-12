@@ -38,7 +38,7 @@ func _ready() -> void:
 	# 초기 속도 설정
 	velocity = direction.normalized() * speed
 	
-	if anim_sprite:
+	if anim_sprite and anim_sprite.sprite_frames and anim_sprite.sprite_frames.has_animation(&"default"):
 		anim_sprite.play("default")
 	
 	# 상대 Hurtbox에 닿으면 명중 (적 탄: 플레이어 Hurtbox, 반사탄: 적 Hurtbox)
@@ -126,10 +126,7 @@ func hit_target(target: Node) -> void:
 	var result := HitData.deliver(target, _make_hit(body, velocity.normalized() * 150.0))
 	if not HitData.blocks_projectile(result):
 		return
-	# 반사탄은 적이 무적이면 사라지지 않고 무적이 끝날 때 명중한다 (패링이 헛되지 않도록).
-	# 적 탄은 무적인 플레이어에게 흡수된다 (무적이 끝나자마자 겹쳐 있던 탄에 맞지 않도록).
-	if result == HitData.Result.INVULNERABLE and _reflected:
-		return
+	# 무적인 상대에게 닿은 탄은 반사탄이든 아니든 흡수된다 (무적 타이밍에 반사하면 데미지 없이 사라짐).
 	_destroy_projectile()
 
 func _make_hit(body: Node, knockback: Vector2) -> HitData:

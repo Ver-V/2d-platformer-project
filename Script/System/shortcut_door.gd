@@ -59,6 +59,7 @@ func _travel(body: Player) -> void:
 		return
 	if int(body.get_meta("key_door_teleport_until", 0)) > Time.get_ticks_msec():
 		return
+	_play_open_sound()
 	if _partner_in_other_scene():
 		_busy = true
 		GameManager.pending_shortcut_arrival = {"link_id": link_id, "side": partner_side()}

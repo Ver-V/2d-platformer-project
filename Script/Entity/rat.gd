@@ -39,8 +39,19 @@ var _lunge_cooldown_left: float = 0.0
 var _lunge_dir: int = 1
 var _shoot_timer: float = 0.0
 
+# 플레이어가 있는 방(= 활성화된 방)에 살아 있는 쥐가 있으면 ROOM_SOUND_INTERVAL초마다 두 소리 중 하나를 무작위로 한 번.
+# 쥐가 여러 마리여도 한 번만 나도록 모든 쥐가 타이머 하나를 같이 쓴다 (한 물리 프레임에 한 마리만 센다).
+const ROOM_SOUNDS: Array[AudioStream] = [
+	preload("res://Assets/sounds/monster/ratsound1.mp3"),
+	preload("res://Assets/sounds/monster/ratsound2.mp3"),
+]
+const ROOM_SOUND_INTERVAL: float = 15.0
+static var _room_sound_timer: float = ROOM_SOUND_INTERVAL
+static var _room_sound_frame: int = -1
+
 func _physics_process(delta: float) -> void:
 	if _active and hp > 0:
+		_tick_room_sound(delta)
 		_update_lunge(delta)
 	elif lunge_state != Lunge.NONE:
 		_end_lunge()
@@ -54,6 +65,23 @@ func _physics_process(delta: float) -> void:
 			_shoot_timer = shoot_interval
 	else:
 		_shoot_timer = shoot_windup
+
+func _tick_room_sound(delta: float) -> void:
+	var frame := Engine.get_physics_frames()
+	if _room_sound_frame == frame: # 같은 프레임에 다른 쥐가 이미 셌다
+		return
+	_room_sound_frame = frame
+	_room_sound_timer -= delta
+	if _room_sound_timer > 0.0:
+		return
+	_room_sound_timer = ROOM_SOUND_INTERVAL
+	var sound := AudioStreamPlayer.new()
+	sound.stream = ROOM_SOUNDS.pick_random()
+	sound.bus = &"SFX"
+	var scene := get_tree().current_scene
+	(scene if scene != null else get_tree().root).add_child(sound)
+	sound.finished.connect(sound.queue_free)
+	sound.play()
 
 func set_active(active: bool) -> void:
 	super.set_active(active)

@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Script/System/torch.gd" id="1_torch"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_torch"]
+size = Vector2(28, 32)
+
+[node name="Torch" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_torch")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -16)
+shape = SubResource("RectangleShape2D_torch")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -16)
+
+[node name="Placeholder" type="Node2D" parent="."]
+
+[node name="Post" type="Polygon2D" parent="Placeholder"]
+color = Color(0.36, 0.25, 0.16, 1)
+polygon = PackedVector2Array(-1.5, 0, 1.5, 0, 1.5, -18, -1.5, -18)
+
+[node name="Bowl" type="Polygon2D" parent="Placeholder"]
+color = Color(0.3, 0.3, 0.33, 1)
+polygon = PackedVector2Array(-4, -18, 4, -18, 5, -22, -5, -22)
+
+[node name="Flame" type="Polygon2D" parent="Placeholder"]
+visible = false
+color = Color(1, 0.62, 0.15, 1)
+polygon = PackedVector2Array(-4, -22, 4, -22, 2, -27, 0, -31, -2, -27)
+
+[node name="LightSound" type="AudioStreamPlayer2D" parent="."]
+bus = &"SFX"

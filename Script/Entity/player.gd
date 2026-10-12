@@ -51,8 +51,10 @@ var current_state: State = State.IDLE
 @export var knockback_decay: float = 1800.0
 
 const BREATH_EFFECT: StatusEffect = preload("res://resources/status_effects/breath.tres")
+const SND_IN_WATER: AudioStream = preload("res://Assets/sounds/environment/in_water.wav")
 const WATER_SENSE_OFFSET := Vector2(0, -10) # 몸 가운데 (발 원점에서 위로)
 var in_water: bool = false
+var _water_loop: AudioStreamPlayer2D # 물속에 있는 동안 반복 재생 (SFXPlayer와 따로 두어 점프·공격 소리에 끊기지 않게)
 
 const CORNER_CORRECTION_PX: int = 4    # 모서리 보정 최대 픽셀 거리 (몸 폭 10px의 40%)
 const KNOCKBACK_COOLDOWN: float = 0.7  # 넉백을 다시 받을 수 있기까지 (짧을수록 금방 다시 움직임)
@@ -60,6 +62,7 @@ const KNOCKBACK_COOLDOWN: float = 0.7  # 넉백을 다시 받을 수 있기까�
 # 내부 타이머
 var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
+var _air_jump_available: bool = false # 더블 점프: 땅·물에 닿으면 다시 한 번 쓸 수 있다
 var _was_on_floor: bool = false
 var _menu_exit_cooldown: float = 0.0
 # 마지막으로 안전한 땅(가시가 아닌 일반 지형 타일)을 밟은 위치. 나갈 때 이어 하기 위치로 쓴다 (BaseStage.get_resume_position)
@@ -83,6 +86,7 @@ func _ready() -> void:
 	guard.setup(self)
 	visuals.setup(self)
 	magnet_area.area_entered.connect(_on_magnet_area_entered)
+	_setup_water_sound()
 
 	# 이전 씬에서 걸려 있던 상태이상을 남은 시간 그대로 이어받는다 (엘리베이터·문 등으로 이동해도 풀리지 않게)
 	get_status_effects().attach_all(GameManager.carried_status_effects)
@@ -227,6 +231,7 @@ func _exit_tree() -> void:
 
 func _on_death() -> void:
 	change_state(State.DEAD)
+	_water_loop.stop()
 
 # --- 물 ---
 # 몸 가운데가 물 칸 안이면 수영. 떠오르며 물 밖으로 나오는 순간 수면 위로 water_exit_jump_height만큼 솟게 한다
@@ -239,12 +244,27 @@ func _update_water() -> void:
 		# 물속 허우적 동작(Run)을 끝내고 공중 동작으로
 		if current_state == State.JUMP or current_state == State.FALL:
 			anim_player.play("Jump")
+	if now and not in_water:
+		sfx_player.play_enter_water()
+		_water_loop.play()
+	elif in_water and not now:
+		_water_loop.stop()
 	in_water = now
 	var breath := get_status_effects().get_effect(&"breath") as BreathEffect
 	if in_water and breath == null and hp > 0:
 		breath = apply_status_effect(BREATH_EFFECT) as BreathEffect
 	if breath != null:
 		breath.submerged = in_water
+
+func _setup_water_sound() -> void:
+	_water_loop = AudioStreamPlayer2D.new()
+	_water_loop.name = "WaterLoop"
+	_water_loop.stream = SND_IN_WATER
+	_water_loop.bus = &"SFX"
+	_water_loop.finished.connect(func():
+		if in_water and hp > 0:
+			_water_loop.play())
+	add_child(_water_loop)
 
 # 물속: 중력이 약하고 낙하 속도 상한이 낮다. 점프 키를 누르고 있으면 천천히 떠오른다
 func _apply_water_gravity(delta: float) -> void:
@@ -306,6 +326,8 @@ func _physics_process(delta: float) -> void:
 	_coyote_timer -= delta
 	_jump_buffer_timer -= delta
 
+	if is_on_floor() or in_water:
+		_air_jump_available = true
 	if is_on_floor():
 		_coyote_timer = coyote_time
 		if current_state == State.FALL or current_state == State.JUMP:
@@ -383,9 +405,10 @@ func _process_movement(delta: float) -> void:
 		change_state(State.GUARD)
 		return
 
-	# 점프 선입력
+	# 점프 선입력 (공중에서 새로 누르면 더블 점프)
 	if Input.is_action_just_pressed("jump") and _menu_exit_cooldown <= 0.0:
 		_jump_buffer_timer = jump_buffer_time
+		_try_double_jump()
 
 	_try_jump()
 	_face(dir_input)
@@ -447,6 +470,20 @@ func _process_guard(delta: float) -> void:
 	guard.tick_guarding(delta) # 퍼펙트 가드 판정용
 	# 가드 지속 시간은 guard 애니메이션 종료 신호로 결정한다.
 	move_with_knockback(delta)
+
+# 더블 점프: 해금 후, 바닥 점프(코요테 포함)를 못 하는 공중에서 점프를 새로 누르면 같은 힘으로 한 번 더 뛴다
+func _try_double_jump() -> void:
+	if not GameManager.double_jump_unlocked or not _air_jump_available:
+		return
+	if is_on_floor() or _coyote_timer > 0.0 or in_water:
+		return
+	_air_jump_available = false
+	_jump_buffer_timer = 0.0
+	velocity.y = jumpforce
+	sfx_player.play_jump()
+	visuals.spawn_dust()
+	visuals.apply_squash(0.8, 1.2)
+	change_state(State.JUMP)
 
 # 선입력과 코요테 타임이 겹치면 점프
 func _try_jump() -> void:

@@ -12,7 +12,7 @@ class_name KeyDoor
 @export var unlock_event: String = "door_unlock" # ask_open 블록에서 '예' 선택지의 "event" 값
 @export var block_key_spent: String = "key_spent"
 @export var block_key_kept: String = "key_kept"
-@export var open_sound: AudioStream
+@export var open_sound: AudioStream = preload("res://Assets/sounds/environment/opendoor_closedoor.wav") # 문을 열 때·지나갈 때마다
 @export var destination_marker: Marker2D # 비워두면 이동 없이 문만 열린다.
 @export var persist_id: String = ""
 
@@ -44,6 +44,8 @@ var _opened: bool = false
 var _busy: bool = false
 var _player: Player = null
 const TELEPORT_COOLDOWN_MS: int = 500
+const DOOR_SOUND_GAP_MS: int = 300 # 처음 열면서 바로 지나갈 때 소리가 두 번 겹치지 않게
+var _last_door_sound_ms: int = -100000
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -245,24 +247,30 @@ func _teleport_player(body: Node2D) -> void:
 	if body is CharacterBody2D:
 		body.velocity = Vector2.ZERO
 	body.global_position = destination_marker.global_position
+	_play_open_sound()
 
 func _play_open_sound() -> void:
-	# 씬에 OpenSound 노드를 두거나, 인스펙터에서 open_sound 리소스를 지정할 수 있다.
+	if Time.get_ticks_msec() - _last_door_sound_ms < DOOR_SOUND_GAP_MS:
+		return
+	_last_door_sound_ms = Time.get_ticks_msec()
+	# 씬에 OpenSound 노드를 두었으면 그것을 (한 번) 쓰고, 아니면 open_sound를 재생한다.
 	var sound := get_node_or_null("OpenSound") as AudioStreamPlayer2D
-	if sound == null:
-		if open_sound == null:
-			return
-		sound = AudioStreamPlayer2D.new()
-		sound.stream = open_sound
-		sound.bus = &"SFX"
-		get_tree().root.add_child(sound)
-		sound.global_position = global_position
-	else:
+	if sound != null:
 		if open_sound != null:
 			sound.stream = open_sound
 		sound.reparent(get_tree().root, true)
-	if sound.stream != null:
-		sound.finished.connect(sound.queue_free)
-		sound.play()
-	else:
-		sound.queue_free()
+		if sound.stream != null:
+			sound.finished.connect(sound.queue_free)
+			sound.play()
+		else:
+			sound.queue_free()
+		return
+	if open_sound == null:
+		return
+	# 문 소리는 언제나 문 앞의 플레이어가 듣는 소리라 위치 없이 재생한다 (순간이동·씬 이동 뒤에도 작아지지 않게)
+	var player := AudioStreamPlayer.new()
+	player.stream = open_sound
+	player.bus = &"SFX"
+	get_tree().root.add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()

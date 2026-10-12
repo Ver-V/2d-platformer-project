@@ -5,7 +5,7 @@ class_name PersistIdAssigner
 # 저장에 쓰이는 persist_id를 씬 단위로 배정·중복 정리한다.
 # 에디터 플러그인(plugin.gd)과 일괄 배정 스크립트(tools/assign_persist_ids.gd), 테스트가 같은 규칙을 쓴다.
 # 형식: <종류 글자>-<16진수 8자리>  예) B-7f3a2c91
-#   M = 몹(EnemyBase, 보스 포함), B = 박스(BreakableBox), C = 상자(Chest), D = 문(KeyDoor), W = 금 간 벽(CrackedWall)
+#   M = 몹(EnemyBase, 보스 포함), B = 박스(BreakableBox), C = 상자(Chest), D = 문(KeyDoor), W = 금 간 벽(CrackedWall), T = 횃불(Torch)
 # 이미 값이 있으면 그대로 둔다 (보스처럼 대사 조건에서 쓰는 ID는 직접 읽기 쉬운 이름으로 적어도 된다).
 
 const KIND_PREFIX := {
@@ -14,6 +14,7 @@ const KIND_PREFIX := {
 	&"Chest": "C",
 	&"KeyDoor": "D",
 	&"CrackedWall": "W",
+	&"Torch": "T",
 }
 
 # 노드의 스크립트 상속 사슬에서 종류 글자를 찾는다. 대상이 아니면 "".

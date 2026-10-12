@@ -2,7 +2,7 @@
   "start": [
 	{
 	  "name": "고대 석판",
-	  "text": "낡은 석판이 공중에 떠 있다. 표면에 글귀가 새겨져 있다. \n'문지기의 징표를 지닌 자여, 원하는 곳으로 데려다주겠다.'",
+	  "text": "낡은 석판이 공중에 떠 있다. 표면에 글귀가 새겨져 있다. \n'문지기의 반지를 지닌 자여, 원하는 곳으로 데려다주겠다.'",
 	  "left_image": "HeroBunny_idle",
 	  "speaker": "left",
 	  "choices": [
@@ -54,9 +54,8 @@
 		},
 		{
 		  "text": "지하 8층",
-		  "next": "B8",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "데모에서는 이용할 수 없습니다."
+		  "scene_path": "res://Scenes/Stage/Stage_03.tscn",
+		  "next": "B8"
 		},
 		{
 		  "text": "지하 9층",
@@ -91,7 +90,7 @@
   "locked": [
 	{
 		"name": "고대 석판",
-		"text": "낡은 석판이 공중에 떠 있다. 표면에 글귀가 새겨져 있다. \n'문지기의 징표를 지닌 자여, 원하는 곳으로 데려다주겠다.'",
+		"text": "낡은 석판이 공중에 떠 있다. 표면에 글귀가 새겨져 있다. \n'문지기의 반지를 지닌 자여, 원하는 곳으로 데려다주겠다.'",
 		"left_image": "HeroBunny_idle",
 		"speaker": "left"
 	},
@@ -115,6 +114,15 @@
 	{
 	  "name": "분홍 토끼",
 	  "text": "여기가 이미 지하 4층이야.",
+	  "left_image": "HeroBunny_surprise",
+	  "speaker": "left",
+	  "next" : "start"
+	}
+  ],
+  "B8": [
+	{
+	  "name": "분홍 토끼",
+	  "text": "여기가 이미 지하 8층이야.",
 	  "left_image": "HeroBunny_surprise",
 	  "speaker": "left",
 	  "next" : "start"
