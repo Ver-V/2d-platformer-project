@@ -37,6 +37,13 @@ for glob in "${EXCLUDE_GLOBS[@]}"; do
 	find "$DEST" -path "$DEST/.git" -prune -o -type f -name "$glob" -print -exec rm -f {} +
 done
 
+# 플레이 로그 디스코드 웹훅 주소는 공개하지 않는다 (아는 사람은 누구나 채널에 글을 쓸 수 있음)
+sed -i 's|^const WEBHOOK_URL := ".*"|const WEBHOOK_URL := ""|' "$DEST/Script/System/play_log.gd"
+if grep -rq "discord.com/api/webhooks" "$DEST" --exclude-dir=.git; then
+	echo "웹훅 주소가 공개 폴더에 남아 있습니다. 중단합니다: $DEST" >&2
+	exit 1
+fi
+
 git -C "$DEST" add -A
 echo
 echo "== 공개 저장소에 반영될 변경 ($DEST) =="

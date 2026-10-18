@@ -1,19 +1,22 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://d1dtrn5b5bsgu"]
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://d1dtrn5b5bsgu"]
 
-[ext_resource type="Texture2D" uid="uid://citog4m28u5un" path="res://Assets/sprites/#2 - Transparent & Drop Shadow.png" id="1_dlk8w"]
+[ext_resource type="SpriteFrames" uid="uid://d1gf14di1psyu" path="res://resources/items/frames/parry_increase_potion_frames.tres" id="1_3n0ct"]
+[ext_resource type="Texture2D" uid="uid://ds1vaqiy2qdao" path="res://Assets/sprites/potion/parry_increased_potion.png" id="1_dlk8w"]
 [ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_vgs86"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3n0ct"]
 atlas = ExtResource("1_dlk8w")
-region = Rect2(448, 288, 32, 32)
+region = Rect2(0, 0, 19, 37)
 
 [resource]
 script = ExtResource("1_vgs86")
 id = "Parry_increase_potion"
 name = "ITEM_PARRY_POTION_NAME"
 icon = SubResource("AtlasTexture_3n0ct")
-price = 750
+price = 1250
 description = "ITEM_PARRY_POTION_DESCRIPTION"
 type = 1
+anim_frames = ExtResource("1_3n0ct")
 parry_multifactor = 0.1
+stat_potion = true
 metadata/_custom_type_script = "uid://djy4vfexvhruh"

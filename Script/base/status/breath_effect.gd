@@ -16,6 +16,7 @@ var submerged: bool = true
 var _drown_accum: float = 0.0
 
 func _init() -> void:
+	tutorial_key = &"TUTORIAL_STATUS_BREATH"
 	id = &"breath"
 	duration = 0.0
 	tick_interval = 0.0
@@ -33,7 +34,7 @@ func _on_process(delta: float) -> void:
 			_drown_accum += delta - left_before # 숨이 떨어진 뒤의 시간만 센다
 			while _drown_accum >= drown_interval and _host_alive():
 				_drown_accum -= drown_interval
-				host.apply_status_damage(drown_damage)
+				host.apply_status_damage(drown_damage, id)
 	else:
 		_drown_accum = 0.0
 		breath = minf(max_breath, breath + max_breath / maxf(refill_time, 0.01) * delta)

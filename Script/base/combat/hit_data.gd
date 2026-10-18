@@ -8,8 +8,8 @@ enum Result {
 	IGNORED,        # 처리하지 않음 (피해 0, 이미 죽음, 비활성 방의 적, 맞을 수 없는 대상 등)
 	INVULNERABLE,   # 피격 후 무적이라 막힘 — 적 투사체는 여기서 흡수된다
 	EVADED,         # 회피 무적(대시 등)으로 피함 — 투사체가 통과한다
-	GUARDED,        # 가드로 막음 (깎인 피해는 들어갈 수 있음, 상태이상은 막음)
-	PERFECT_GUARD,  # 퍼펙트 가드 (피해 없음)
+	GUARDED,        # 가드로 막음 (깎인 피해는 들어갈 수 있음, 상태이상은 그대로 받음)
+	PERFECT_GUARD,  # 퍼펙트 가드 (피해 없음, 상태이상은 절반)
 	HIT,            # 피해가 들어감
 	KILLED,         # 이 타격으로 쓰러짐
 }
@@ -20,7 +20,7 @@ var source: Node = null                      # 때린 쪽 (없을 수 있음)
 var is_projectile: bool = false              # 가드는 투사체만 막는다 (의도된 동작)
 var ignore_knockback_cooldown: bool = false
 var invuln_time: float = -1.0                # 0 이상이면 맞은 쪽 무적시간을 이 값으로 (가시 등)
-var status_effects: Array[StatusEffect] = [] # HIT일 때만 건다
+var status_effects: Array[StatusEffect] = [] # HIT일 때 건다 (플레이어 가드: 일반은 그대로, 퍼펙트는 절반)
 var is_heavy: bool = false                   # 플레이어 강공격 (금 간 벽은 이것만 부서진다)
 
 func _init(p_amount: int = 0, p_knockback: Vector2 = Vector2.ZERO, p_source: Node = null) -> void:

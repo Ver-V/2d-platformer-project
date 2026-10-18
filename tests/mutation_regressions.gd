@@ -103,7 +103,7 @@ func check_roll_rules() -> void:
 	check(not split_without_flag, "Only mobs with can_split should split")
 	print("Roll: ~3% mutants, split only for can_split mobs")
 
-# 같은 세이브 시드 + 같은 몹 + 같은 회차 = 같은 결과. reset_mobs(휴식·부활)로 회차가 오르고 상자 기록이 지워진다
+# 같은 세이브 시드 + 같은 몹 + 같은 회차 = 같은 결과. reset_mobs(휴식)로 회차가 오르고 상자 기록이 지워진다
 func check_seeded_and_reroll() -> void:
 	gm().reset_data()
 	var a: RandomNumberGenerator = gm().make_loot_rng(MobMutation.seed_key("M-test", gm().mutation_epoch))
@@ -113,11 +113,36 @@ func check_seeded_and_reroll() -> void:
 	gm().add_collected_item("chest:mutant:M-test:0")
 	gm().add_collected_item("chest:other")
 	gm().reset_mobs()
-	check(gm().mutation_epoch == 1, "Rest/respawn should move to the next mutation epoch")
+	check(gm().mutation_epoch == 1, "Rest should move to the next mutation epoch")
 	check(gm().mutant_chests.is_empty() and not gm().collected_items.has("chest:mutant:M-test:0") and gm().collected_items.has("chest:other"),
 		"Reroll should clear mutant chests and only their opened records")
 	gm().reset_data()
 	check(gm().mutation_epoch == 0, "New game should start from epoch 0")
+	# 죽으면 몹만 되살아나고 회차(달·변이)는 그대로, 휴식하면 회차까지 넘어간다
+	gm().defeated_mobs = ["M-a", "M-b"]
+	gm().add_mutant_chest("res://x.tscn", "mutant:M-test:0", Vector2(1, 2))
+	gm().revive_mobs()
+	check(gm().defeated_mobs.is_empty() and gm().mutation_epoch == 0 and not gm().mutant_chests.is_empty(),
+		"Reviving mobs on death should keep the epoch and mutant chests")
+	gm().reset_data()
+	# 부활은 세이브를 다시 불러오지 않고(진행 유지) 몹만 되살린다 (실제 호출은 씬을 바꾸므로 소스로 확인)
+	var gm_src := FileAccess.get_file_as_string("res://Script/base/GameManager.gd")
+	var respawn_src := gm_src.substr(gm_src.find("func respawn_player"))
+	respawn_src = respawn_src.substr(0, respawn_src.find("
+func ", 1))
+	check(respawn_src.find("load_game()") == -1 and respawn_src.find("revive_mobs()") != -1 and respawn_src.find("reset_mobs()") == -1,
+		"Death respawn should keep progress, revive mobs and keep the moon phase")
+	# 세이브 포인트: 기다리기(E)는 달·변이를 넘기고, 휴식(R)은 몹만 되살리고 달은 그대로
+	var sp_src := FileAccess.get_file_as_string("res://Script/System/SavePoint.gd")
+	var wait_src := sp_src.substr(sp_src.find("func action_wait"))
+	wait_src = wait_src.substr(0, wait_src.find("
+func ", 1))
+	var rest_src := sp_src.substr(sp_src.find("func action_rest"))
+	rest_src = rest_src.substr(0, rest_src.find("
+func ", 1))
+	check(wait_src.find("GameManager.reset_mobs()") != -1, "Waiting at a save point should advance the moon (reset_mobs)")
+	check(rest_src.find("GameManager.revive_mobs()") != -1 and rest_src.find("reset_mobs()") == -1,
+		"Resting at a save point should revive mobs but keep the moon")
 	print("Seeded: same epoch same result, reset_mobs rerolls")
 
 func check_kind_effects(stage) -> void:

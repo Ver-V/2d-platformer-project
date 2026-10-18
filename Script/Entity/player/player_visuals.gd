@@ -46,13 +46,16 @@ func setup(p: Player) -> void:
 		status_label.z_index = RenderingServer.CANVAS_ITEM_Z_MAX
 	if sprite:
 		_base_sprite_scale = sprite.scale
+		_base_sprite_pos = sprite.position
 	var status := p.get_status_effects()
 	status.effect_added.connect(_on_status_effect_added)
 	status.effect_removed.connect(_on_status_effect_removed)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	queue_redraw()
 	_place_popup()
+	_update_sleep_bubble()
+	_update_sleep_pose(delta)
 	# 반격 보너스 오라 (쉐이더)
 	if sprite and sprite.material is ShaderMaterial:
 		var bonus := player.combat.has_perfect_guard_bonus
@@ -108,6 +111,73 @@ func _place_popup() -> void:
 		pos = Vector2(clampf(pos.x, lo.x, maxf(lo.x, hi.x)), clampf(pos.y, lo.y, maxf(lo.y, hi.y)))
 	status_label.global_position = pos
 
+# --- 졸음: 잠든 동안 머리 위에 회색 말풍선 "Zzz..." ---
+const SLEEP_BUBBLE_Y := -40.0 # 말풍선 아래쪽 (플레이어 원점 기준)
+const SLEEP_BUBBLE_BOB := 2.0 # 위아래로 흔들리는 폭(px)
+var _sleep_bubble: PanelContainer
+# 잠든 자세: sleep 애니메이션이 없으면 스프라이트를 뒤로 90도 천천히 눕힌다 (깨면 빨리 일어난다)
+const SLEEP_LIE_TIME := 0.6
+const SLEEP_RISE_TIME := 0.15
+const SLEEP_DROP := 5.0 # 누우면 몸 두께가 키보다 얇아 떠 보이므로 이만큼 내린다(px)
+var _sleep_pose: float = 0.0 # 0 = 서 있음, 1 = 다 누움
+var _base_sprite_pos: Vector2 = Vector2.ZERO
+
+func is_sleep_bubble_visible() -> bool:
+	return _sleep_bubble != null and _sleep_bubble.visible
+
+func _update_sleep_bubble() -> void:
+	var asleep := player.hp > 0 and player.is_asleep()
+	if not asleep:
+		if _sleep_bubble != null:
+			_sleep_bubble.visible = false
+		return
+	if _sleep_bubble == null:
+		_sleep_bubble = _make_sleep_bubble()
+	_sleep_bubble.visible = true
+	var t := Time.get_ticks_msec() / 1000.0
+	var size := _sleep_bubble.get_combined_minimum_size()
+	_sleep_bubble.size = size
+	_sleep_bubble.position = Vector2(-size.x * 0.5, SLEEP_BUBBLE_Y - size.y + sin(t * 3.0) * SLEEP_BUBBLE_BOB)
+
+func _update_sleep_pose(delta: float) -> void:
+	if sprite == null:
+		return
+	var lying := player.hp > 0 and player.is_asleep() and not player.anim_player.has_animation("sleep")
+	if lying:
+		_sleep_pose = move_toward(_sleep_pose, 1.0, delta / SLEEP_LIE_TIME)
+	else:
+		_sleep_pose = move_toward(_sleep_pose, 0.0, delta / SLEEP_RISE_TIME)
+	var t := ease(_sleep_pose, -2.0) # 천천히 시작해 천천히 멈춘다
+	var back := 1.0 if sprite.flip_h else -1.0 # 바라보는 반대쪽(등 뒤)으로 눕는다
+	sprite.rotation = back * PI * 0.5 * t
+	sprite.position = _base_sprite_pos + Vector2(0, SLEEP_DROP * t)
+
+func get_sleep_pose() -> float:
+	return _sleep_pose
+
+func _make_sleep_bubble() -> PanelContainer:
+	var bubble := PanelContainer.new()
+	bubble.name = "SleepBubble"
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.3, 0.3, 0.33, 0.85)
+	style.border_color = Color(0.6, 0.6, 0.64, 0.9)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(3)
+	style.content_margin_left = 4.0
+	style.content_margin_right = 4.0
+	style.content_margin_top = 1.0
+	style.content_margin_bottom = 1.0
+	bubble.add_theme_stylebox_override("panel", style)
+	var label := Label.new()
+	label.text = tr(&"STATUS_SLEEP_ZZZ")
+	label.add_theme_color_override("font_color", Color(0.88, 0.88, 0.9))
+	label.add_theme_font_size_override("font_size", 10)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble.add_child(label)
+	add_child(bubble)
+	return bubble
+
 # 상황별 정해진 문구·색 (저장, 회복 등)
 const STATUS_MESSAGES := {
 	"save": [&"STATUS_SAVED", Color(0.347, 0.824, 0.885, 1.0)],
@@ -115,6 +185,7 @@ const STATUS_MESSAGES := {
 	"mana": [&"STATUS_MANA_UP", Color(0.3, 0.3, 1.0)],
 	"key": [&"STATUS_KEY_FOUND", Color(0.8, 0.8, 0.8)],
 	"rest": [&"STATUS_RESTED", Color(0.429, 0.793, 0.33, 1.0)],
+	"wait": [&"STATUS_WAITED", Color(0.75, 0.75, 1.0)],
 	"full": [&"STATUS_INVENTORY_FULL", Color.ORANGE],
 }
 

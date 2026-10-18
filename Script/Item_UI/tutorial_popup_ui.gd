@@ -30,6 +30,17 @@ func display(text_key: StringName, pause: bool = true) -> bool:
 		_show_popup(text_key, pause)
 	return true
 
+# 처음 한 번만 띄운다 (GameManager.seen_tutorials에 기록, 세이브에 남는다). 상태이상에 처음 걸림·블록을 처음 부숨 등에서 쓴다.
+# 실제 스테이지(BaseStage) 안에서만 띄운다 — 테스트·메뉴 화면에선 기록도 남기지 않는다.
+# 오토로드 이름을 못 쓰는 스크립트에서는 Tutorials.show_once(node, key)
+func show_once(text_key: StringName, pause: bool = true) -> bool:
+	if text_key == &"" or GameManager.has_seen_tutorial(String(text_key)):
+		return false
+	if not get_tree().current_scene is BaseStage:
+		return false
+	GameManager.mark_tutorial_seen(String(text_key))
+	return display(text_key, pause)
+
 func _show_popup(text_key: StringName, pause: bool) -> void:
 	is_active = true
 	_is_closing = false

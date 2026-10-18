@@ -25,11 +25,15 @@ func run_checks() -> void:
 	check_torch()
 	await check_crumbling_block()
 	check_glow_eyes()
+	check_tinted_rat_materials()
 	check_patrol_idle()
 	check_hit_squash_and_death_flip()
 	check_persist_ids()
+	check_camera_zone()
 	check_elevator_floors()
 	await check_elevator_transition()
+	await check_elevator_arrival()
+	await check_no_double_travel()
 	check_hazard_layers()
 	await check_cave_ambience()
 	await check_rat_room_sound()
@@ -117,7 +121,7 @@ func check_torch() -> void:
 	torch._process(0.1)
 	check(torch.get_light_radius() > 0.0 and torch.get_light_radius() < 150.0, "Torch light should spread gradually")
 	torch._process(10.0)
-	check(absf(torch.get_light_radius() - 160.0) <= torch.flicker_px + 0.01, "Torch should light a 10-tile radius")
+	check(absf(torch.get_light_radius() - 128.0) <= torch.flicker_px + 0.01, "Torch should light an 8-tile radius")
 
 	# 시야 제한: 플레이어 원 밖이어도 횃불 원 안은 밝다
 	vision._process(0.0)
@@ -134,13 +138,13 @@ func check_torch() -> void:
 	var again = load(TORCH_SCENE).instantiate()
 	again.persist_id = "T-torchtest"
 	fixture.add_child(again)
-	check(again.lit and absf(again.get_light_radius() - 160.0) <= again.flicker_px + 0.01, "A saved lit torch should be fully lit on load")
+	check(again.lit and absf(again.get_light_radius() - 128.0) <= again.flicker_px + 0.01, "A saved lit torch should be fully lit on load")
 	again.free()
 
 	gm.collected_items.erase("torch:T-torchtest")
 	inv().reset()
 	vision.free()
-	print("Torch: needs the lantern, lights 10 tiles, saved via collected_items")
+	print("Torch: needs the lantern, lights 8 tiles, saved via collected_items")
 
 const BLOCK_SCENE := preload("res://Scenes/System/CrumblingBlock.tscn")
 
@@ -587,3 +591,109 @@ func _all_persist_targets(node: Node, root: Node) -> Array:
 			out.append(child)
 		out.append_array(_all_persist_targets(child, root))
 	return out
+
+# 카메라 구역: 묶은 방 어디에 있든 구역 가운데·구역 확대 (zoom 0 = 화면에 꽉 차게), 밖에서는 방 가운데·기본 확대
+func check_camera_zone() -> void:
+	var stage = load("res://Script/base/stage_base.gd").new()
+	stage.room_size = Vector2(640, 360)
+	stage.grid_size = Vector2i(12, 5)
+	stage._default_zoom = Vector2(2, 2)
+	var zone := CameraZone.new()
+	zone.rooms = Rect2i(2, 1, 2, 2)
+	stage.add_child(zone)
+	var view := Vector2(1280, 720)
+	for r in [Vector2i(2, 1), Vector2i(3, 2)]:
+		var t: Dictionary = stage.camera_target_for_room(r, view)
+		check(t.zone == zone and t.pos.is_equal_approx(Vector2(1920, 720)) and t.zoom.is_equal_approx(Vector2.ONE),
+			"Any room in a 2x2 zone should center the camera on the zone at 1x (room %s: %s, %s)" % [r, t.pos, t.zoom])
+	var outside: Dictionary = stage.camera_target_for_room(Vector2i(4, 1), view)
+	check(outside.zone == null and outside.pos.is_equal_approx(Vector2(2880, 540)) and outside.zoom.is_equal_approx(Vector2(2, 2)),
+		"Outside a zone the camera should frame one room at the default zoom")
+	zone.zoom = 1.5
+	check(stage.camera_target_for_room(Vector2i(2, 1), view).zoom.is_equal_approx(Vector2(1.5, 1.5)), "A fixed zone zoom should be used as is")
+	stage.free()
+	print("Camera zone: rooms grouped into one view, auto-fit or fixed zoom, normal rooms unchanged")
+
+# 색 쥐(틴트 셰이더)는 마리마다 머티리얼을 따로 가져야 한다: 한 마리가 디졸브로 녹아도 다른 쥐·새로 생긴 쥐는 보여야 한다
+func check_tinted_rat_materials() -> void:
+	for path in ["res://Scenes/Entitites/rat_red.tscn", "res://Scenes/Entitites/rat_blue.tscn",
+			"res://Scenes/Entitites/rat_purple.tscn", "res://Scenes/Entitites/rat_white.tscn"]:
+		var scene: PackedScene = load(path)
+		var a = scene.instantiate()
+		var b = scene.instantiate()
+		fixture.add_child(a)
+		fixture.add_child(b)
+		var mat_a: ShaderMaterial = a.sprite.material
+		mat_a.set_shader_parameter("dissolve_value", 1.1)
+		mat_a.set_shader_parameter("flash_modifier", 1.0)
+		var c = scene.instantiate()
+		fixture.add_child(c)
+		for other in [b, c]:
+			var m: ShaderMaterial = other.sprite.material
+			check(m != mat_a and is_zero_approx(float(m.get_shader_parameter("dissolve_value"))) and is_zero_approx(float(m.get_shader_parameter("flash_modifier"))),
+				"%s: one rat dissolving/flashing should not affect the others" % path.get_file())
+		for n in [a, b, c]:
+			n.free()
+
+# 엘리베이터로 도착하면 마지막 세이브 포인트가 그 층에 있어도 엘리베이터 앞에서 시작한다 (세이브 포인트로 가던 버그)
+func check_elevator_arrival() -> void:
+	var gm = root.get_node("GameManager")
+	var old_checkpoint: bool = gm.has_checkpoint
+	var old_scene_path: String = gm.last_scene_path
+	var old_pos: Vector2 = gm.last_checkpoint_pos
+	gm.has_checkpoint = true
+	gm.last_scene_path = "res://Scenes/Stage/Stage_02.tscn"
+	gm.last_checkpoint_pos = Vector2(100, 100)
+	for arrive in [true, false]:
+		gm.pending_elevator_arrival = arrive
+		var stage = load("res://Scenes/Stage/Stage_02.tscn").instantiate()
+		var elevator = stage.get_node("ElevatorBlock")
+		root.add_child(stage) # 스폰은 스테이지 _ready에서 바로 일어난다
+		var expected: Vector2 = elevator.arrival_position() if arrive else gm.last_checkpoint_pos
+		check(stage.player != null and stage.player.global_position.is_equal_approx(expected),
+			"Spawn should be %s (at %s, expected %s)" % ["the elevator" if arrive else "the save point", stage.player.global_position if stage.player else null, expected])
+		check(not gm.pending_elevator_arrival, "Elevator arrival flag should be cleared after spawning")
+		stage.free()
+		await process_frame
+	gm.has_checkpoint = old_checkpoint
+	gm.last_scene_path = old_scene_path
+	gm.last_checkpoint_pos = old_pos
+
+# 화면이 바뀌는 중엔 조작이 잠기고 겹친 전환은 무시된다 (엘리베이터 이동 중에 블록을 다시 박아 선택지가 또 뜨던 버그).
+# 사라진 잠금 주인은 스테이지 시작 때 정리되고, 죽은 채로는 층·씬을 옮기지 않는다
+func check_no_double_travel() -> void:
+	var gm = root.get_node("GameManager")
+	var transition = root.get_node("SceneTransition")
+	var dm = root.get_node("DialogueManager")
+	var calls := [0]
+	transition.start_elevator_transition(func(): calls[0] += 1, 0.2)
+	check(transition.is_transitioning and gm.is_menu_open, "A scene transition should lock player control")
+	transition.start_elevator_transition(func(): calls[0] += 1, 0.2)
+	transition.start_transition(func(): calls[0] += 1, 0.2)
+	# 이동 중에 엘리베이터 블록을 박아도 대화(층 선택)가 열리지 않는다
+	var block: Area2D = load("res://Script/System/elevator_block.gd").new()
+	block.dialogue_file = "res://resources/Dialogues/en/elevator_block.json"
+	block.required_item_id = ""
+	fixture.add_child(block)
+	var player := make_player_stub(block.global_position + Vector2(0, 20))
+	player.velocity = Vector2(0, -100)
+	block._on_body_entered(player)
+	check(not dm.is_dialogue_active, "Hitting the elevator during a transition should not open the floor menu again")
+	await wait(1.0)
+	check(calls[0] == 1 and not transition.is_transitioning and not gm.is_menu_open, "Overlapping transitions should be ignored and control given back (calls %d)" % calls[0])
+	block.free()
+	player.free()
+	# 사라진 주인의 잠금은 스테이지가 시작할 때 정리된다
+	var owner_node := Node.new()
+	root.add_child(owner_node)
+	gm.ui_opened(owner_node, false)
+	owner_node.free()
+	check(gm.is_menu_open, "precondition: a freed owner keeps the lock until refreshed")
+	gm.refresh_ui_owners()
+	check(not gm.is_menu_open, "Refreshing should drop locks whose owner is gone")
+	# 죽었으면 이동하지 않는다
+	var old_hp: int = gm.player_current_hp
+	gm.player_current_hp = 0
+	check(not gm.can_travel(), "A dead player should not travel to another scene")
+	gm.player_current_hp = old_hp
+	check(gm.can_travel(), "A living player can travel")

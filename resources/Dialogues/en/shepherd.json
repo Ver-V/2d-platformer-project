@@ -1,0 +1,103 @@
+{
+	"intro": [
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "Shepherd",
+			"text": "Oh, a traveler? Did you happen to see any lambs on your way here?"
+		},
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "Lambs? I've seen plenty of big sheep."
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "Shepherd",
+			"text": "The little ones got scared by the bleating and scattered. Four of them..."
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "Shepherd",
+			"text": "If you bring them back, I'll make it worth your while. Please."
+		},
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "Got it. I'll bring them if I see them!"
+		}
+	],
+	"waiting": [
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "Shepherd",
+			"text": "Some of them still haven't come back. Mind the big sheep's bleating, it'll make you terribly sleepy."
+		}
+	],
+	"thanks": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "Here, I found one of your lost lambs."
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "Shepherd",
+			"text": "Oh, you're safe! Thank you. Here's the reward I promised. Please find the rest too."
+		}
+	],
+	"thanks_all": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "This is the last lamb!"
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "Shepherd",
+			"text": "They're all back! Thank you so much. Thanks to you, I'll sleep well tonight."
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "Shepherd",
+			"text": "Take this as thanks. I found this key in the pasture... it looks precious, but I've no idea what it opens."
+		},
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "I wonder what it opens...?"
+		}
+	],
+	"done": [
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "Shepherd",
+			"text": "With the lambs back, the flock has calmed down. Thank you again, traveler."
+		}
+	]
+}

@@ -23,6 +23,7 @@ const COLOR_ELEVATOR = Color(0.25, 0.4, 1.0)         # 엘리베이터 (파랑)
 const COLOR_CHEST = Color(1.0, 0.6, 0.1)             # 보물 상자 (주황)
 const COLOR_DOOR_CLOSED = Color(1.0, 0.2, 0.9)       # 닫힌 문 (자홍)
 const COLOR_DOOR_OPEN = Color(0.75, 0.65, 1.0)       # 열린 문 (연보라)
+const COLOR_DEATH_DROP = Color(0.95, 0.92, 0.8)       # 죽은 자리 금화 (뼈 색 큰 점)
 const COLOR_TERRAIN = Color.BLACK                    # 지형 (검은색)
 const COLOR_MARKER_OUTLINE = Color(0, 0, 0, 0.85)    # 밝은 방 배경에서도 보이도록 표시마다 검은 테두리
 
@@ -42,6 +43,7 @@ const LEGEND := [
 	[&"MINIMAP_LEGEND_CHEST", COLOR_CHEST, true, 3.0],
 	[&"MINIMAP_LEGEND_DOOR_CLOSED", COLOR_DOOR_CLOSED, true, 3.0],
 	[&"MINIMAP_LEGEND_DOOR_OPEN", COLOR_DOOR_OPEN, true, 3.0],
+	[&"MINIMAP_LEGEND_DEATH_DROP", COLOR_DEATH_DROP, false, 4.0],
 ]
 const LEGEND_FONT_SIZE := 14
 const LEGEND_LINE := 18.0
@@ -221,6 +223,8 @@ func _draw():
 	_draw_entities_as_dots("npc", COLOR_NPC, center_offset, current_room_origin, false)
 	_draw_entities_as_dots("enemies", COLOR_ENEMY, center_offset, current_room_origin, true)
 	_draw_entities_as_dots("bosses", COLOR_BOSS, center_offset, current_room_origin, false, false, 5.0)
+	_draw_entities_as_dots(DeathDrop.MINIMAP_GROUP, COLOR_DEATH_DROP, center_offset, current_room_origin, false, false, 4.0)
+	_draw_death_tooltip(center_offset, current_room_origin)
 
 	# 3. 플레이어(초록 점) 그리기
 	var p_draw_pos = center_offset + (player.global_position - current_room_origin) * MAP_SCALE
@@ -228,6 +232,41 @@ func _draw():
 
 	# 4. 범례
 	_draw_legend()
+
+# 해골 표시에 마우스를 올리면 사인과 남은 금화 (미니맵을 연 동안 커서가 보인다)
+const DEATH_HOVER_RADIUS := 7.0
+func _draw_death_tooltip(center_offset: Vector2, current_room_origin: Vector2) -> void:
+	var drop := hovered_death_drop(get_local_mouse_position(), center_offset, current_room_origin)
+	if drop == null:
+		return
+	var text := death_tooltip_text(drop)
+	var font := get_theme_default_font()
+	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, LEGEND_FONT_SIZE)
+	var at := center_offset + (drop.global_position - current_room_origin) * MAP_SCALE + Vector2(8, -8 - text_size.y)
+	at.x = clampf(at.x, 2.0, maxf(2.0, size.x - text_size.x - 8.0))
+	at.y = clampf(at.y, 2.0, maxf(2.0, size.y - text_size.y - 6.0))
+	var box := Rect2(at - Vector2(3, 2), text_size + Vector2(6, 4))
+	draw_rect(box, Color(0, 0, 0, 0.85))
+	draw_rect(box, COLOR_DEATH_DROP, false, 1.0)
+	draw_string(font, at + Vector2(0, font.get_ascent(LEGEND_FONT_SIZE)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, LEGEND_FONT_SIZE, Color.WHITE)
+
+# local_mouse(미니맵 안 좌표) 근처의 해골 더미. 다녀간 방에 있는 것만
+func hovered_death_drop(local_mouse: Vector2, center_offset: Vector2, current_room_origin: Vector2) -> Node2D:
+	var best: Node2D = null
+	var best_d := DEATH_HOVER_RADIUS
+	for node in get_tree().get_nodes_in_group(DeathDrop.MINIMAP_GROUP):
+		if not node is Node2D or node.is_queued_for_deletion() or not visited_rooms.has(_room_from_world(node.global_position)):
+			continue
+		var d := local_mouse.distance_to(center_offset + (node.global_position - current_room_origin) * MAP_SCALE)
+		if d <= best_d:
+			best = node
+			best_d = d
+	return best
+
+static func death_tooltip_text(drop: Node) -> String:
+	return TranslationServer.translate(&"MINIMAP_DEATH_TOOLTIP").format({
+		"cause": DeathCause.describe(str(drop.get("cause"))), "gold": int(drop.get("gold")),
+	})
 
 func _draw_legend() -> void:
 	var font := get_theme_default_font()

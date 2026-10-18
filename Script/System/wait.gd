@@ -8,15 +8,20 @@ class_name Wait
 # - 노드의 일시정지 설정(process_mode)을 따른다 — 트리가 멈추면(튜토리얼 팝업 등) 같이 멈춘다.
 #   create_timer()의 기본값은 일시정지와 상관없이 흐른다.
 
-static func seconds(node: Node, time: float) -> Signal:
+# Engine.time_scale(히트스톱·시간 멈춤)과 상관없이 실제 시간으로 기다린다 (연출용)
+static func real_seconds(node: Node, time: float) -> Signal:
+	return seconds(node, time, true)
+
+static func seconds(node: Node, time: float, ignore_time_scale: bool = false) -> Signal:
 	# 트리 밖 노드에 붙인 Timer는 시작되지 않아 영원히 기다리게 된다 → 경고 후 트리 타이머로 대신 기다린다
 	if not node.is_inside_tree():
 		push_warning("Wait.seconds: %s is not in the scene tree; falling back to a tree timer" % node)
 		var tree := Engine.get_main_loop() as SceneTree
-		return tree.create_timer(time).timeout
+		return tree.create_timer(time, true, false, ignore_time_scale).timeout
 	var timer := Timer.new()
 	timer.one_shot = true
 	timer.wait_time = maxf(time, 0.001) # Timer는 0초를 받지 않는다
+	timer.ignore_time_scale = ignore_time_scale
 	timer.timeout.connect(timer.queue_free)
 	node.add_child(timer)
 	timer.start()

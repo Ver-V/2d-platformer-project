@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://bektmkpubjyrn"]
+
+[ext_resource type="Texture2D" uid="uid://bmfhkce3wvq1k" path="res://Assets/sprites/#2 - Transparent Icons & Drop Shadow.png" id="1_8jfo1"]
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kxs83"]
+atlas = ExtResource("1_8jfo1")
+region = Rect2(32, 608, 32, 32)
+
+[resource]
+script = ExtResource("1_script")
+id = "flask_shard"
+name = "ITEM_FLASK_SHARD_NAME"
+icon = SubResource("AtlasTexture_kxs83")
+price = 1000
+description = "ITEM_FLASK_SHARD_DESCRIPTION"
+type = 1
+flask_charges_up = 1
+metadata/_custom_type_script = "uid://djy4vfexvhruh"

@@ -1,0 +1,47 @@
+{
+	"without_item": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "There's a tiny keyhole in a crack in the wall... a hidden door? I don't have the right key."
+		}
+	],
+	"ask_open": [
+		{
+			"speaker": "left",
+			"left_image": "",
+			"right_image": "",
+			"name": "",
+			"text": "Try the key the shepherd gave you?",
+			"choices": [
+				{
+					"text": "Yes",
+					"event": "door_unlock"
+				},
+				{
+					"text": "No"
+				}
+			]
+		}
+	],
+	"key_spent": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "Something is inside."
+		}
+	],
+	"key_kept": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "The door is open."
+		}
+	]
+}

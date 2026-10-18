@@ -10,6 +10,7 @@ class_name ShortcutDoor
 enum DoorSide { A, B }
 
 const GROUP := &"shortcut_doors"
+const TUTORIAL_KEY := &"TUTORIAL_SHORTCUT" # 처음 지름길을 열고 반대편(A)에 도착했을 때
 
 @export var link_id: String = "" # 한 쌍의 A·B에 같은 값. 쌍마다 겹치지 않게 (세이브 키로도 쓰인다)
 @export var side: DoorSide = DoorSide.A
@@ -55,7 +56,7 @@ func _try_use_door(body: Player) -> void:
 	call_deferred("_travel", body)
 
 func _travel(body: Player) -> void:
-	if not is_instance_valid(body):
+	if not is_instance_valid(body) or body.hp <= 0:
 		return
 	if int(body.get_meta("key_door_teleport_until", 0)) > Time.get_ticks_msec():
 		return
@@ -63,7 +64,13 @@ func _travel(body: Player) -> void:
 	if _partner_in_other_scene():
 		_busy = true
 		GameManager.pending_shortcut_arrival = {"link_id": link_id, "side": partner_side()}
-		SceneTransition.start_transition(func(): get_tree().change_scene_to_file(partner_scene))
+		SceneTransition.start_transition(func():
+			if GameManager.can_travel():
+				get_tree().change_scene_to_file(partner_scene)
+			else: # 어두워지는 사이에 죽었다: 이동하지 않는다
+				_busy = false
+				GameManager.pending_shortcut_arrival = {}
+		)
 		return
 	var partner := find_door(get_tree(), link_id, partner_side())
 	if partner == null:
@@ -90,6 +97,11 @@ func place_player(body: Node2D) -> void:
 	if body is CharacterBody2D:
 		body.velocity = Vector2.ZERO
 	body.global_position = arrival_position()
+	if side == DoorSide.A and body is Player:
+		_show_tutorial.call_deferred() # 스테이지 시작 중(다른 씬에서 도착)이어도 씬이 다 준비된 뒤에
+
+func _show_tutorial() -> void:
+	Tutorials.show_once(self, TUTORIAL_KEY)
 
 static func find_door(tree: SceneTree, id: String, door_side: int) -> ShortcutDoor:
 	for node in tree.get_nodes_in_group(GROUP):

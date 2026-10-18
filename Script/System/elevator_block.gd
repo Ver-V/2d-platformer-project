@@ -6,17 +6,22 @@ extends Area2D
 # 이 아이템을 "장착"하고 있어야 층 선택지가 나온다. 없으면 locked_block (석판 글귀 뒤에 탑승 거부)을 띄운다. 비우면 항상 탑승 가능
 @export var required_item_id: String = "gatekeepers_ring"
 @export var locked_block: String = "locked"
+# 엘리베이터로 이 층에 도착했을 때 플레이어가 나타날 자리 (블록 기준. 블록 바로 아래 바닥쪽 — 거기서 떨어져 내려선다)
+@export var arrival_offset: Vector2 = Vector2(0, 24)
+
+const GROUP := &"minimap_elevator"
 
 var is_active: bool = true
 var original_pos: Vector2
 
 func _ready() -> void:
-	add_to_group("minimap_elevator")
+	add_to_group(GROUP)
 	original_pos = position
 	body_entered.connect(_on_body_entered)
 
 func _on_body_entered(body: Node) -> void:
-	if not is_active or DialogueManager.is_dialogue_active: return
+	# 층을 골라 화면이 바뀌는 중에도 다시 박으면 선택지가 또 뜨지 않게
+	if not is_active or DialogueManager.is_dialogue_active or SceneTransition.is_transitioning: return
 	
 	if body.is_in_group("player"):
 		var p = body as CharacterBody2D
@@ -33,6 +38,9 @@ func _on_body_entered(body: Node) -> void:
 			# 박치기 판정: 상승 중이거나, 점프 상태에서 머리가 닿았을 때
 			if p.velocity.y < 50.0: # 떨어지는 중만 아니면 됨
 				_hit_block()
+
+func arrival_position() -> Vector2:
+	return global_position + arrival_offset
 
 func dialogue_block() -> String:
 	if required_item_id.is_empty() or Inventory.is_equipped(required_item_id):

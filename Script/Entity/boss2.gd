@@ -52,6 +52,8 @@ enum Move { NONE, WALK, DASH, RUSH, JUMP }
 @export_group("Flask")
 @export var flasks_per_idle: int = 1
 @export var flask_flight_time: float = 0.9
+@export var flask_ready_sound: AudioStream = preload("res://Assets/sounds/boss/boss02/flask_ready.wav") # 던지기 전 예고음
+@export var flask_ready_delay: float = 0.5 # 예고음이 나고 이만큼 뒤에 던진다
 
 @export_group("Platform")
 @export var platform_chase_time: float = 3.0
@@ -66,6 +68,7 @@ const RAGE_SHADER: Shader = preload("res://resources/Shaders/boss_rage.gdshader"
 const MOVE_EPSILON := 2.0
 
 @onready var shooter: ShooterComponent = get_node_or_null("ShooterComponent")
+@onready var action_sfx: AudioStreamPlayer2D = get_node_or_null("ActionSFX")
 @onready var facing: Node2D = get_node_or_null("Facing")
 @onready var melee_range: Area2D = get_node_or_null("Facing/MeleeRange")
 @onready var dash_range: Area2D = get_node_or_null("Facing/DashRange")
@@ -210,13 +213,23 @@ func _idle_phase() -> void:
 	_lock_face = false
 	_play(&"idle")
 	var count := maxi(flasks_per_idle, 0)
-	var step := idle_time / float(count + 1)
+	var step := maxf(idle_time - idle_cut(), 0.3) / float(count + 1)
 	for i in count:
-		await Wait.seconds(self, step)
+		# 예고음을 내고 flask_ready_delay 뒤에 던진다 (던지는 시점은 그대로 step 간격)
+		await Wait.seconds(self, maxf(step - flask_ready_delay, 0.0))
+		if not _still_fighting():
+			return
+		_play_flask_ready()
+		await Wait.seconds(self, flask_ready_delay)
 		if not _still_fighting():
 			return
 		throw_flask()
 	await Wait.seconds(self, step)
+
+func _play_flask_ready() -> void:
+	if action_sfx != null and flask_ready_sound != null:
+		action_sfx.stream = flask_ready_sound
+		action_sfx.play()
 
 func _do_pattern() -> void:
 	var choices := [1, 2] if _on_platform() else [1, 2, 3] # 발판 위에선 돌진 안 함

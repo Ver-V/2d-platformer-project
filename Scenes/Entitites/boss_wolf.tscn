@@ -1,0 +1,290 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://bl288730bkpt" path="res://Scenes/Entitites/Boss.tscn" id="1_boss"]
+[ext_resource type="Script" path="res://Script/Entity/boss_wolf.gd" id="2_script"]
+[ext_resource type="Texture2D" path="res://Assets/sprites/wolf_placeholder.png" id="3_wolf"]
+[ext_resource type="Texture2D" path="res://Assets/sprites/sheep_placeholder.png" id="4_sheep"]
+[ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="5_coin"]
+
+[sub_resource type="AtlasTexture" id="Wolf_0"]
+atlas = ExtResource("3_wolf")
+region = Rect2(0, 0, 48, 32)
+
+[sub_resource type="AtlasTexture" id="Wolf_1"]
+atlas = ExtResource("3_wolf")
+region = Rect2(48, 0, 48, 32)
+
+[sub_resource type="AtlasTexture" id="Wolf_2"]
+atlas = ExtResource("3_wolf")
+region = Rect2(96, 0, 48, 32)
+
+[sub_resource type="AtlasTexture" id="Wolf_3"]
+atlas = ExtResource("3_wolf")
+region = Rect2(144, 0, 48, 32)
+
+[sub_resource type="AtlasTexture" id="Wolf_4"]
+atlas = ExtResource("3_wolf")
+region = Rect2(192, 0, 48, 32)
+
+[sub_resource type="AtlasTexture" id="Wolf_5"]
+atlas = ExtResource("3_wolf")
+region = Rect2(240, 0, 48, 32)
+
+[sub_resource type="AtlasTexture" id="Wolf_6"]
+atlas = ExtResource("3_wolf")
+region = Rect2(288, 0, 48, 32)
+
+[sub_resource type="AtlasTexture" id="Wolf_7"]
+atlas = ExtResource("3_wolf")
+region = Rect2(336, 0, 48, 32)
+
+[sub_resource type="AtlasTexture" id="Sheep_0"]
+atlas = ExtResource("4_sheep")
+region = Rect2(0, 0, 32, 24)
+
+[sub_resource type="AtlasTexture" id="Sheep_1"]
+atlas = ExtResource("4_sheep")
+region = Rect2(32, 0, 32, 24)
+
+[sub_resource type="AtlasTexture" id="Sheep_2"]
+atlas = ExtResource("4_sheep")
+region = Rect2(64, 0, 32, 24)
+
+[sub_resource type="AtlasTexture" id="Sheep_3"]
+atlas = ExtResource("4_sheep")
+region = Rect2(96, 0, 32, 24)
+
+[sub_resource type="AtlasTexture" id="Sheep_4"]
+atlas = ExtResource("4_sheep")
+region = Rect2(128, 0, 32, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wolf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_0")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Wolf_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("Wolf_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Wolf_0")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Wolf_2")
+}],
+"loop": true,
+"name": &"run",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_3")
+}],
+"loop": false,
+"name": &"windup",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_4")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_5")
+}],
+"loop": true,
+"name": &"howl",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_6")
+}],
+"loop": false,
+"name": &"jump",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_3")
+}],
+"loop": false,
+"name": &"gethit",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Wolf_7")
+}],
+"loop": false,
+"name": &"dead",
+"speed": 5.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_sheep"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Sheep_0")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Sheep_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Sheep_4")
+}],
+"loop": true,
+"name": &"bleat",
+"speed": 6.0
+}]
+
+[sub_resource type="RectangleShape2D" id="Shape_body"]
+size = Vector2(34, 20)
+
+[sub_resource type="RectangleShape2D" id="Shape_hurt"]
+size = Vector2(36, 22)
+
+[sub_resource type="RectangleShape2D" id="Shape_hit"]
+size = Vector2(30, 16)
+
+[sub_resource type="CircleShape2D" id="Shape_detect"]
+radius = 400.0
+
+[sub_resource type="RectangleShape2D" id="Shape_melee"]
+size = Vector2(36, 28)
+
+[sub_resource type="RectangleShape2D" id="Shape_claw"]
+size = Vector2(30, 26)
+
+[sub_resource type="RectangleShape2D" id="Shape_bite"]
+size = Vector2(26, 20)
+
+[sub_resource type="RectangleShape2D" id="Shape_pounce"]
+size = Vector2(64, 22)
+
+[sub_resource type="CircleShape2D" id="Shape_howl"]
+radius = 140.0
+
+[node name="WolfBoss" node_paths=PackedStringArray("bgm_player", "boss_sprite") instance=ExtResource("1_boss")]
+script = ExtResource("2_script")
+bgm_player = NodePath("BGMPlayer")
+boss_sprite = NodePath("AnimatedSprite2D")
+dialogue_file = "res://resources/Dialogues/en/wolf_boss.json"
+drop_gold_amount = 400
+coin_scene = ExtResource("5_coin")
+max_hp_base = 400
+contact_damage_base = 15
+move_speed_base = 0.0
+knockback_resist = 10000000.0
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+sprite_frames = SubResource("SpriteFrames_wolf")
+animation = &"idle"
+
+[node name="CollisionShape2D" parent="." index="1"]
+position = Vector2(0, 6)
+shape = SubResource("Shape_body")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, 5)
+shape = SubResource("Shape_hurt")
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, 6)
+shape = SubResource("Shape_hit")
+
+[node name="CollisionShape2D" parent="DetectArea" index="0"]
+shape = SubResource("Shape_detect")
+
+[node name="BGMPlayer" parent="." index="6"]
+volume_db = -15.0
+parameters/looping = true
+
+[node name="Disguise" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, 4)
+sprite_frames = SubResource("SpriteFrames_sheep")
+animation = &"idle"
+
+[node name="Facing" type="Node2D" parent="."]
+
+[node name="MeleeRange" type="Area2D" parent="Facing"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/MeleeRange"]
+position = Vector2(24, 4)
+shape = SubResource("Shape_melee")
+debug_color = Color(0.2, 0.8, 0.3, 0.25)
+
+[node name="ClawHitbox" type="Area2D" parent="Facing"]
+collision_layer = 0
+collision_mask = 256
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/ClawHitbox"]
+position = Vector2(26, 4)
+shape = SubResource("Shape_claw")
+debug_color = Color(0.95, 0.2, 0.2, 0.3)
+
+[node name="BiteHitbox" type="Area2D" parent="Facing"]
+collision_layer = 0
+collision_mask = 256
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/BiteHitbox"]
+position = Vector2(26, 6)
+shape = SubResource("Shape_bite")
+debug_color = Color(0.95, 0.5, 0.1, 0.3)
+
+[node name="PounceHitbox" type="Area2D" parent="Facing"]
+collision_layer = 0
+collision_mask = 256
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/PounceHitbox"]
+position = Vector2(0, 8)
+shape = SubResource("Shape_pounce")
+debug_color = Color(0.9, 0.3, 0.6, 0.3)
+
+[node name="EyeGlint" type="Node2D" parent="Facing"]
+position = Vector2(14, -2)
+
+[node name="HowlArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HowlArea"]
+position = Vector2(0, 0)
+shape = SubResource("Shape_howl")
+debug_color = Color(0.6, 0.6, 0.9, 0.15)

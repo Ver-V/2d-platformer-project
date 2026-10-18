@@ -8,7 +8,7 @@ class_name PlayerCombat
 @export var attack_cooldown: float = 0.5
 @export var attack_damage: float = 10.0
 @export var parry_damage_multiplier: float = 1.5
-var attack_speed_mult: float = 1.0 # 장비 공격 속도 보너스 (쿨다운을 나누고 공격 애니메이션 재생 속도에 곱한다)
+var attack_speed_mult: float = 1.0 # 공격 속도 보너스 (영구 + 장비) (쿨다운을 나누고 공격 애니메이션 재생 속도에 곱한다)
 
 const PERFECT_GUARD_BONUS_DAMAGE: int = 10 # 퍼펙트 가드 후 다음 공격(검·패리)에 더하는 피해
 
@@ -52,7 +52,7 @@ func setup(p: Player) -> void:
 func sync_stats() -> void:
 	attack_damage = GameManager.player_damage + Inventory.get_equipped_attack_bonus()
 	parry_damage_multiplier = GameManager.player_parry_damage_multifac + Inventory.get_equipped_parry_bonus()
-	attack_speed_mult = 1.0 + Inventory.get_equipped_attack_speed_bonus()
+	attack_speed_mult = 1.0 + GameManager.player_attack_speed_bonus + Inventory.get_equipped_attack_speed_bonus()
 
 func tick(delta: float) -> void:
 	if cooldown_left > 0.0:
@@ -113,6 +113,12 @@ func update_parry_ratio(amount: float) -> void:
 	sync_stats()
 	if amount > 0:
 		player.show_popup(tr(&"COMBAT_PARRY_POWER_UP"), Color.CYAN)
+
+func update_attack_speed(amount: float) -> void:
+	GameManager.add_attack_speed(amount)
+	sync_stats()
+	if amount > 0:
+		player.show_popup(tr(&"COMBAT_ATTACK_SPEED_UP"), Color.ORANGE)
 
 # --- 검 판정 ---
 func _on_sword_area_entered(area: Area2D) -> void:

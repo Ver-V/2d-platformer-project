@@ -13,6 +13,7 @@ enum EquipSlot { NONE, ACCESSORY, GEM }
 @export var price: int = 0
 @export_multiline var description: String = ""
 @export var type: ItemType = ItemType.GENERIC # 기본값은 잡동사니
+@export_range(1, 99, 1) var max_stack: int = 1 # 가방 한 칸에 겹쳐 넣을 수 있는 개수 (1 = 겹치지 않음)
 
 @export_group("Animation")
 # 있으면 필드(FieldItem)와 인벤토리 슬롯에서 icon 대신 이 애니메이션을 재생한다. 상점 등 나머지 UI는 icon 그대로.
@@ -29,6 +30,12 @@ enum EquipSlot { NONE, ACCESSORY, GEM }
 @export var heal_amount: int = 0  # 포션 아니면 그냥 0으로 두면 됨
 @export var damage_amount: int = 0
 @export var parry_multifactor: float = 0.0
+@export var attack_speed_up: float = 0.0 # 영구 공격 속도 + (0.1 = 10% 빠르게)
+@export var guard_reduction_up: int = 0 # 일반 가드로 막는 투사체 피해 경감 + (기본 10)
+@export var breath_up: float = 0.0 # 물속에서 버티는 시간 +(초, 기본 10초)
+@export var flask_charges_up: int = 0 # 플라스크 최대 사용 횟수 + (늘어난 만큼 바로 채워 준다)
+@export var flask_heal_up: int = 0 # 플라스크 한 번 회복량 + (기본 30)
+@export var stat_potion: bool = false # 켜면 스탯 포션: 기본 상자(LootTable.stat_pity)에서 불운 보정·종류 순환 대상
 @export var unlocks_heavy_attack: bool = false # 마시면 강공격 해금 (수상한 과학자의 약물)
 @export var unlocks_double_jump: bool = false # 쓰면 더블 점프 영구 해금
 
@@ -68,6 +75,10 @@ func _effect_line(key: StringName, value: float) -> Dictionary:
 	var number := str(roundi(v)) if is_equal_approx(v, roundf(v)) else String.num(v, 2) # 정수면 "5", 아니면 "0.25"
 	var signed := ("+ " if value >= 0.0 else "- ") + number
 	return {"text": TranslationServer.translate(key).format({"value": signed}), "buff": value >= 0.0}
+
+# 상자의 스탯 포션 불운 보정·종류 순환 대상 (인스펙터의 stat_potion 체크)
+func is_stat_potion() -> bool:
+	return stat_potion and type == ItemType.CONSUMABLE
 
 func has_animation() -> bool:
 	return anim_frames != null and anim_frames.has_animation(anim_name) and anim_frames.get_frame_count(anim_name) > 0
@@ -113,6 +124,20 @@ func _use_consumable(player) -> void:
 		player.update_damage(damage_amount)
 	if parry_multifactor > 0:
 		player.update_parry_ratio(parry_multifactor)
+	if attack_speed_up > 0:
+		player.combat.update_attack_speed(attack_speed_up)
+	if guard_reduction_up > 0:
+		GameManager.add_guard_reduction(guard_reduction_up)
+		player.show_popup(tr(&"COMBAT_GUARD_UP"), Color.GRAY)
+	if breath_up > 0:
+		GameManager.add_breath(breath_up)
+		player.show_popup(tr(&"COMBAT_BREATH_UP"), Color(0.4, 0.6, 1.0))
+	if flask_charges_up > 0:
+		GameManager.add_flask_charges(flask_charges_up)
+		player.show_popup(tr(&"COMBAT_FLASK_CHARGES_UP"), Color(1.0, 0.75, 0.3))
+	if flask_heal_up > 0:
+		GameManager.add_flask_heal(flask_heal_up)
+		player.show_popup(tr(&"COMBAT_FLASK_HEAL_UP"), Color(1.0, 0.75, 0.3))
 	if unlocks_heavy_attack:
 		GameManager.unlock_heavy_attack()
 	if unlocks_double_jump:

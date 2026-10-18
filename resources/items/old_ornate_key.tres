@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://cj0jtcih3jbpb"]
+
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://c2bintlmpnc02" path="res://Assets/sprites/Key 10 - GREY -.png" id="1_wr6ij"]
+[ext_resource type="SpriteFrames" uid="uid://cjfsb6uc6hpax" path="res://resources/items/frames/oldlockpadgrey.tres" id="2_nppef"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nppef"]
+atlas = ExtResource("1_wr6ij")
+
+[resource]
+script = ExtResource("1_script")
+id = "old_ornate_key"
+name = "ITEM_OLD_ORNATE_KEY_NAME"
+icon = SubResource("AtlasTexture_nppef")
+description = "ITEM_OLD_ORNATE_KEY_DESCRIPTION"
+key_uses = 1
+lock_sprite_frames = ExtResource("2_nppef")

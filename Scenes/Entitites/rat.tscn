@@ -73,6 +73,8 @@ contact_damage_base = 15
 move_speed_base = 45.0
 sprite_faces_left = false
 detect_radius = 60.0
+fears_light = true
+light_fear_margin = -16.0
 
 [node name="AnimatedSprite2D" parent="." index="0"]
 sprite_frames = SubResource("SpriteFrames_rat")

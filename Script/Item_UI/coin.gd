@@ -17,6 +17,7 @@ var speed = 0.0
 var time_passed: float = 0.0  # 시간 누적용
 var can_float: bool = false   # "지금 둥둥 떠도 되니?" 상태 확인
 var _collected: bool = false
+signal collected(amount: int) # 플레이어가 주운 순간 (죽은 자리 금화 더미가 남은 금액을 줄인다)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -136,6 +137,7 @@ func _on_body_entered(body):
 		# 골드 업데이트
 		GameManager.update_gold(gold_amount)
 		HUD.log_pickup_gold(gold_amount)
+		collected.emit(gold_amount)
 		
 		# 필드 기록
 		if is_field_coin and id != "":

@@ -1,7 +1,25 @@
 # HUD.gd
 extends CanvasLayer
 
-@onready var Restart_Label: Label = $Control/RestartLabel
+@onready var Restart_Label: Control = $DeathPromptLayer/RestartPrompt # 사망 시 [R] + 번역 문구(HUD_RESTART_PROMPT)
+
+# --- 사망 화면 ---
+# 플레이어만 남기고 나머지(맵·몹·HUD)가 death_fade_time초에 걸쳐 검게 덮이고, 사망 BGM이 같이 커진다.
+# 층: 검은 막(DEATH_DARK_LAYER) < 플레이어 복사본(DEATH_ACTOR_LAYER, 카메라를 따라감) < [R] 안내(DeathPromptLayer, 4)
+@export var death_bgm: AudioStream # 사망 BGM (비우면 소리 없음). 스테이지·보스 BGM은 페이드아웃
+@export var death_fade_time: float = 5.0
+@export_range(0.0, 1.0) var death_dark_alpha: float = 1.0
+const DEATH_DARK_LAYER := 2
+const DEATH_ACTOR_LAYER := 3
+const STAGE_BGM_FADE_OUT := 1.0
+var _death_dark: ColorRect
+var _death_dark_layer: CanvasLayer
+var _death_actor: AnimatedSprite2D
+var _death_actor_layer: CanvasLayer
+var _death_source: AnimatedSprite2D # 따라 그릴 플레이어 스프라이트
+var _death_tween: Tween
+var _death_bgm_player: AudioStreamPlayer
+var _faded_bgms: Dictionary = {} # 페이드아웃한 스테이지·보스 BGM -> 원래 volume_db
 @onready var heart_container: HBoxContainer = $Control/HeartContainer
 @onready var hide_timer: Timer = $HideTimer
 @onready var ui_root: Control = $Control
@@ -65,6 +83,7 @@ var boss_bar_fill: ColorRect = null
 var boss_bar_label: Label = null
 
 func _ready() -> void:
+	add_child(BestiaryUI.new()) # 몬스터 도감 [B]
 	GameManager.hp_changed.connect(_on_hp_changed)
 	GameManager.gold_changed.connect(_on_gold_changed)
 	GameManager.interact_msg_requested.connect(_on_interact_msg)
@@ -72,7 +91,8 @@ func _ready() -> void:
 	
 	if Restart_Label:
 		Restart_Label.hide()
-		
+	_build_death_screen()
+
 	minimap_container.visible = false
 	ui_root.modulate.a = 0.0
 	visible = false
@@ -172,6 +192,8 @@ func _update_status_tint() -> void:
 func _input(event):
 	if event.is_action_pressed("toggle_map"):
 		minimap_container.visible = !minimap_container.visible
+		# 미니맵을 연 동안은 커서를 보여 준다 (해골 표시에 올리면 사인). 조작은 막지 않는다
+		GameManager.request_cursor(minimap_container, minimap_container.visible)
 		if minimap_container.visible:
 			show_hud_temporarily()
 			hide_timer.stop()
@@ -179,6 +201,7 @@ func _input(event):
 			hide_timer.start()
 
 func _process(_delta: float) -> void:
+	_sync_death_actor()
 	_update_pickup_log()
 	_update_damage_vignette()
 	_update_status_tint()
@@ -190,35 +213,126 @@ func _process(_delta: float) -> void:
 	_update_boss_health_bar()
 
 func show_death_screen() -> void:
-	if Restart_Label:
-		Restart_Label.show()
 	visible = true
 	ui_root.modulate.a = 1.0
 	hide_timer.stop()
 
-	# [추가] 화면을 어둡게 만드는 이펙트 (동적 생성)
-	var darken_rect = ColorRect.new()
-	darken_rect.color = Color(0, 0, 0, 0) # 처음엔 투명하게
-	darken_rect.set_anchors_preset(Control.PRESET_FULL_RECT) # 전체 화면 덮기
-	darken_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	darken_rect.name = "DeathDarkenRect"
-	add_child(darken_rect)
+	var player := get_tree().get_first_node_in_group("player")
+	_death_source = player.get("sprite") as AnimatedSprite2D if player != null else null
+	_death_actor.visible = _death_source != null
+	_sync_death_actor()
+	_death_dark_layer.visible = true
+	_death_actor_layer.visible = true
+	_death_dark.color.a = 0.0
+	if _death_tween != null and _death_tween.is_valid():
+		_death_tween.kill()
+	_death_tween = create_tween().set_parallel(true)
+	_death_tween.tween_property(_death_dark, "color:a", death_dark_alpha, death_fade_time).set_trans(Tween.TRANS_QUAD)
+	_fade_out_stage_bgm()
+	if death_bgm != null:
+		_death_bgm_player.stream = death_bgm # 반복 설정이 없는 곡이어도 부활 전까지 다시 재생 (_on_death_bgm_finished)
+		_death_bgm_player.volume_linear = 0.0
+		_death_bgm_player.play()
+		_death_tween.tween_property(_death_bgm_player, "volume_linear", 1.0, death_fade_time)
 
-	# z_index를 높여서 다른 UI 위로 올라오게 함 (Restart Label 보다는 아래일 수 있음)
-	darken_rect.z_index = -1
-
-	# 트윈으로 서서히 어두워지는 애니메이션 (4초 동안)
-	var tween = create_tween()
-	tween.tween_property(darken_rect, "color:a", 0.7, 3.0).set_trans(Tween.TRANS_QUAD)
+# [R] 안내: 스테이지가 부활 입력을 받기 시작할 때(죽고 respawn_input_delay초 뒤) 띄운다
+func show_restart_prompt() -> void:
+	if Restart_Label and is_death_screen_active():
+		Restart_Label.show()
 
 func hide_death_screen() -> void:
 	if Restart_Label:
 		Restart_Label.hide()
+	if _death_tween != null and _death_tween.is_valid():
+		_death_tween.kill()
+	_death_dark.color.a = 0.0
+	_death_dark_layer.visible = false
+	_death_actor_layer.visible = false
+	_death_source = null
+	_death_bgm_player.stop()
+	_restore_stage_bgm()
 
-	# 어두워진 이펙트 제거
-	var darken_rect = get_node_or_null("DeathDarkenRect")
-	if darken_rect:
-		darken_rect.queue_free()
+func is_death_screen_active() -> bool:
+	return _death_dark_layer != null and _death_dark_layer.visible
+
+func _build_death_screen() -> void:
+	_death_dark_layer = CanvasLayer.new()
+	_death_dark_layer.name = "DeathDarkLayer"
+	_death_dark_layer.layer = DEATH_DARK_LAYER
+	_death_dark_layer.visible = false
+	add_child(_death_dark_layer)
+	_death_dark = ColorRect.new()
+	_death_dark.name = "DeathDark"
+	_death_dark.color = Color(0, 0, 0, 0)
+	_death_dark.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_death_dark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_death_dark_layer.add_child(_death_dark)
+	# 월드 좌표 그대로 그리도록 카메라(뷰포트 변환)를 따라가는 층
+	_death_actor_layer = CanvasLayer.new()
+	_death_actor_layer.name = "DeathActorLayer"
+	_death_actor_layer.layer = DEATH_ACTOR_LAYER
+	_death_actor_layer.follow_viewport_enabled = true
+	_death_actor_layer.visible = false
+	add_child(_death_actor_layer)
+	_death_actor = AnimatedSprite2D.new()
+	_death_actor.name = "PlayerCopy"
+	_death_actor_layer.add_child(_death_actor)
+	_death_bgm_player = AudioStreamPlayer.new()
+	_death_bgm_player.name = "DeathBGM"
+	_death_bgm_player.bus = &"BGM"
+	_death_bgm_player.finished.connect(_on_death_bgm_finished)
+	add_child(_death_bgm_player)
+
+# 사망 BGM은 부활(hide_death_screen)할 때까지 끊기지 않고 반복한다
+func _on_death_bgm_finished() -> void:
+	if is_death_screen_active() and _death_bgm_player.stream != null:
+		_death_bgm_player.play()
+
+# 플레이어 스프라이트의 그림·프레임·위치를 그대로 따라 그린다 (검은 막 위에 플레이어만 보이게)
+func _sync_death_actor() -> void:
+	if _death_actor == null or not _death_actor.visible:
+		return
+	if not is_instance_valid(_death_source) or not _death_source.is_inside_tree():
+		_death_actor.visible = false
+		return
+	var src := _death_source
+	_death_actor.sprite_frames = src.sprite_frames
+	if _death_actor.animation != src.animation:
+		_death_actor.animation = src.animation
+	_death_actor.frame = src.frame
+	_death_actor.flip_h = src.flip_h
+	_death_actor.flip_v = src.flip_v
+	_death_actor.centered = src.centered
+	_death_actor.offset = src.offset
+	_death_actor.material = src.material
+	_death_actor.texture_filter = src.texture_filter
+	_death_actor.transform = src.get_global_transform()
+	var owner_modulate := Color.WHITE
+	var parent := src.get_parent() as CanvasItem
+	if parent != null:
+		owner_modulate = parent.modulate
+	_death_actor.modulate = owner_modulate * src.modulate
+	_death_actor.self_modulate = src.self_modulate
+
+# 지금 씬에서 재생 중인 BGM 버스 음악(스테이지·보스)을 줄이고 멈춘다. 부활하면 씬을 다시 불러 새로 재생된다
+func _fade_out_stage_bgm() -> void:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	for node in scene.find_children("*", "AudioStreamPlayer", true, false):
+		var bgm := node as AudioStreamPlayer
+		if bgm.bus != &"BGM" or not bgm.playing or _faded_bgms.has(bgm):
+			continue
+		_faded_bgms[bgm] = bgm.volume_db
+		var t := bgm.create_tween()
+		t.tween_property(bgm, "volume_db", -60.0, STAGE_BGM_FADE_OUT)
+		t.tween_callback(bgm.stop)
+
+func _restore_stage_bgm() -> void:
+	for bgm in _faded_bgms:
+		if is_instance_valid(bgm):
+			bgm.volume_db = _faded_bgms[bgm]
+	_faded_bgms.clear()
 
 func show_hud_temporarily():
 	# 메인 메뉴 등 BaseStage가 없는 씬에서는 표시하지 않음
@@ -251,6 +365,15 @@ func _setup_ui() -> void:
 	_on_gold_changed(GameManager.gold)
 	if interact_label: interact_label.visible = false
 	if save_panel: save_panel.visible = false
+	_setup_moon_icon()
+
+# 오른쪽 위 달 아이콘 (MoonPhase). 위상이 바뀌거나 통로를 열고 닫으면 HUD를 잠깐 보여 준다
+func _setup_moon_icon() -> void:
+	var icon := MoonIcon.new()
+	icon.name = "MoonIcon"
+	ui_root.add_child(icon)
+	icon.position = Vector2(640.0 - MoonIcon.SIZE - 4.0, 4.0) # HUD는 640x360을 2배로 그린다
+	GameManager.moon_changed.connect(show_hud_temporarily)
 	
 func _on_hp_changed(current: int, max_hp: int) -> void:
 	draw_hearts(current, max_hp)

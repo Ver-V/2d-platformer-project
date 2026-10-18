@@ -1,7 +1,7 @@
 extends Interactable
 class_name Torch
 
-# 횃불: 랜턴(required_item_id)을 장착한 채 interact 키(E)로 불을 붙이면 주변 light_radius_tiles(10타일)를 밝힌다.
+# 횃불: 랜턴(required_item_id)을 장착한 채 interact 키(E)로 불을 붙이면 주변 light_radius_tiles(8타일)를 밝힌다.
 # 시야 제한(VisionLimit)이 있는 스테이지용 — 켜진 횃불은 VisionLimit.LIGHT_GROUP에 들어가 어둠에 빛 원을 하나 더 뚫는다.
 # 붙인 기록은 GameManager.collected_items에 "torch:<persist_id>"로 남는다: 세이브하면 계속 켜져 있고,
 # 세이브 전에 죽으면(세이브를 다시 불러오므로) 꺼진 상태로 돌아간다.
@@ -11,12 +11,13 @@ class_name Torch
 const TILE := 16.0
 const HINT_COOLDOWN_MS := 2000
 
-@export var light_radius_tiles: float = 10.0
+@export var light_radius_tiles: float = 8.0
 @export var required_item_id: String = "lantern" # 이 아이템을 장착하고 있어야 불을 붙일 수 있다
 @export var light_offset: Vector2 = Vector2(0, -24) # 빛의 중심 (불꽃 위치)
 @export var light_grow_time: float = 0.8 # 불을 붙였을 때 빛이 다 퍼지는 시간
 @export var flicker_px: float = 2.0 # 켜진 빛 반지름이 일렁이는 폭
 @export var persist_id: String = ""
+@export var tutorial_key: StringName = &"TUTORIAL_TORCH" # 처음 불을 붙였을 때 한 번
 
 @onready var sprite: AnimatedSprite2D = get_node_or_null("Sprite")
 @onready var placeholder: Node2D = get_node_or_null("Placeholder")
@@ -69,6 +70,7 @@ func light() -> void:
 	_grow = 0.0
 	_time = 0.0
 	GameManager.add_collected_item(save_id())
+	Tutorials.show_once(self, tutorial_key)
 	_hide_prompt()
 	if light_sound != null and light_sound.stream != null:
 		light_sound.play()

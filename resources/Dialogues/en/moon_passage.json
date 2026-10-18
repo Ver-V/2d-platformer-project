@@ -1,0 +1,56 @@
+{
+  "ask_open": [
+	{
+	  "name": "Pink Bunny",
+	  "text": "A cold draft seeps through the hatch. If I open it, the moonlight will pour all the way down the shaft.",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left"
+	},
+	{
+	  "name": "Pink Bunny",
+	  "text": "They say moonlight drives the beasts mad... Should I open it anyway?",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left",
+	  "choices": [
+		{ "text": "Open it", "event": "moon_passage_open", "next": "opened" },
+		{ "text": "Leave it", "next": "leave" }
+	  ]
+	}
+  ],
+  "ask_close": [
+	{
+	  "name": "Pink Bunny",
+	  "text": "Moonlight is flowing down the shaft through the open hatch. Close it again?",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left",
+	  "choices": [
+		{ "text": "Close it", "event": "moon_passage_close", "next": "closed" },
+		{ "text": "Leave it open", "next": "leave" }
+	  ]
+	}
+  ],
+  "opened": [
+	{
+	  "name": "Pink Bunny",
+	  "text": "Moonlight floods in. Somewhere below, a beast is howling...",
+	  "left_image": "HeroBunny_surprise",
+	  "speaker": "left"
+	}
+  ],
+  "closed": [
+	{
+	  "name": "Pink Bunny",
+	  "text": "The hatch is shut. It's quiet again.",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left"
+	}
+  ],
+  "leave": [
+	{
+	  "name": "Pink Bunny",
+	  "text": "Let's come back later.",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left"
+	}
+  ]
+}

@@ -35,19 +35,19 @@ layout_mode = 2
 
 [node name="BtnResume" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "Resume"
+text = "PAUSE_RESUME"
 
 [node name="BtnOptions" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "Options"
+text = "MAIN_MENU_OPTIONS"
 
 [node name="BtnLoad" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "Load Game"
+text = "MAIN_MENU_LOAD_GAME"
 
 [node name="BtnExit" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "Exit"
+text = "PAUSE_EXIT"
 
 [node name="OptionsUI" parent="." instance=ExtResource("2_hhp88")]
 visible = false

@@ -11,6 +11,7 @@ class_name CrumblingBlock
 @export var crumble_delay: float = 0.8 # 밟은 뒤 무너질 때까지
 @export var respawn_delay: float = 3.0 # 무너진 뒤 다시 생길 때까지
 @export var shake_amount: float = 1.5
+@export var tutorial_key: StringName = &"TUTORIAL_CRUMBLING_BLOCK" # 처음 밟아 무너뜨렸을 때 한 번
 @export var crumble_alone: bool = false # 켜면 옆에 붙은 블록과 묶이지 않고 혼자 무너진다
 @export var texture: Texture2D: # 넣으면 Sprite2D 그림으로 쓴다. Sprite2D에 직접 넣어도 된다. 둘 다 비우면 임시 그림
 	set(value):
@@ -57,6 +58,7 @@ func _try_step_on(body: Node) -> void:
 	for block in linked_blocks():
 		if block.state == State.SOLID:
 			block._crumble()
+	Tutorials.show_once(self, tutorial_key)
 
 # 이 블록과 가로로 맞붙어 이어진 블록들 (자신 포함). crumble_alone인 블록은 묶음에 끼지 않는다
 func linked_blocks() -> Array[CrumblingBlock]:

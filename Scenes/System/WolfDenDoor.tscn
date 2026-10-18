@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" uid="uid://d2qf7f3rpxa10" path="res://Scenes/System/KeyDoor.tscn" id="1_door"]
+
+[node name="WolfDenDoor" instance=ExtResource("1_door")]
+item_key = "old_ornate_key"
+dialogue_file = "res://resources/Dialogues/en/wolf_den_door.json"

@@ -1,0 +1,74 @@
+[gd_resource type="SpriteFrames" load_steps=11 format=3 uid="uid://ticjoypqu2da"]
+
+[ext_resource type="Texture2D" uid="uid://3m3hx5ufy5g2" path="res://Assets/sprites/potion/attack_increased_potion.png" id="1_ty723"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cxr4s"]
+atlas = ExtResource("1_ty723")
+region = Rect2(0, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3ahgd"]
+atlas = ExtResource("1_ty723")
+region = Rect2(19, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_guxfa"]
+atlas = ExtResource("1_ty723")
+region = Rect2(38, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fedfy"]
+atlas = ExtResource("1_ty723")
+region = Rect2(57, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gfvps"]
+atlas = ExtResource("1_ty723")
+region = Rect2(76, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ky6v0"]
+atlas = ExtResource("1_ty723")
+region = Rect2(95, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_grq15"]
+atlas = ExtResource("1_ty723")
+region = Rect2(114, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sa34p"]
+atlas = ExtResource("1_ty723")
+region = Rect2(133, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5jp5e"]
+atlas = ExtResource("1_ty723")
+region = Rect2(152, 0, 19, 37)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cxr4s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3ahgd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_guxfa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fedfy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gfvps")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ky6v0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_grq15")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sa34p")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5jp5e")
+}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]

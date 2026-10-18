@@ -26,7 +26,7 @@ func _gui_input(event: InputEvent) -> void:
 			# "나 클릭됐어요!"라고 신호를 보냄
 			slot_clicked.emit()
 
-func set_item(item: ItemData, _inventory_index: int = -1): # 칸 번호는 예전 열쇠 횟수 표시용 (지금은 안 씀)
+func set_item(item: ItemData, inventory_index: int = -1): # 가방 칸 번호: 겹친 개수 표시용 (장비 칸은 -1)
 	_set_anim_item(item if item != null and item.has_animation() else null)
 	if item != null:
 		# [핵심 변경] load() 필요 없음! 리소스 안에 이미 이미지가 들어있음.
@@ -35,6 +35,9 @@ func set_item(item: ItemData, _inventory_index: int = -1): # 칸 번호는 예�
 
 		if item.id == "health_flask":
 			$AmountLabel.text = str(GameManager.flask_current_charges) + "/" + str(GameManager.flask_max_charges)
+			$AmountLabel.show()
+		elif inventory_index >= 0 and Inventory.get_count_at(inventory_index) > 1:
+			$AmountLabel.text = str(Inventory.get_count_at(inventory_index))
 			$AmountLabel.show()
 		else:
 			$AmountLabel.hide()

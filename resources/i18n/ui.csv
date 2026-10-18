@@ -4,6 +4,9 @@ MAIN_MENU_LOAD_GAME,"Load Game","불러오기"
 MAIN_MENU_OPTIONS,"Options","설정"
 MAIN_MENU_CREDITS,"Credits","제작진"
 MAIN_MENU_EXIT,"Exit","종료"
+PAUSE_RESUME,"Resume","계속하기"
+PAUSE_EXIT,"Main Menu","메인 메뉴로"
+HUD_RESTART_PROMPT,": Get back up",": 다시 일어나기"
 MAIN_MENU_NEW_GAME_WARNING,"Warning!","주의!"
 MAIN_MENU_NEW_GAME_CONFIRM,"Saved data already exists. Are you sure you want to start a new game?","저장된 데이터가 있습니다. 새 게임을 시작하시겠습니까?"
 MAIN_MENU_SLOT_OVERWRITE_CONFIRM,"Slot {n} already has saved data. Overwrite it and start a new game?","슬롯 {n}에 저장된 데이터가 있습니다. 덮어쓰고 새 게임을 시작하시겠습니까?"
@@ -18,6 +21,11 @@ COMMON_YES,"Yes","예"
 COMMON_NO,"No","아니요"
 COMBAT_DAMAGE_UP,"Damage Up!","공격력 증가!"
 COMBAT_PARRY_POWER_UP,"Parry Power Up!","패링 위력 증가!"
+COMBAT_ATTACK_SPEED_UP,"Attack Speed Up!","공격 속도 증가!"
+COMBAT_GUARD_UP,"Guard Up!","가드 경감 증가!"
+COMBAT_BREATH_UP,"Breath Up!","호흡량 증가!"
+COMBAT_FLASK_CHARGES_UP,"Flask Uses Up!","플라스크 사용 횟수 증가!"
+COMBAT_FLASK_HEAL_UP,"Flask Healing Up!","플라스크 회복량 증가!"
 COMBAT_COUNTER_PARRY,"Counter Parry!","반격 패링!"
 COMBAT_COUNTER_HIT,"Counter Hit!","반격 적중!"
 COMBAT_PERFECT_GUARD,"Perfect Guard!","퍼펙트 가드!"
@@ -25,6 +33,7 @@ COMBAT_GUARD,"Guard","가드"
 STATUS_POISONED,"Poisoned!","중독!"
 STATUS_ACID,"Corroded! (ATK -5)","부식! (공격력 -5)"
 STATUS_BLEED_BURST,"Bleed!","출혈!"
+STATUS_SLEEP_ZZZ,"Zzz...","Zzz..."
 STATUS_SAVED,"Saved!","저장 완료!"
 STATUS_HEALED,"Healed!","회복!"
 STATUS_MANA_UP,"Mana Up!","마나 증가!"
@@ -83,9 +92,9 @@ STAGE_01_TITLE,"Bunny's Forest","토끼의 숲"
 STAGE_02_TITLE,"Rat's Cave","쥐의 동굴"
 STAGE_03_TITLE,"Stage 3","스테이지 3"
 TUTORIAL_HEALTH_FLASK,"You obtained the Flask of Blessed Health.
-Resting at a save point replenishes its charges, allowing repeated use.
+Resting at a save point or getting back up after falling refills its charges.
 Press [Q] to use it.","축복받은 생명의 플라스크를 획득했습니다.
-세이브 포인트에서 휴식하면 사용 횟수가 초기화되어 다시 사용할 수 있습니다.
+세이브 포인트에서 휴식하거나 쓰러졌다 다시 일어나면 사용 횟수가 다시 채워집니다.
 [Q]를 눌러서 사용하세요."
 TUTORIAL_JUMP,"Welcome to the game.
 Press [Z] to jump.
@@ -97,12 +106,14 @@ Press [X] to attack and defeat it.","앞에 적이 있습니다!
 [X]를 눌러 공격하고 쓰러뜨리세요."
 TUTORIAL_GUARD,"[Shift] to guard against projectiles and reduce incoming damage.
 A perfectly timed guard negates the damage and empowers your next attack.
-Guard has a 1.5-second cooldown, so use it wisely.","[Shift]를 눌러 투사체를 막고 받는 피해를 줄이세요.
+Guard has a 1-second cooldown, so use it wisely.","[Shift]를 눌러 투사체를 막고 받는 피해를 줄이세요.
 정확한 타이밍에 가드하면 피해를 무효화하고 다음 공격이 강화됩니다.
-가드에는 1.5초의 재사용 대기시간이 있으니 신중하게 사용하세요."
+가드에는 1초의 재사용 대기시간이 있으니 신중하게 사용하세요."
 TUTORIAL_PARRY,"Press [X] with perfect timing to parry bullets of specific colors.
-A parried bullet always hits the enemy and deals heavy counter damage.","특정 색상의 탄환은 정확한 타이밍에 [X]를 눌러 패링할 수 있습니다.
-패링한 탄환은 반드시 적에게 명중하며 강력한 반격 피해를 줍니다."
+A parried bullet always hits the enemy and deals heavy counter damage.
+Ranged enemies killed by their own bullets drop bonus gold.","특정 색상의 탄환은 정확한 타이밍에 [X]를 눌러 패링할 수 있습니다.
+패링한 탄환은 반드시 적에게 명중하며 강력한 반격 피해를 줍니다.
+원거리 적이 자신의 탄환에 맞아 쓰러지면 보너스 금화를 떨어뜨립니다."
 TUTORIAL_GOLD,"Defeated enemies may drop Gold.
 Gold can be used in shops or during special events, and can also be found scattered throughout the field.","적을 쓰러뜨리면 골드를 떨어뜨릴 수 있습니다.
 골드는 상점이나 특별한 이벤트에서 사용할 수 있으며 필드 곳곳에서도 발견할 수 있습니다."
@@ -117,6 +128,18 @@ ITEM_HEALTH_POTION_NAME,"Healing Potion","치유 물약"
 ITEM_HEALTH_POTION_DESCRIPTION,"Restores 40 health points.","체력을 40 회복합니다."
 ITEM_PARRY_POTION_NAME,"Purple Potion","보라색 물약"
 ITEM_PARRY_POTION_DESCRIPTION,"A vial containing a mystical purple liquid. It seems to improve the ability to parry attacks.","신비로운 보라색 액체가 담긴 병입니다. 공격을 패링하는 능력을 향상시키는 것 같습니다."
+ITEM_ATTACK_POTION_NAME,"Magenta Potion","자홍색 물약"
+ITEM_ATTACK_POTION_DESCRIPTION,"A vial containing a vivid magenta liquid. It seems to make your strikes hit harder.","선명한 자홍색 액체가 담긴 병입니다. 공격을 더 강하게 만들어 주는 것 같습니다."
+ITEM_ATTACK_SPEED_POTION_NAME,"Amber Potion","호박색 물약"
+ITEM_ATTACK_SPEED_POTION_DESCRIPTION,"A vial containing a warm amber liquid. It seems to make your sword swings quicker.","따뜻한 호박색 액체가 담긴 병입니다. 검을 더 빠르게 휘두르게 해 주는 것 같습니다."
+ITEM_GUARD_POTION_NAME,"Grey Potion","회색 물약"
+ITEM_GUARD_POTION_DESCRIPTION,"A vial containing a heavy grey liquid. It seems to soften the blows you take while guarding.","묵직한 회색 액체가 담긴 병입니다. 가드할 때 받는 충격을 줄여 주는 것 같습니다."
+ITEM_BREATH_POTION_NAME,"Blue Potion","파란색 물약"
+ITEM_FLASK_SHARD_NAME,"Flask Shard","플라스크 조각"
+ITEM_FLASK_SHARD_DESCRIPTION,"A glass shard that still holds a faint warmth. Fused to your flask, it lets you drink from it one more time.","희미한 온기가 남아 있는 유리 조각입니다. 플라스크에 녹여 붙이면 한 번 더 마실 수 있습니다."
+ITEM_FLASK_ESSENCE_NAME,"Healing Essence","치유의 정수"
+ITEM_FLASK_ESSENCE_DESCRIPTION,"A few drops of thick red essence. Mixed into your flask, each sip heals a little more.","진한 붉은 정수 몇 방울입니다. 플라스크에 섞으면 한 모금마다 조금 더 회복됩니다."
+ITEM_BREATH_POTION_DESCRIPTION,"A vial containing a clear blue liquid. It seems to let you hold your breath longer underwater.","맑은 파란색 액체가 담긴 병입니다. 물속에서 숨을 더 오래 참게 해 주는 것 같습니다."
 ITEM_PINK_KEY_NAME,"Pink Key","분홍색 열쇠"
 ITEM_PINK_KEY_DESCRIPTION,"Opens a matching locked door or chest.","일치하는 자물쇠가 달린 문이나 상자를 열 수 있습니다."
 ITEM_RED_LIGHTED_SILVER_KEY_NAME,"Red-Lit Silver Key","붉은 빛을 내는 은열쇠"
@@ -136,7 +159,7 @@ PICKUP_ITEM,"Got %s","%s 획득"
 SHORTCUT_DOOR_LOCKED,"It won't open from this side.","이쪽에서는 열리지 않는다."
 KEY_REQUIRED,"A key is required.","열쇠가 필요해."
 HUD_INTERACT,": Interact",": 상호작용"
-HUD_SAVE,": Save",": 저장"
+HUD_WAIT,": Wait",": 기다리기"
 HUD_REST,": Rest",": 휴식"
 MINIMAP_LEGEND_PLAYER,"Me","나"
 MINIMAP_LEGEND_ENEMY,"Enemy","적"
@@ -147,8 +170,10 @@ MINIMAP_LEGEND_ELEVATOR,"Elevator","엘리베이터"
 MINIMAP_LEGEND_CHEST,"Chest","보물 상자"
 MINIMAP_LEGEND_DOOR_CLOSED,"Closed Door","닫힌 문"
 MINIMAP_LEGEND_DOOR_OPEN,"Open Door","열린 문"
+MINIMAP_LEGEND_DEATH_DROP,"Lost Gold","잃은 금화"
 WALL_NEEDS_COUNTER,"It won't budge... I need a stronger blow.","꿈쩍도 안 해... 더 강한 일격이 필요해."
 TORCH_NEEDS_LANTERN,"An unlit torch... I could light it with a lantern.","꺼진 횃불이다... 랜턴이 있으면 불을 붙일 수 있겠어."
+WOOL_NEEDS_FIRE,"My sword can't break this. I need something to burn it.","검으로는 부술 수 없어. 무언가 태울 게 필요할 것 같아."
 ITEM_SUSPICIOUS_DRUG_NAME,"Suspicious Scientist's Drug","수상한 과학자의 약물"
 ITEM_SUSPICIOUS_DRUG_DESCRIPTION,"A vial left behind by a suspicious scientist. Drinking it might awaken a hidden strength...","수상한 과학자가 남긴 약물. 마시면 몸속에 잠든 힘이 깨어날지도 모른다..."
 TUTORIAL_HEAVY_ATTACK,"You learned the Heavy Attack!
@@ -180,3 +205,174 @@ WORLD_MAP_FLOOR_B11,"B11","지하 11층"
 WORLD_MAP_FLOOR_B12,"B12","지하 12층"
 BOSS1_PHASE2_SPEECH,"Hmm... Time to get serious!","흐음... 지금부터 제대로 한다!"
 BOSS2_PHASE2_SPEECH,"Ugh... Ughhhhhhh!","으윽... 으으윽!"
+OPTIONS_LOG_COLLECTION,"Send Play Logs to Developer","개발자에게 플레이 로그 전송"
+LOG_CONSENT_TITLE,"Play Logs","플레이 로그"
+LOG_CONSENT_TEXT,"Send play logs to the developer to help fix bugs and balance the game?\nThe log content includes only error messages and play records (deaths, boss fights, stage visits) and contains no personal information.\nLogs are sent through Discord, which may process your IP address as part of the transfer.\nYou can change this anytime in Options.","버그 수정과 밸런스 조정을 위해 플레이 로그를 개발자에게 보낼까요?\n로그 내용에는 오류 메시지와 플레이 기록(사망, 보스전, 스테이지 이동)만 담기며, 개인정보는 포함되지 않습니다.\n로그는 Discord를 통해 전송되며, 전송 과정에서 Discord가 IP 주소를 처리할 수 있습니다.\n설정에서 언제든지 바꿀 수 있습니다."
+LOG_CONSENT_ALLOW,"Allow","허용"
+LOG_CONSENT_DECLINE,"Decline","거부"
+ITEM_LOST_LAMB_NAME,"Lost Lamb","길 잃은 새끼양"
+ITEM_LOST_LAMB_DESCRIPTION,"A lamb that wandered away from its flock. The shepherd must be worried about it.","무리에서 떨어져 헤매던 새끼양. 양치기가 애타게 찾고 있을 것 같다."
+SHEPHERD_LAMBS_RETURNED,"Lambs returned: {count}/{total}","돌려준 새끼양: {count}/{total}"
+ITEM_OLD_ORNATE_KEY_NAME,"Ornate Old Key","고풍스러운 열쇠"
+ITEM_OLD_ORNATE_KEY_DESCRIPTION,"A key the shepherd picked up in the pasture. It looks precious, but no one knows what it opens.","양치기가 풀밭에서 주운 열쇠. 귀해 보이지만 어디에 쓰는 열쇠인지는 아무도 모른다."
+TUTORIAL_STATUS_POISON,"You've been poisoned!
+You lose a little HP every second while it lasts.
+The purple bar beside you shows the time left. Resting at a save point cures it.","독에 걸렸습니다!
+지속되는 동안 1초마다 체력이 조금씩 줄어듭니다.
+몸 옆의 보라색 게이지가 남은 시간이고, 세이브 포인트에서 쉬면 풀립니다."
+TUTORIAL_STATUS_BLEED,"Bleed is building up!
+Each hit fills the red bar, and when it's full it bursts for a large chunk of HP.
+Avoid hits for a while and the bar drains away.","출혈이 쌓이고 있습니다!
+맞을 때마다 몸 옆의 빨간 게이지가 차고, 가득 차면 큰 피해가 한 번에 터집니다.
+한동안 맞지 않으면 게이지가 줄어듭니다."
+TUTORIAL_STATUS_ACID,"You've been corroded by acid!
+Your attack power is lowered for a short time.","산성에 부식되었습니다!
+잠시 동안 공격력이 줄어듭니다."
+TUTORIAL_STATUS_BREATH,"You're underwater!
+Hold [Z] to swim up. The dark blue bar beside you is your breath.
+When it runs out you start taking damage, so surface in time.","물속에 들어왔습니다!
+[Z]를 누르고 있으면 떠오릅니다. 몸 옆의 진한 파란 게이지가 숨입니다.
+숨이 다 떨어지면 피해를 입으니 제때 물 밖으로 나오세요."
+TUTORIAL_STATUS_DROWSY,"The bleating is making you drowsy...
+While you hear it, the gray bar fills. When it's full you fall asleep for a few seconds and can't move.
+Get out of range to let it drain. Taking a hit wakes you up.","울음소리를 듣고 졸음이 오기 시작합니다...
+소리가 들리는 동안 몸 옆의 회색 게이지가 차고, 가득 차면 몇 초 동안 잠들어 움직일 수 없습니다.
+범위 밖으로 벗어나면 게이지가 줄어듭니다. 공격받으면 잠에서 깹니다."
+TUTORIAL_CRUMBLING_BLOCK,"This block is crumbling!
+Cracked blocks collapse shortly after you step on them, then reappear after a while.
+Don't stand still on them.","발판이 무너집니다!
+금이 간 발판은 밟고 잠시 뒤 무너지고, 시간이 지나면 다시 생깁니다.
+오래 서 있지 마세요."
+TUTORIAL_CRACKED_WALL,"You broke through a cracked wall!
+Heavy attacks can shatter cracked walls. Hidden paths may lie behind them.","금 간 벽을 부쉈습니다!
+강공격으로 금 간 벽을 부술 수 있습니다. 벽 너머에 숨겨진 길이 있을지도 모릅니다."
+TUTORIAL_WOOL_WALL,"The wool caught fire!
+With the lantern equipped, press [E] to burn away thick wool that blocks your path.","양털에 불이 붙었습니다!
+랜턴을 장착하고 [E]를 누르면 길을 막은 두꺼운 양털을 태울 수 있습니다."
+TUTORIAL_WOOL_BOUNCE,"You bounced off the wool!
+Landing on wool sends you back up to the height you fell from, and restores your double jump.
+Chain bounces and double jumps to reach high places.","양털에 튕겼습니다!
+양털에 떨어지면 떨어진 높이만큼 다시 튀어 오르고, 더블 점프가 다시 채워집니다.
+튕김과 더블 점프를 이어서 높은 곳에 올라가 보세요."
+TUTORIAL_TORCH,"You lit a torch!
+A lit torch lights up the darkness around it and stays lit.
+Rats hate the light and won't come far into it.","횃불을 밝혔습니다!
+켜진 횃불은 주변의 어둠을 밝혀 주며, 계속 켜져 있습니다.
+쥐들은 불빛을 싫어해서 그 안으로 깊이 들어오지 못합니다."
+TUTORIAL_EQUIPMENT,"You got a piece of equipment!
+Equipment only works while it's in an equipment slot (4 accessory slots, 2 gem slots).
+It's equipped right away if a slot is free. Press [I], pick an item and choose Equip or Unequip to swap.","장비를 얻었습니다!
+장비는 장비 칸에 끼워야 효과가 있습니다 (보조 장비 4칸, 보석 2칸).
+빈 칸이 있으면 바로 장착되고, [I]로 인벤토리를 열어 아이템을 고른 뒤 '장착'·'해제'로 바꿀 수 있습니다."
+MOON_FULL,"Full Moon","보름달"
+MOON_HALF,"Half Moon","반달"
+MOON_NEW,"New Moon","그믐달"
+STAGE_SURFACE_TITLE,"Surface","지상"
+TUTORIAL_MOON_PASSAGE,"Interact to open the moonlight passage.
+Depending on the moon's phase, you can find certain powerful foes and treasures, and enemies become stronger overall.
+The moon's phase changes each time you rest at a save point.
+You can close the passage again at any time to restore the original difficulty.","상호작용하면 달빛의 통로를 엽니다.
+달의 위상에 따라 특정 강적과 보물 등을 찾을 수 있고, 적들이 전반적으로 강력해집니다.
+달의 위상은 세이브 포인트에서 휴식할 때마다 바뀝니다.
+언제든 원하면 통로를 다시 닫아 난이도를 원래대로 되돌릴 수 있습니다."
+TUTORIAL_DEATH,"You have fallen...
+You get back up at the last save point you used. Items you picked up and chests you opened stay that way, but every defeated enemy comes back.
+But you dropped half your gold where you fell. Return to the skull (also shown on the minimap) to pick it back up.","쓰러졌습니다...
+마지막으로 들른 세이브 포인트에서 다시 일어납니다. 주운 아이템과 연 상자는 그대로지만, 쓰러뜨린 적은 모두 되살아납니다.
+대신 가진 골드의 절반을 쓰러진 자리에 떨어뜨렸습니다. 해골 표시(미니맵에도 보입니다)로 돌아가면 다시 주울 수 있습니다."
+TUTORIAL_SAVE_POINT,"This is a save point. Your progress is saved here, and if you fall, you get back up here.
+[E] Wait: time passes and the moon's phase changes. Defeated enemies come back and mutations change. Your health is not restored.
+[R] Rest: fully restores your health and flask. Defeated enemies come back, but the moon stays as it is.","세이브 포인트입니다. 여기서 진행 상황이 저장되고, 쓰러지면 여기서 다시 일어납니다.
+[E] 기다리기: 시간이 흘러 달의 위상이 바뀝니다. 쓰러뜨린 적이 되살아나고 변이체도 바뀝니다. 체력은 회복되지 않습니다.
+[R] 휴식: 체력과 플라스크를 모두 채웁니다. 쓰러뜨린 적은 되살아나지만 달은 그대로입니다."
+TUTORIAL_MUTATION,"A mutant has appeared!
+Enemies with a glowing outline are mutants. They may be tougher or faster, inflict poison or bleeding, or split apart when defeated.
+Mutants drop more gold and sometimes leave a reward chest. Mutations change each time you rest.","변이체가 나타났습니다!
+윤곽선이 빛나는 적은 변이체입니다. 더 단단하거나, 빠르거나, 독이나 출혈을 걸거나, 쓰러뜨리면 분열하기도 합니다.
+변이체는 골드를 더 많이 주고, 가끔 보상 상자를 떨어뜨립니다. 변이는 휴식할 때마다 새로 정해집니다."
+TUTORIAL_DARKNESS,"This floor is shrouded in darkness. You can only see what's close to you.
+Equip a lantern to see farther, and light torches to brighten their surroundings.
+Watch for the glint of enemy eyes in the dark.","이 층은 어둠에 잠겨 있어 가까운 곳만 보입니다.
+랜턴을 장착하면 더 멀리 볼 수 있고, 횃불을 밝히면 그 주변이 환해집니다.
+어둠 속에서 빛나는 적의 눈을 잘 살피세요."
+TUTORIAL_SPIKES,"You hit the spikes!
+Spikes hurt you and send you back to the last safe ground you stood on.
+The wooden base of the spikes is safe to stand on.","가시에 찔렸습니다!
+가시에 닿으면 피해를 입고, 마지막으로 밟은 안전한 땅으로 돌아갑니다.
+가시의 나무 받침 쪽은 밟아도 안전합니다."
+TUTORIAL_MINIMAP,"Press [M] to show or hide the minimap.
+It shows the rooms you've visited, and the chests, doors and save points you've seen up close.","[M]을 누르면 미니맵을 켜고 끌 수 있습니다.
+다녀간 방과, 가까이에서 본 상자·문·세이브 포인트가 표시됩니다."
+TUTORIAL_FAST_FALL,"Hold [Down] in the air to fall faster.","공중에서 [↓]를 누르고 있으면 더 빨리 떨어집니다."
+TUTORIAL_HEALING_POTION,"You got a healing potion!
+When your flask is empty, pressing [Q] drinks a healing potion instead.
+Several potions stack in one bag slot.","회복 물약을 얻었습니다!
+플라스크를 다 쓴 뒤 [Q]를 누르면 회복 물약을 대신 마십니다.
+물약은 가방 한 칸에 여러 개 겹쳐 들 수 있습니다."
+TUTORIAL_KEY,"You got a key!
+Press [E] at a door or chest with a matching lock to open it.
+Each key can only be used a set number of times, and disappears once used up.","열쇠를 얻었습니다!
+맞는 자물쇠가 걸린 문이나 상자 앞에서 [E]를 누르면 열립니다.
+열쇠마다 쓸 수 있는 횟수가 정해져 있고, 다 쓰면 사라집니다."
+TUTORIAL_STAT_POTION,"You got a stat potion!
+Open your inventory with [I] and drink it to raise a stat permanently.","능력치 물약을 얻었습니다!
+[I]로 인벤토리를 열어 마시면 능력치가 영구히 오릅니다."
+TUTORIAL_FLASK_UPGRADE,"You got something to strengthen your flask!
+Open your inventory with [I] and use it to permanently raise your flask's charges or healing.","플라스크를 강화하는 재료를 얻었습니다!
+[I]로 인벤토리를 열어 사용하면 플라스크의 사용 횟수나 회복량이 영구히 늘어납니다."
+TUTORIAL_SHORTCUT,"You opened a shortcut!
+From now on, you can also go through from this side.","지름길이 열렸습니다!
+이제 이쪽 문에서도 반대편으로 바로 갈 수 있습니다."
+TUTORIAL_MOON_GATE,"A wall carved with moon runes.
+It opens only on nights when moonlight shines in and the moon is in a certain phase.
+The moon's phase changes each time you rest at a save point.","달의 문양이 새겨진 벽입니다.
+달빛이 들어오고 특정 위상의 달이 뜬 밤에만 길이 열립니다.
+달의 위상은 세이브 포인트에서 휴식할 때마다 바뀝니다."
+STATUS_WAITED,"Time passes...","시간이 흘렀다..."
+ENEMY_SLIME_1,"Slime","슬라임"
+ENEMY_EMUSHROOM,"Mushroom","버섯"
+ENEMY_ESNAKE,"Snake","뱀"
+ENEMY_ENEMY_RANGED,"Shooter","사수"
+ENEMY_RAT,"Rat","쥐"
+ENEMY_RAT_BLUE,"Blue Rat","파란 쥐"
+ENEMY_RAT_PURPLE,"Purple Rat","보라 쥐"
+ENEMY_RAT_RED,"Red Rat","빨간 쥐"
+ENEMY_RAT_WHITE,"White Rat","흰 쥐"
+ENEMY_SHEEP,"Sheep","양"
+ENEMY_BOSS_STAGE_1,"Big Bunny","언니 토끼"
+ENEMY_BOSS_STAGE_2,"Drugged Wererat & Scientist","약에 취한 웨어랫과 과학자 쥐"
+ENEMY_BOSS_STAGE_3,"Stage 3 Boss","3스테이지 보스"
+ENEMY_BOSS_WOLF,"Wolf in Sheep's Clothing","양의 탈을 쓴 늑대"
+BESTIARY_TITLE,"Bestiary","몬스터 도감"
+BESTIARY_HINT,"[B] / [Esc] Close","[B] / [Esc] 닫기"
+BESTIARY_UNKNOWN,"???","???"
+BESTIARY_KILLS,"Defeated: {n}","처치: {n}"
+BESTIARY_NOHIT,"★ No-hit","★ 노히트"
+BESTIARY_STATS,"HP {hp} · Contact {damage} · Speed {speed} · Gold {gold}","체력 {hp} · 몸통 피해 {damage} · 속도 {speed} · 금화 {gold}"
+BESTIARY_STATUS,"On hit: {status} ({chance}%)","맞으면: {status} ({chance}%)"
+BESTIARY_REWARD,"Reward: {item}","보상: {item}"
+BOSS_NO_HIT,"No Hit!","노히트!"
+DEATH_CAUSE,"Fell to: {cause}","사인: {cause}"
+CAUSE_SPIKES,"Spikes","가시"
+CAUSE_UNKNOWN,"Unknown","알 수 없음"
+CAUSE_STATUS_POISON,"Poison","독"
+CAUSE_STATUS_BLEED,"Bleeding","출혈"
+CAUSE_STATUS_BREATH,"Drowning","익사"
+CAUSE_STATUS_ACID,"Acid","산성"
+CAUSE_STATUS_DROWSY,"Drowsiness","졸음"
+TUTORIAL_BESTIARY,"You defeated a new kind of enemy.
+Press [B] to open the bestiary: every enemy you have defeated shows its stats and drops.","새로운 종류의 적을 쓰러뜨렸습니다.
+[B]를 누르면 몬스터 도감이 열립니다. 한 번 쓰러뜨린 적은 능력치와 드롭이 기록됩니다."
+TUTORIAL_REMATCH,"Under the full moon, a boss you defeated has returned, stronger than before.
+It only appears once per full moon, and gives gold.","보름달 아래, 쓰러뜨렸던 보스가 더 강해져서 돌아왔습니다.
+보름달마다 한 번만 나타나며 금화를 줍니다."
+TUTORIAL_ENEMY_SLEEP,"The sheep's bleating put an enemy to sleep.
+Sleeping enemies don't move or attack, but wake up when hit.","양의 울음소리에 적이 잠들었습니다.
+잠든 적은 움직이거나 공격하지 않지만, 맞으면 깨어납니다."
+TUTORIAL_SPIKE_KILL,"Enemies knocked into spikes die instantly.
+Push them in with a heavy attack!","가시에 밀려난 적은 바로 쓰러집니다.
+강공격으로 밀어 넣어 보세요!"
+TUTORIAL_MOON_CHEST,"A chest that only appears under a certain moon.
+When the moon changes, it disappears again.","특정한 달 아래에서만 나타나는 상자입니다.
+달이 바뀌면 다시 사라집니다."
+MINIMAP_DEATH_TOOLTIP,"Fell to: {cause}  ({gold} gold)","사인: {cause}  (금화 {gold})"

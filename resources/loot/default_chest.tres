@@ -1,28 +1,55 @@
-[gd_resource type="Resource" script_class="LootTable" load_steps=8 format=3 uid="uid://c7hihsj87xisr"]
+[gd_resource type="Resource" script_class="LootTable" load_steps=16 format=3 uid="uid://c7hihsj87xisr"]
 
 [ext_resource type="Script" uid="uid://12sqauwkphvu" path="res://Script/Item_UI/LootTable.gd" id="1_table"]
 [ext_resource type="Script" uid="uid://bmhgnp15bqioc" path="res://Script/Item_UI/LootEntry.gd" id="2_entry"]
-[ext_resource type="Resource" uid="uid://csvo1tat21ts4" path="res://resources/items/health_flask.tres" id="3_bf0eo"]
+[ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="3_bf0eo"]
 [ext_resource type="Resource" uid="uid://d1dtrn5b5bsgu" path="res://resources/items/Parry_increase_potion.tres" id="4_parry"]
+[ext_resource type="Resource" uid="uid://0asx8ywd8gsi" path="res://resources/items/Attack_increase_potion.tres" id="4_qln4u"]
+[ext_resource type="Resource" uid="uid://b2c4qkgd2rctg" path="res://resources/items/Guard_increase_potion.tres" id="5_1ymnb"]
+[ext_resource type="Resource" uid="uid://c3prevnu1wa26" path="res://resources/items/Breath_increase_potion.tres" id="6_7x51l"]
+[ext_resource type="Resource" uid="uid://c8iggy358vdr6" path="res://resources/items/Attack_speed_increase_potion.tres" id="7_cm8e2"]
 
 [sub_resource type="Resource" id="Resource_ry8ry"]
 script = ExtResource("2_entry")
 item = ExtResource("4_parry")
 metadata/_custom_type_script = "uid://bmhgnp15bqioc"
 
-[sub_resource type="Resource" id="Resource_ubl5c"]
+[sub_resource type="Resource" id="Resource_cqab3"]
 script = ExtResource("2_entry")
 item = ExtResource("3_bf0eo")
-weight = 14
+gold_amount = 10
+gold_max = 50
+weight = 15
 metadata/_custom_type_script = "uid://bmhgnp15bqioc"
 
-[sub_resource type="Resource" id="Resource_cqab3"]
+[sub_resource type="Resource" id="Resource_bf0eo"]
 script = ExtResource("2_entry")
 gold_amount = 50
 gold_max = 150
-weight = 25
+weight = 84
+metadata/_custom_type_script = "uid://bmhgnp15bqioc"
+
+[sub_resource type="Resource" id="Resource_m0rhq"]
+script = ExtResource("2_entry")
+item = ExtResource("4_qln4u")
+metadata/_custom_type_script = "uid://bmhgnp15bqioc"
+
+[sub_resource type="Resource" id="Resource_j5cp7"]
+script = ExtResource("2_entry")
+item = ExtResource("5_1ymnb")
+metadata/_custom_type_script = "uid://bmhgnp15bqioc"
+
+[sub_resource type="Resource" id="Resource_apq0a"]
+script = ExtResource("2_entry")
+item = ExtResource("6_7x51l")
+metadata/_custom_type_script = "uid://bmhgnp15bqioc"
+
+[sub_resource type="Resource" id="Resource_gpkjb"]
+script = ExtResource("2_entry")
+item = ExtResource("7_cm8e2")
 metadata/_custom_type_script = "uid://bmhgnp15bqioc"
 
 [resource]
 script = ExtResource("1_table")
-entries = Array[ExtResource("2_entry")]([SubResource("Resource_ry8ry"), SubResource("Resource_ubl5c"), SubResource("Resource_cqab3")])
+entries = Array[ExtResource("2_entry")]([SubResource("Resource_ry8ry"), SubResource("Resource_cqab3"), SubResource("Resource_bf0eo"), SubResource("Resource_m0rhq"), SubResource("Resource_j5cp7"), SubResource("Resource_apq0a"), SubResource("Resource_gpkjb")])
+stat_pity = true

@@ -1,0 +1,74 @@
+[gd_resource type="SpriteFrames" load_steps=11 format=3 uid="uid://c3xn62wuny71n"]
+
+[ext_resource type="Texture2D" uid="uid://cnr4n55wiruhx" path="res://Assets/sprites/potion/guard_increased_potion.png" id="1_vlyfh"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0f3cb"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(0, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5medl"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(19, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vcpss"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(38, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tdbbv"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(57, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vj1wt"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(76, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nhtlb"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(95, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gmhrv"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(114, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o85n5"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(133, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sying"]
+atlas = ExtResource("1_vlyfh")
+region = Rect2(152, 0, 19, 37)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0f3cb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5medl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vcpss")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tdbbv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vj1wt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nhtlb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gmhrv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o85n5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sying")
+}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]

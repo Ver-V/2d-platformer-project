@@ -15,7 +15,8 @@ const SAVE_SCRIPT_DIR := "res://Script/base/status/" # 세이브에서 불러올
 @export var tick_interval: float = 0.0           # 0 이하면 틱 없음
 @export var screen_tint: Color = Color(0, 0, 0, 0) # 플레이어가 걸려 있는 동안 화면 가장자리 점멸 색 (알파 0이면 없음)
 @export var bar_color: Color = Color.WHITE        # 플레이어 옆 상태이상 게이지 색 (get_progress 만큼 채움)
-@export var attack_modifier: int = 0              # 걸려 있는 동안 플레이어 검 공격력에 더한다 (산성 디버프 = -5)
+@export var attack_modifier: int = 0
+@export var tutorial_key: StringName = &""        # 플레이어가 처음 걸렸을 때 한 번 띄울 도움말 (TutorialPopup.show_once)              # 걸려 있는 동안 플레이어 검 공격력에 더한다 (산성 디버프 = -5)
 
 var host: CombatBody2D
 var elapsed: float = 0.0
@@ -146,6 +147,16 @@ static func _decode_value(v: Variant, want: int) -> Variant:
 						return null
 				return Color(v[0], v[1], v[2], v[3])
 	return null
+
+# 세기를 factor배로 줄인/늘린 사본 (퍼펙트 가드로 반만 받을 때). 기본은 지속시간, 게이지형은 한 번에 쌓이는 양을 바꾼다
+func scaled(factor: float) -> StatusEffect:
+	var copy: StatusEffect = duplicate()
+	copy._scale_strength(factor)
+	return copy
+
+func _scale_strength(factor: float) -> void:
+	if duration > 0.0:
+		duration *= factor
 
 # --- 하위 클래스 훅 ---
 func _on_applied() -> void: pass

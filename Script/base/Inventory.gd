@@ -7,6 +7,7 @@ extends Node
 # 장비 칸: 보조 장비(accessories) 4칸, 보석(gems) 2칸. 장착 아이템(ItemData.equip_slot)은 얻을 때 칸이 비어 있으면
 # 바로 장착되고, 가방(inventory)과 장비 칸 사이는 equip_from_bag / unequip으로만 옮긴다 (inventory_changed가 나간다).
 # 장착 효과(시야·공격력·패링 배율·타격 상태이상)는 장착한 것만 적용된다.
+# 겹치는 아이템(ItemData.max_stack > 1, 예: 체력 포션)은 한 칸에 max_stack개까지 쌓인다 (stack_counts).
 
 signal inventory_changed
 
@@ -16,39 +17,104 @@ const GEM_SLOTS: int = 2
 
 var inventory: Array[ItemData] = []
 var key_uses_remaining: Array[int] = [] # inventory와 같은 인덱스의 열쇠 잔여 사용 횟수
+var stack_counts: Array[int] = [] # inventory와 같은 인덱스의 개수 (빈 칸 0, 보통 아이템 1)
 var accessories: Array[ItemData] = []
 var gems: Array[ItemData] = []
 
 func _init() -> void:
 	inventory.resize(SLOT_COUNT)
 	key_uses_remaining.resize(SLOT_COUNT)
+	stack_counts.resize(SLOT_COUNT)
 	accessories.resize(ACCESSORY_SLOTS)
 	gems.resize(GEM_SLOTS)
 
-# 장착 아이템은 맞는 장비 칸이 비어 있으면 바로 장착, 아니면 가방으로
+const EQUIPMENT_TUTORIAL_KEY := &"TUTORIAL_EQUIPMENT" # 장비를 처음 얻었을 때 한 번 (TutorialPopup.show_once)
+
+# 장착 아이템은 맞는 장비 칸이 비어 있으면 바로 장착, 아니면 가방으로.
+# 겹치는 아이템은 같은 아이템이 든 칸에 자리가 있으면 거기에 하나 더한다
 func add_item(item: ItemData) -> bool:
 	if item == null:
 		return false
 	if _equip_into_free_slot(item):
 		inventory_changed.emit()
+		_on_got_item(item)
+		return true
+	var stack_index := _stack_slot_for(item)
+	if stack_index != -1:
+		stack_counts[stack_index] += 1
+		inventory_changed.emit()
+		_on_got_item(item)
 		return true
 	for i in range(inventory.size()):
 		if inventory[i] == null:
 			inventory[i] = item # 리소스 파일 자체를 저장
 			key_uses_remaining[i] = maxi(1, item.key_uses)
+			stack_counts[i] = 1
 			inventory_changed.emit()
+			_on_got_item(item)
 			return true
 	return false
 
-# 해당 칸을 비운다 (사용·버리기). 비운 아이템을 돌려준다. 빈 칸·범위 밖이면 null.
+func _on_got_item(item: ItemData) -> void:
+	var key := item_tutorial_key(item)
+	if key != &"":
+		var popup := get_node_or_null("/root/TutorialPopup")
+		if popup != null:
+			popup.show_once(key)
+
+# 이런 종류의 아이템을 처음 얻었을 때 띄울 도움말 (없으면 빈 키). 아이템마다가 아니라 종류마다 한 번
+static func item_tutorial_key(item: ItemData) -> StringName:
+	if item.equip_slot != ItemData.EquipSlot.NONE:
+		return EQUIPMENT_TUTORIAL_KEY
+	if item.key_uses > 0:
+		return &"TUTORIAL_KEY"
+	if item.flask_charges_up > 0 or item.flask_heal_up > 0:
+		return &"TUTORIAL_FLASK_UPGRADE"
+	if item.is_stat_potion():
+		return &"TUTORIAL_STAT_POTION"
+	if item.type == ItemData.ItemType.CONSUMABLE and item.heal_amount > 0 and item.id != "health_flask":
+		return &"TUTORIAL_HEALING_POTION"
+	return &""
+
+# 같은 아이템이 들어 있고 아직 더 쌓을 수 있는 칸. 없으면(겹치지 않는 아이템 포함) -1
+func _stack_slot_for(item: ItemData) -> int:
+	if item.max_stack <= 1:
+		return -1
+	for i in range(inventory.size()):
+		if inventory[i] != null and inventory[i].id == item.id and stack_counts[i] < item.max_stack:
+			return i
+	return -1
+
+# 해당 칸에서 하나를 뺀다 (사용·버리기). 겹친 칸은 개수만 줄고, 마지막 하나면 칸이 빈다.
+# 뺀 아이템을 돌려준다. 빈 칸·범위 밖이면 null.
 func remove_item_at(index: int) -> ItemData:
 	if index < 0 or index >= inventory.size() or inventory[index] == null:
 		return null
 	var item := inventory[index]
-	inventory[index] = null
-	key_uses_remaining[index] = 0
+	stack_counts[index] -= 1
+	if stack_counts[index] <= 0:
+		_clear_slot(index)
 	inventory_changed.emit()
 	return item
+
+func _clear_slot(index: int) -> void:
+	inventory[index] = null
+	key_uses_remaining[index] = 0
+	stack_counts[index] = 0
+
+# 칸에 든 개수 (빈 칸 0)
+func get_count_at(index: int) -> int:
+	if index < 0 or index >= inventory.size() or inventory[index] == null:
+		return 0
+	return stack_counts[index]
+
+# 가방에 든 그 아이템의 총 개수 (겹친 칸 포함)
+func count_item(item_id: String) -> int:
+	var total := 0
+	for i in range(inventory.size()):
+		if inventory[i] != null and inventory[i].id == item_id:
+			total += stack_counts[i]
+	return total
 
 # 가방이나 장비 칸에 있으면 true
 func has_item(item_id: String) -> bool:
@@ -81,6 +147,12 @@ func equipped_items() -> Array[ItemData]:
 			out.append(item)
 	return out
 
+# add_item이 성공할지 미리 본다 (넣지는 않음). 열쇠를 쓰기 전에 보상 자리가 있는지 확인할 때
+func has_room_for(item: ItemData) -> bool:
+	if item == null:
+		return false
+	return equipment_for(item.equip_slot).has(null) or inventory.has(null) or _stack_slot_for(item) != -1
+
 func _equip_into_free_slot(item: ItemData) -> bool:
 	var slots := equipment_for(item.equip_slot)
 	for i in slots.size():
@@ -96,8 +168,7 @@ func equip_from_bag(index: int) -> bool:
 	var item := inventory[index]
 	if not _equip_into_free_slot(item):
 		return false
-	inventory[index] = null
-	key_uses_remaining[index] = 0
+	_clear_slot(index)
 	inventory_changed.emit()
 	return true
 
@@ -111,6 +182,7 @@ func unequip(kind: ItemData.EquipSlot, slot_index: int) -> bool:
 		return false
 	inventory[bag_index] = slots[slot_index]
 	key_uses_remaining[bag_index] = maxi(1, slots[slot_index].key_uses)
+	stack_counts[bag_index] = 1
 	slots[slot_index] = null
 	inventory_changed.emit()
 	return true
@@ -173,12 +245,12 @@ func consume_key_use(item_id: String) -> int:
 	return remaining
 
 # --- 저장 (GameManager가 부름) ---
-# 칸마다 null 또는 {"id", "key_uses"}
+# 칸마다 null 또는 {"id", "key_uses", "count"}
 func to_save() -> Array:
 	var out: Array = []
 	for i in range(inventory.size()):
 		var item := inventory[i]
-		out.append(null if item == null else {"id": item.id, "key_uses": key_uses_remaining[i]})
+		out.append(null if item == null else {"id": item.id, "key_uses": key_uses_remaining[i], "count": stack_counts[i]})
 	return out
 
 # 가방과 장비 칸을 한 번에 불러온다 (inventory_changed는 한 번만).
@@ -186,6 +258,7 @@ func to_save() -> Array:
 func load_from_save(slots: Array, equipment: Variant = null) -> void:
 	inventory.fill(null)
 	key_uses_remaining.fill(0)
+	stack_counts.fill(0)
 	accessories.fill(null)
 	gems.fill(null)
 	for i in range(mini(slots.size(), inventory.size())):
@@ -194,6 +267,7 @@ func load_from_save(slots: Array, equipment: Variant = null) -> void:
 			inventory[i] = Database.get_item_by_id(slot["id"])
 			if inventory[i] != null:
 				key_uses_remaining[i] = maxi(1, int(slot.get("key_uses", inventory[i].key_uses)))
+				stack_counts[i] = clampi(int(slot.get("count", 1)), 1, maxi(1, inventory[i].max_stack)) # count 없는 옛 세이브 = 1
 	if equipment is Dictionary:
 		for pair in [[accessories, equipment.get("accessories", [])], [gems, equipment.get("gems", [])]]:
 			var equip_slots: Array[ItemData] = pair[0]
@@ -204,13 +278,13 @@ func load_from_save(slots: Array, equipment: Variant = null) -> void:
 	else:
 		for i in inventory.size():
 			if inventory[i] != null and inventory[i].equip_slot != ItemData.EquipSlot.NONE and _equip_into_free_slot(inventory[i]):
-				inventory[i] = null
-				key_uses_remaining[i] = 0
+				_clear_slot(i)
 	inventory_changed.emit()
 
 func reset() -> void:
 	inventory.fill(null)
 	key_uses_remaining.fill(0)
+	stack_counts.fill(0)
 	accessories.fill(null)
 	gems.fill(null)
 	inventory_changed.emit()

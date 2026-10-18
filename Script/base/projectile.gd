@@ -7,6 +7,10 @@ class_name Projectile
 @export var life_time: float = 10.0
 var shooter: Node2D = null # [추가] 나를 쏜 놈을 기억하는 변수
 var _reflected: bool = false
+# 명중하면 거는 상태이상 (반사돼서 쏜 쪽을 맞혀도 똑같이 건다)
+@export var status_effects: Array[StatusEffect] = []
+# 0 이상이면 맞은 쪽 무적시간을 이 값으로 (연발 탄이 무적에 흡수되지 않고 다 들어가게 — 늑대의 잠 탄환 = 0)
+@export var hit_invuln_time: float = -1.0
 @export_group("Parry")
 @export var is_parryable: bool = false         # 이 옵션을 켜면 패링 가능
 @export var practice_parry_defeats_shooter: bool = false
@@ -96,6 +100,9 @@ func _physics_process(delta: float) -> void:
 	if _current_life <= 0.0:
 		queue_free()
 
+func is_reflected() -> bool:
+	return _reflected
+
 func _has_live_homing_target() -> bool:
 	if not is_instance_valid(_homing_target) or _homing_target.is_queued_for_deletion():
 		return false
@@ -132,6 +139,8 @@ func hit_target(target: Node) -> void:
 func _make_hit(body: Node, knockback: Vector2) -> HitData:
 	var hit := HitData.new(_get_impact_damage(body), knockback, self)
 	hit.is_projectile = true
+	hit.invuln_time = hit_invuln_time
+	hit.status_effects.append_array(status_effects)
 	return hit
 
 func _get_impact_damage(body: Node) -> int:

@@ -64,7 +64,7 @@ func _teleport_state(delta:float) -> void:
 	if is_attacking: return # 텔레포트 연출 중 중복 실행 방지
 	
 	teleport_timer += delta
-	if teleport_timer >= TELEPORT_INTERVAL / _speed():
+	if teleport_timer >= maxf(TELEPORT_INTERVAL / _speed() - idle_cut(), 0.5):
 		teleport_timer = 0.0
 		_execute_teleport_sequence()
 

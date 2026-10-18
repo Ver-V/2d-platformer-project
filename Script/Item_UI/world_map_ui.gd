@@ -11,7 +11,7 @@ extends CanvasLayer
 
 # [층 이름 번역 키, 씬 경로]. 위층부터. 아직 없는 층은 경로를 비워 둔다
 const FLOORS := [
-	[&"WORLD_MAP_FLOOR_GROUND", ""],
+	[&"WORLD_MAP_FLOOR_GROUND", "res://Scenes/Stage/Stage_Surface.tscn"],
 	[&"WORLD_MAP_FLOOR_B1", "res://Scenes/Stage/Stage_02.tscn"],
 	[&"WORLD_MAP_FLOOR_B2", ""],
 	[&"WORLD_MAP_FLOOR_B3", ""],

@@ -25,6 +25,12 @@ class_name GroundEnemy
 @export_group("Ground Movement")
 @export var detect_radius: float = 0.0 # 0보다 크면 DetectArea 원 반지름을 이 값으로 바꾼다
 
+@export_group("Light")
+# 켜면 켜진 횃불 등(VisionLimit.LIGHT_GROUP, 반지름 > 0)의 빛 안으로 들어가지 않는다:
+# 순찰 중이면 빛 가장자리에서 돌아서고, 쫓는 중이면 가장자리에서 멈춰 노려본다. 빛 안에 있으면(횃불이 막 켜졌을 때) 밖으로 나간다
+@export var fears_light: bool = false
+@export var light_fear_margin: float = 0.0 # 빛 반지름에 더하는 여유 px (음수면 빛 가장자리까지 조금 들어온다)
+
 @export_group("Melee Attack")
 @export var attack_distance: float = 0.0 # 0이면 공격하지 않음 (몸통 접촉 데미지만)
 @export var attack_vertical_range: float = 24.0
@@ -81,6 +87,16 @@ func _physics_process(delta: float) -> void:
 		move_in_room(delta)
 		return
 
+	# 잠들었으면 제자리에 멈춰 있는다 (공격·추격·순찰 없음)
+	if is_asleep():
+		if is_attacking:
+			is_attacking = false
+			set_attack_hitbox(false)
+		velocity.x = move_toward(velocity.x, 0.0, acceleration * delta)
+		move_in_room(delta)
+		play_move_animation(false)
+		return
+
 	var idling := false
 	var blocked := false
 	if is_on_floor():
@@ -89,6 +105,10 @@ func _physics_process(delta: float) -> void:
 			dir = 1 if target.global_position.x >= global_position.x else -1
 			if wants_attack():
 				_start_attack()
+		var escape := _light_escape_dir()
+		if escape != 0 and not is_attacking:
+			dir = escape # 빛 안이면 무조건 밖으로
+			idling = false
 		blocked = _is_blocked_ahead()
 		var forced := forced_ground_speed()
 		var water_mult := water_move_mult if in_water else 1.0
@@ -132,7 +152,38 @@ func _is_blocked_ahead() -> bool:
 		if (global_position.x < room_rect.position.x + room_edge_margin and dir < 0) or \
 		   (global_position.x > room_rect.end.x - room_edge_margin and dir > 0):
 			return true
+	if _light_ahead(dir):
+		return true
 	return turn_on_ledge and is_ledge_ahead(dir, ledge_check_offset)
+
+# --- 빛 무서워하기 (fears_light) ---
+# 켜진 빛들: [[중심, 반지름], ...]
+func _fear_lights() -> Array:
+	var out: Array = []
+	if not fears_light or not is_inside_tree():
+		return out
+	for node in get_tree().get_nodes_in_group(VisionLimit.LIGHT_GROUP):
+		var r: float = node.get_light_radius()
+		if r > 0.0:
+			out.append([node.get_light_center(), r + light_fear_margin])
+	return out
+
+# 앞으로 한 걸음 가면 빛 안으로 더 들어가는가 (빛 안에서 밖으로 나가는 걸음은 막지 않는다)
+func _light_ahead(move_dir: int) -> bool:
+	var here := global_position
+	var ahead := here + Vector2(move_dir * ledge_check_offset, 0.0)
+	for light in _fear_lights():
+		var d: float = ahead.distance_to(light[0])
+		if d < light[1] and d < here.distance_to(light[0]):
+			return true
+	return false
+
+# 빛 안에 있으면 빠져나갈 방향(빛 중심 반대쪽), 아니면 0
+func _light_escape_dir() -> int:
+	for light in _fear_lights():
+		if global_position.distance_to(light[0]) < light[1]:
+			return 1 if global_position.x >= light[0].x else -1
+	return 0
 
 func facing_flip_h(move_dir: int) -> bool:
 	return move_dir > 0 if sprite_faces_left else move_dir < 0

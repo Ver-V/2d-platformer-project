@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DrowsyEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Script/base/status/drowsy_effect.gd" id="1_drowsy"]
+
+[resource]
+script = ExtResource("1_drowsy")
+buildup_per_sec = 20.0
+threshold = 100.0
+sleep_time = 5.0
+decay_delay = 1.0
+decay_per_sec = 10.0
+warn_above = 0.7

@@ -1,0 +1,56 @@
+{
+  "ask_open": [
+	{
+	  "name": "분홍 토끼",
+	  "text": "덮개 틈으로 차가운 바람이 새어 들어온다. 이걸 열면 달빛이 아래층까지 쏟아져 내려갈 것 같아.",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left"
+	},
+	{
+	  "name": "분홍 토끼",
+	  "text": "달빛을 받은 짐승들은 사나워진다고 했지... 그래도 열어 볼까?",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left",
+	  "choices": [
+		{ "text": "연다", "event": "moon_passage_open", "next": "opened" },
+		{ "text": "그만둔다", "next": "leave" }
+	  ]
+	}
+  ],
+  "ask_close": [
+	{
+	  "name": "분홍 토끼",
+	  "text": "열린 통로로 달빛이 갱도를 타고 내려가고 있다. 덮개를 다시 닫을까?",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left",
+	  "choices": [
+		{ "text": "닫는다", "event": "moon_passage_close", "next": "closed" },
+		{ "text": "그대로 둔다", "next": "leave" }
+	  ]
+	}
+  ],
+  "opened": [
+	{
+	  "name": "분홍 토끼",
+	  "text": "달빛이 쏟아져 들어온다. 아래쪽 어딘가에서 짐승 울음소리가 들려...",
+	  "left_image": "HeroBunny_surprise",
+	  "speaker": "left"
+	}
+  ],
+  "closed": [
+	{
+	  "name": "분홍 토끼",
+	  "text": "덮개를 닫았다. 다시 조용해졌어.",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left"
+	}
+  ],
+  "leave": [
+	{
+	  "name": "분홍 토끼",
+	  "text": "나중에 다시 오자.",
+	  "left_image": "HeroBunny_idle",
+	  "speaker": "left"
+	}
+  ]
+}

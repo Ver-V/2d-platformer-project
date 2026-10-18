@@ -257,10 +257,17 @@ func _start_scene_choice_transition(scene_path: String) -> void:
 	
 	if SceneTransition and SceneTransition.has_method("start_elevator_transition"):
 		SceneTransition.start_elevator_transition(func():
-			get_tree().change_scene_to_file(scene_path)
+			_change_floor(scene_path)
 		)
 	else:
-		get_tree().change_scene_to_file(scene_path)
+		_change_floor(scene_path)
+
+# 층 이동은 엘리베이터 선택지뿐이다: 도착한 층이 세이브 포인트·시작 지점이 아니라 엘리베이터 앞에 세우도록 알린다
+func _change_floor(scene_path: String) -> void:
+	if not GameManager.can_travel(): # 화면이 어두워지는 사이에 죽었다
+		return
+	GameManager.pending_elevator_arrival = true
+	get_tree().change_scene_to_file(scene_path)
 
 func _clear_choices():
 	choice_bg.visible = false

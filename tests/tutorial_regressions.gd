@@ -53,8 +53,12 @@ func run_checks() -> void:
 	await check_player_guard()
 	await check_corner_correction()
 	await check_double_jump()
+	await check_double_jump_near_ground()
+	await check_ledge_pop()
+	await check_air_control()
 	await check_save_point_input()
 	await check_hitstop_overlap()
+	await check_transition_while_paused()
 	fixture.queue_free()
 	await create_timer(0.5, true, false, true).timeout
 	print("Tutorial regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
@@ -394,6 +398,136 @@ func check_double_jump() -> void:
 	await process_frame
 	print("Double jump: locked/unlocked, once per air time, coyote jump and water excluded, refreshed on landing")
 
+# 정점 체공(점프 키를 누르고 있으면 정점 근처 중력 절반)과 빠른 낙하(아래를 누르면 낙하 상한이 서서히 오른다)
+func check_air_control() -> void:
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	fixture.add_child(player)
+	player.set_physics_process(false)
+	player.global_position = Vector2(-6000, 3000)
+	await physics_frame
+	await physics_frame
+	var delta := 1.0 / 60.0
+	var g: float = player.get_gravity().y
+	check(g > 0.0, "Setup: gravity should be known")
+
+	# 정점 근처: 점프 키를 누르면 중력이 절반
+	player.velocity = Vector2(0, -10)
+	player.apply_gravity(delta)
+	var plain: float = player.velocity.y + 10.0
+	Input.action_press("jump")
+	player.velocity = Vector2(0, -10)
+	player.apply_gravity(delta)
+	var held: float = player.velocity.y + 10.0
+	check(is_equal_approx(held, plain * player.apex_gravity_mult), "Holding jump near the apex should halve gravity (%.2f vs %.2f)" % [held, plain])
+	# 정점에서 먼 상승 중에는 그대로
+	player.velocity = Vector2(0, -200)
+	player.apply_gravity(delta)
+	check(is_equal_approx(player.velocity.y + 200.0, g * delta), "Away from the apex gravity should be normal")
+	Input.action_release("jump")
+	await process_frame
+	await process_frame
+
+	# 빠른 낙하
+	player.velocity = Vector2(0, player.max_fall_speed)
+	for i in 30:
+		player.apply_gravity(delta)
+	check(is_equal_approx(player.velocity.y, player.max_fall_speed), "Without down, falling should stay at max_fall_speed")
+	Input.action_press("down")
+	for i in 5:
+		player.apply_gravity(delta)
+	check(player.velocity.y > player.max_fall_speed and player.velocity.y < player.fast_fall_speed, "Holding down should raise the fall cap gradually (%.1f)" % player.velocity.y)
+	for i in 60:
+		player.apply_gravity(delta)
+	check(is_equal_approx(player.velocity.y, player.fast_fall_speed), "Holding down should reach fast_fall_speed")
+	Input.action_release("down")
+	for i in 60:
+		player.apply_gravity(delta)
+	check(is_equal_approx(player.velocity.y, player.max_fall_speed), "Releasing down should bring the cap back")
+	player.queue_free()
+	await process_frame
+	print("Air control: apex hang halves gravity near the top while jump is held, fast fall raises the cap while down is held")
+
+# 착지 직전에 누른 점프는 더블 점프로 새지 않고 착지 후 땅 점프가 된다. 결국 못 내려서면 그때 더블 점프
+func check_double_jump_near_ground() -> void:
+	var gm = root.get_node("GameManager")
+	gm.double_jump_unlocked = true
+	for floor_stays in [true, false]:
+		var floor_body := StaticBody2D.new()
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(200, 16)
+		shape.shape = rect
+		floor_body.add_child(shape)
+		fixture.add_child(floor_body)
+		floor_body.global_position = Vector2(9000, 3000)
+		var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+		player.position = Vector2(9000, 3000 - 8 - 12) # 바닥 위 12px. 넣기 전에 옮겨야 _ready의 첫 이동이 엉뚱한 바닥 판정을 남기지 않는다
+		fixture.add_child(player)
+		player.set_physics_process(false)
+		await physics_frame
+		await physics_frame
+		player._menu_exit_cooldown = 0.0
+		player._coyote_timer = 0.0
+		player._air_jump_available = true
+		player.velocity = Vector2(0, 150)
+		# 점프를 새로 누른 순간 (_process_movement가 하는 것: 선입력을 걸고 더블 점프 시도)
+		player._jump_buffer_timer = player.jump_buffer_time
+		player._try_double_jump()
+		check(player._air_jump_available and player.velocity.y > 0.0 and player._air_jump_deferred, "A jump pressed just before landing should not spend the double jump (floor %s)" % floor_stays)
+		if not floor_stays:
+			floor_body.free() # 착지할 줄 알았던 바닥이 없어진다 (턱 끝을 스치고 지나간 경우)
+		player.set_physics_process(true)
+		var jumped := false
+		for i in 30:
+			await physics_frame
+			if player.velocity.y < -100.0:
+				jumped = true
+				break
+		if floor_stays:
+			check(jumped and player._air_jump_available, "Landing should turn the buffered press into a ground jump and keep the double jump")
+		else:
+			check(jumped and not player._air_jump_available, "If it never lands, the deferred double jump should fire when the buffer runs out")
+		player.queue_free()
+		if is_instance_valid(floor_body):
+			floor_body.queue_free()
+		await process_frame
+		await process_frame
+	gm.double_jump_unlocked = false
+	print("Double jump near ground: a late press becomes a ground jump, or a double jump if the landing never comes")
+
+# 턱 끝 올려 주기: 발이 턱 위끝보다 조금(6px 이내) 아래에서 벽 쪽으로 밀면 올려 준다. 그보다 아래거나 빠르게 오르는 중이면 안 한다
+func check_ledge_pop() -> void:
+	var ledge := StaticBody2D.new()
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(64, 64)
+	shape.shape = rect
+	ledge.add_child(shape)
+	fixture.add_child(ledge)
+	ledge.global_position = Vector2(12032, 3032) # 위끝 y = 3000, 왼끝 x = 12000
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	player.position = Vector2(11990, 3000)
+	fixture.add_child(player)
+	player.set_physics_process(false)
+	await physics_frame
+	await physics_frame
+	var half_w: float = player.collision_stand.shape.size.x * 0.5
+	var feet_off: float = player.collision_stand.position.y + player.collision_stand.shape.size.y * 0.5
+	# [발이 턱보다 아래인 거리, 세로 속도, 올려 줘야 하나]
+	for c in [[4.0, 50.0, true], [10.0, 50.0, false], [4.0, -200.0, false]]:
+		player.global_position = Vector2(12000 - half_w - player.collision_stand.position.x - 0.05, 3000 + c[0] - feet_off)
+		player.velocity = Vector2(120, c[1])
+		var before: float = player.global_position.y
+		player._handle_ledge_pop(1.0)
+		var popped: bool = player.global_position.y < before
+		check(popped == c[2], "Ledge pop (feet %.0fpx below, vy %.0f) should %s" % [c[0], c[1], "pop up" if c[2] else "not move"])
+		if c[2]:
+			check(player.global_position.y + feet_off <= 3000.01 and player.velocity.y <= 0.0, "A popped player should stand at the ledge top")
+	player.queue_free()
+	ledge.queue_free()
+	await process_frame
+	print("Ledge pop: up to 6px below a ledge while pushing into it pops up; deeper or fast rising does not")
+
 # 공중에서 떨어지는 중에 점프를 새로 누른 한 프레임을 처리한다
 func air_jump_press(player, delta: float) -> void:
 	player.velocity = Vector2(0, 60)
@@ -420,7 +554,7 @@ func check_save_point_input() -> void:
 		'extends "res://Script/System/SavePoint.gd"',
 		"var saves: int = 0",
 		"var rests: int = 0",
-		"func action_save_only() -> void:",
+		"func action_wait() -> void:",
 		"\tsaves += 1",
 		"func action_rest() -> void:",
 		"\trests += 1",
@@ -473,3 +607,14 @@ func check_hitstop_overlap() -> void:
 	check(is_equal_approx(Engine.time_scale, 1.0), "Time scale not restored after overlapping hitstops")
 	Engine.time_scale = 1.0
 	print("Hitstop: overlapping calls keep the stronger scale and only the last one restores time")
+
+# 엘리베이터로 도착한 층에서 도움말 팝업이 트리를 멈춰도 페이드는 끝까지 밝아져야 한다 (검은 화면에 갇히던 버그)
+func check_transition_while_paused() -> void:
+	var transition := root.get_node("SceneTransition")
+	var rect: ColorRect = transition.get_node("ColorRect")
+	transition.start_elevator_transition(func(): paused = true, 0.2)
+	await create_timer(1.5, true).timeout
+	check(paused, "Transition action did not run")
+	check(is_equal_approx(rect.modulate.a, 0.0), "Elevator fade stuck dark while the tree is paused (alpha %s)" % rect.modulate.a)
+	paused = false
+	rect.modulate.a = 0.0

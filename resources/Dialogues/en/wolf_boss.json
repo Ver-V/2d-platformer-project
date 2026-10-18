@@ -1,0 +1,18 @@
+{
+	"start": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "...A sheep? All alone in a place like this."
+		},
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "Pink Bunny",
+			"text": "Did you get lost too?"
+		}
+	]
+}

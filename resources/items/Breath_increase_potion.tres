@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://c3prevnu1wa26"]
+
+[ext_resource type="SpriteFrames" uid="uid://b5rv7ul1qlfo4" path="res://resources/items/frames/breath_increase_potion_frames.tres" id="1_jgmcj"]
+[ext_resource type="Texture2D" uid="uid://cybyehdm6ccv2" path="res://Assets/sprites/potion/breath_increased_potion.png" id="2_jgmcj"]
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="3_6eafg"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jqtkm"]
+atlas = ExtResource("2_jgmcj")
+region = Rect2(0, 0, 19, 37)
+
+[resource]
+script = ExtResource("3_6eafg")
+id = "Breath_increase_potion"
+name = "ITEM_BREATH_POTION_NAME"
+icon = SubResource("AtlasTexture_jqtkm")
+price = 750
+description = "ITEM_BREATH_POTION_DESCRIPTION"
+type = 1
+anim_frames = ExtResource("1_jgmcj")
+breath_up = 2.0
+stat_potion = true
+metadata/_custom_type_script = "uid://djy4vfexvhruh"

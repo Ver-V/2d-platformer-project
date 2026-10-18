@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://0asx8ywd8gsi"]
+
+[ext_resource type="SpriteFrames" uid="uid://ticjoypqu2da" path="res://resources/items/frames/attack_increase_potion_frames.tres" id="1_acdhs"]
+[ext_resource type="Texture2D" uid="uid://3m3hx5ufy5g2" path="res://Assets/sprites/potion/attack_increased_potion.png" id="1_vy8c4"]
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="2_acdhs"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jqtkm"]
+atlas = ExtResource("1_vy8c4")
+region = Rect2(0, 0, 19, 37)
+
+[resource]
+script = ExtResource("2_acdhs")
+id = "Attack_increase_potion"
+name = "ITEM_ATTACK_POTION_NAME"
+icon = SubResource("AtlasTexture_jqtkm")
+price = 1250
+description = "ITEM_ATTACK_POTION_DESCRIPTION"
+type = 1
+anim_frames = ExtResource("1_acdhs")
+damage_amount = 3
+stat_potion = true
+metadata/_custom_type_script = "uid://djy4vfexvhruh"

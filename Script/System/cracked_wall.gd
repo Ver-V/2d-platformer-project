@@ -28,6 +28,7 @@ const COLOR_CRACK := Color(0.12, 0.1, 0.14)
 		queue_redraw()
 @export var break_sound: AudioStream = preload("res://Assets/sounds/environment/brokenwall.wav")
 @export var persist_id: String = ""
+@export var tutorial_key: StringName = &"TUTORIAL_CRACKED_WALL" # 처음 부쉈을 때 한 번
 
 const HIT_DUST_SHADER: Shader = preload("res://resources/Shaders/box_hit_dust.gdshader")
 
@@ -99,6 +100,7 @@ func receive_hit(hit: HitData) -> HitData.Result:
 	GameManager.add_collected_item(save_id())
 	_emit_dust(24)
 	_play_break_sound()
+	Tutorials.show_once(self, tutorial_key)
 	queue_free()
 	return HitData.Result.KILLED
 

@@ -11,7 +11,7 @@ atlas = ExtResource("2_hpuih")
 region = Rect2(128, 16, 16, 16)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
-size = Vector2(14, 3)
+size = Vector2(16, 3)
 
 [node name="CrumblingBlock" type="StaticBody2D"]
 collision_mask = 0

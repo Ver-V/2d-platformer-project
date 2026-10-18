@@ -276,14 +276,12 @@ func check_save_round_trip() -> void:
 	gm.load_data_from_save(old_save)
 	check(gm.carried_status_effects.is_empty(), "old saves should load with no status effects")
 
-	# 사망 후 부활은 세이브를 불러오지만 상태이상은 풀린다 (실제 호출은 세이브를 읽고 씬을 바꾸므로 소스로 확인)
+	# 사망 후 부활은 상태이상을 푼다 (실제 호출은 씬을 바꾸므로 소스로 확인)
 	var gm_src := FileAccess.get_file_as_string("res://Script/base/GameManager.gd")
-	var respawn_src := gm_src.substr(gm_src.find("func respawn_player"))
-	respawn_src = respawn_src.substr(0, respawn_src.find("
+	var restore_src := gm_src.substr(gm_src.find("func _restore_after_death"))
+	restore_src = restore_src.substr(0, restore_src.find("
 func ", 1))
-	var load_at := respawn_src.find("load_game()")
-	var clear_at := respawn_src.find("carried_status_effects.clear()")
-	check(load_at != -1 and clear_at > load_at, "respawn should clear status effects after loading the save")
+	check(restore_src.find("carried_status_effects.clear()") != -1, "respawn should clear status effects")
 
 # 상태이상마다 몸 왼쪽에 세로 게이지가 하나씩 생기고, 남은 양(get_progress)이 줄어든다
 func check_player_status_bars() -> void:
@@ -392,6 +390,15 @@ func check_player_water() -> void:
 	p.global_position = Vector2(500, 300)
 	p._update_water()
 	check(is_equal_approx(p.velocity.y, -40.0), "Leaving the water without holding jump should not boost")
+	# 호흡량 소모품: 다음에 물에 들어갈 때 숨이 그만큼 길다
+	p.clear_status_effects()
+	gm.breath_bonus = 5.0
+	p.global_position = Vector2(500, 400)
+	p._update_water()
+	var long_breath = p.get_status_effects().get_effect(&"breath")
+	check(long_breath != null and is_equal_approx(long_breath.max_breath, 15.0) and is_equal_approx(long_breath.get_progress(), 1.0),
+		"Breath bonus should lengthen the breath gauge (10 + 5s) and start it full")
+	gm.breath_bonus = 0.0
 	p.clear_status_effects()
 	p.queue_free()
 	water.queue_free()

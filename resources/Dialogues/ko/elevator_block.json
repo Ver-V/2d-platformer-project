@@ -8,9 +8,8 @@
 	  "choices": [
 		{
 		  "text": "지상층",
-		  "next": "Ground Floor",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "데모에서는 이용할 수 없습니다."
+		  "scene_path": "res://Scenes/Stage/Stage_Surface.tscn",
+		  "next": "Ground Floor"
 		},
 		{
 		  "text": "지하 1층",
@@ -99,6 +98,15 @@
 		"text": "허가받지 않은 자는 탑승할 수 없다.",
 		"left_image": "HeroBunny_idle",
 		"speaker": "left"
+	}
+  ],
+  "Ground Floor": [
+	{
+	  "name": "분홍 토끼",
+	  "text": "여기가 이미 지상층이야.",
+	  "left_image": "HeroBunny_surprise",
+	  "speaker": "left",
+	  "next" : "start"
 	}
   ],
   "B1": [

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=6 format=3 uid="uid://c8iggy358vdr6"]
+
+[ext_resource type="SpriteFrames" uid="uid://bjff6kqa20yxh" path="res://resources/items/frames/attack_speed_increase_potion_frames.tres" id="1_72vn0"]
+[ext_resource type="Texture2D" uid="uid://ems0rkoo4qyu" path="res://Assets/sprites/potion/attackspeed_increased_potion.png" id="2_72vn0"]
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="3_ixlc3"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3ltjh"]
+atlas = ExtResource("2_72vn0")
+region = Rect2(0, 0, 19, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jqtkm"]
+atlas = SubResource("AtlasTexture_3ltjh")
+region = Rect2(0, 0, 19, 37)
+
+[resource]
+script = ExtResource("3_ixlc3")
+id = "Attack_speed_increase_potion"
+name = "ITEM_ATTACK_SPEED_POTION_NAME"
+icon = SubResource("AtlasTexture_jqtkm")
+price = 1250
+description = "ITEM_ATTACK_SPEED_POTION_DESCRIPTION"
+type = 1
+anim_frames = ExtResource("1_72vn0")
+attack_speed_up = 0.1
+stat_potion = true
+metadata/_custom_type_script = "uid://djy4vfexvhruh"

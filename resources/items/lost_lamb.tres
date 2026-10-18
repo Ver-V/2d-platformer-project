@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3 uid="uid://ya24j2qg4w1m"]
+
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://be5xrtpvy6vob" path="res://Assets/sprites/lost_lamb_placeholder.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+id = "lost_lamb"
+name = "ITEM_LOST_LAMB_NAME"
+icon = ExtResource("2_icon")
+description = "ITEM_LOST_LAMB_DESCRIPTION"

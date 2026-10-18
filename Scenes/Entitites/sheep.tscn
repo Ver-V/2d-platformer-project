@@ -1,0 +1,116 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="PackedScene" uid="uid://b0ioi1n7pmn7f" path="res://Scenes/Entitites/EnemyBase.tscn" id="1_base"]
+[ext_resource type="Script" path="res://Script/Entity/sheep.gd" id="2_script"]
+[ext_resource type="Texture2D" path="res://Assets/sprites/sheep_placeholder.png" id="3_sprite"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle"]
+atlas = ExtResource("3_sprite")
+region = Rect2(0, 0, 32, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk1"]
+atlas = ExtResource("3_sprite")
+region = Rect2(32, 0, 32, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk2"]
+atlas = ExtResource("3_sprite")
+region = Rect2(64, 0, 32, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleat1"]
+atlas = ExtResource("3_sprite")
+region = Rect2(96, 0, 32, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bleat2"]
+atlas = ExtResource("3_sprite")
+region = Rect2(128, 0, 32, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_sheep"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleat1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bleat2")
+}],
+"loop": true,
+"name": &"bleat",
+"speed": 6.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(22, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(24, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(20, 12)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 90.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bleat"]
+radius = 80.0
+
+[node name="Sheep" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+drop_gold_amount = 20
+max_hp_base = 60
+contact_damage_base = 20
+move_speed_base = 35.0
+knockback_resist = 0.3
+chase_speed_multiplier = 1.8
+detect_radius = 90.0
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+sprite_frames = SubResource("SpriteFrames_sheep")
+animation = &"idle"
+
+[node name="CollisionShape2D" parent="." index="1"]
+position = Vector2(1, 2)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(1, 2)
+shape = SubResource("RectangleShape2D_hurt")
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(1, 3)
+shape = SubResource("RectangleShape2D_hit")
+
+[node name="CollisionShape2D" parent="DetectArea" index="0"]
+shape = SubResource("CircleShape2D_detect")
+
+[node name="BleatArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BleatArea"]
+shape = SubResource("CircleShape2D_bleat")

@@ -3,18 +3,22 @@ class_name Rat
 
 # 쥐 (스테이지2): 공통 지상 이동 + 몸통 접촉 피해. 스프라이트는 걷기 4프레임뿐이라 공격 동작은 코드로 만든다:
 # 달려들기 = 웅크림(lunge_windup, 눈이 깜빡임) → 앞으로 돌진(걷기 속도 × lunge_speed_mult) → 멈춤(lunge_recovery, 반격 틈).
-# 변종은 rat.tscn을 상속한 씬에서 색(enemy_tint.gdshader)과 스탯만 바꾼다. 색 있는 변종은 변이체가 되지 않는다
-# (mutation_enabled = false — 변이 테두리 셰이더가 몸 색 셰이더를 덮어쓰기 때문).
+# 변종은 rat.tscn을 상속한 씬에서 색과 스탯만 바꾼다. 색은 팔레트를 바꾼 시트(sprite_sheet, Assets/sprites/ratsprite_<색>.png)로 칠하고,
+# 머티리얼은 피격 번쩍임·사망 디졸브·변이 윤곽선 때문에 enemy_tint.gdshader를 tint_strength 0으로 둔다.
+# 색 있는 변종도 변이체가 되며, 몸 색은 그대로 두고 변이 윤곽선만 겹친다 (MobMutation.make_material).
 # 원거리 변종(파란 쥐)은 ShooterComponent 자식을 두고 shoot_range를 0보다 크게 준다:
 # 타겟이 사거리 안에 있고 벽에 가리지 않으면 제자리에 서서 shoot_interval마다 쏜다. 가까이 오면 쏘지 않고 달려든다.
 
 enum Lunge { NONE, WINDUP, DASH, RECOVER }
 
+# 비어 있지 않으면 걷기/대기 프레임의 그림을 이 시트로 바꾼다 (rat.tscn과 같은 32x32 4프레임 배치)
+@export var sprite_sheet: Texture2D
+
 @export_group("Lunge")
 @export var lunge_enabled: bool = true
 @export var lunge_trigger_distance: float = 40.0 # 타겟이 가로로 이만큼 안에 오면 달려든다
 @export var lunge_vertical_range: float = 20.0
-@export var lunge_speed_mult: float = 2.0 # 걷기 속도 배율
+@export var lunge_speed_mult: float = 2.5 # 걷기 속도 배율
 @export var lunge_windup: float = 0.35
 @export var lunge_dash_time: float = 0.35
 @export var lunge_recovery: float = 0.5
@@ -49,14 +53,34 @@ const ROOM_SOUND_INTERVAL: float = 15.0
 static var _room_sound_timer: float = ROOM_SOUND_INTERVAL
 static var _room_sound_frame: int = -1
 
+func _ready() -> void:
+	_apply_sprite_sheet()
+	super._ready()
+
+# 공유하는 SpriteFrames를 복제해서 프레임마다 아틀라스만 바꾼다 (다른 쥐의 그림은 건드리지 않는다)
+func _apply_sprite_sheet() -> void:
+	var spr := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if sprite_sheet == null or spr == null or spr.sprite_frames == null:
+		return
+	var frames: SpriteFrames = spr.sprite_frames.duplicate()
+	for anim in frames.get_animation_names():
+		for i in frames.get_frame_count(anim):
+			var tex := frames.get_frame_texture(anim, i) as AtlasTexture
+			if tex == null:
+				continue
+			var swapped: AtlasTexture = tex.duplicate()
+			swapped.atlas = sprite_sheet
+			frames.set_frame(anim, i, swapped, frames.get_frame_duration(anim, i))
+	spr.sprite_frames = frames
+
 func _physics_process(delta: float) -> void:
-	if _active and hp > 0:
+	if _active and hp > 0 and not is_asleep():
 		_tick_room_sound(delta)
 		_update_lunge(delta)
 	elif lunge_state != Lunge.NONE:
 		_end_lunge()
 	super._physics_process(delta)
-	if not _active or hp <= 0:
+	if not _active or hp <= 0 or is_asleep():
 		return
 	if lunge_state == Lunge.NONE and _wants_shoot():
 		_shoot_timer -= delta

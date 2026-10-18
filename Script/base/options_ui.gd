@@ -15,6 +15,11 @@ signal close_requested
 @onready var slider_shake: HSlider = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/SliderShake"
 @onready var lbl_shake_value: Label = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/ShakeValue"
 @onready var btn_language: OptionButton = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer/BtnLanguage"
+@onready var game_grid: GridContainer = $"OptionsUI/Panel/TabContainer/Control and game/GridContainer"
+
+# 플레이 로그 (PlayLog) 행은 코드로 붙인다
+var lbl_log: Label
+var chk_log: CheckButton
 
 
 # 1. 해상도 목록 (자주 쓰는 것들)
@@ -45,6 +50,7 @@ const FPS_OPTIONS: Array[Dictionary] = [
 ]
 
 func _ready():
+	_build_log_rows()
 	_add_items_to_ui()
 	_connect_signals()
 	visibility_changed.connect(_on_visibility_changed)
@@ -142,6 +148,7 @@ func _refresh_translated_texts() -> void:
 	tab_container.set_tab_title(0, tr(&"OPTIONS_TAB_GRAPHICS"))
 	tab_container.set_tab_title(1, tr(&"OPTIONS_TAB_AUDIO"))
 	tab_container.set_tab_title(2, tr(&"OPTIONS_TAB_CONTROLS"))
+	lbl_log.text = tr(&"OPTIONS_LOG_COLLECTION")
 	_update_sens_label(slider_sens.value)
 	_update_shake_label(slider_shake.value)
 
@@ -204,6 +211,7 @@ func _on_visibility_changed():
 		tab_container.current_tab = 0
 		_init_audio_sliders()
 		_init_graphics_ui()
+		chk_log.set_pressed_no_signal(SettingsManager.log_consent == PlayLog.Consent.ALLOWED)
 
 func _on_exit_button_pressed() -> void:
 	close_requested.emit()
@@ -259,3 +267,15 @@ func _update_shake_label(value: float):
 	lbl_shake_value.text = tr(&"OPTIONS_SHAKE_VALUE").format({
 		"percent": int(value * 100)
 	})
+
+# --- [플레이 로그] ---
+func _build_log_rows() -> void:
+	lbl_log = Label.new()
+	game_grid.add_child(lbl_log)
+	chk_log = CheckButton.new()
+	chk_log.set_pressed_no_signal(SettingsManager.log_consent == PlayLog.Consent.ALLOWED)
+	chk_log.toggled.connect(_on_log_toggled)
+	game_grid.add_child(chk_log)
+
+func _on_log_toggled(on: bool) -> void:
+	PlayLog.set_consent(on)

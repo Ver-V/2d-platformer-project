@@ -12,8 +12,11 @@ const FIRST_LEVEL_PATH = "res://Scenes/Stage/Stage_tutorial.tscn"
 var slot_menu: SaveSlotMenu
 var _pending_new_game_slot: int = 0 # 덮어쓰기 확인 중인 슬롯
 
+const DEBUG_MENU := "res://Scenes/Debug/DebugMenu.tscn" # 개발용 바로 가기 (디버그 빌드에서 F2)
+
 func _ready() -> void:
 	CustomCursor.show_cursor()
+	GameManager.save_path_override = "" # 디버그 바로 가기에서 돌아왔으면 다시 진짜 세이브 슬롯으로
 	options_ui.visible = false
 
 	# 슬롯 도입 전 단일 세이브가 있으면 1번 슬롯으로 옮긴다
@@ -35,6 +38,10 @@ func _ready() -> void:
 
 	# 1. 저장된 슬롯이 하나도 없으면 'Load Game' 버튼 비활성화 (클릭 불가)
 	_update_load_button()
+
+	# 처음 실행이면 플레이 로그 저장 동의를 묻는다
+	if PlayLog.needs_consent_prompt():
+		_ask_log_consent()
 
 	# 2. 버튼 기능 연결 (에디터 시그널 대신 코드로 연결하면 관리하기 편함)
 	for button in $VBoxContainer.get_children():
@@ -103,7 +110,7 @@ func _on_credits_pressed() -> void:
 	credits_panel.visible = true
 
 func _on_exit_pressed() -> void:
-	get_tree().quit()
+	PlayLog.quit_game() # 남은 플레이 로그를 보내고 끈다
 	
 func _on_options_closed():
 	options_ui.visible = false
@@ -111,3 +118,22 @@ func _on_options_closed():
 func _close_panels() -> void:
 	options_ui.visible = false
 	credits_panel.visible = false
+
+# 플레이 로그 동의 창. 닫기(X)·ESC도 거부로 저장한다 (설정에서 다시 켤 수 있음)
+func _ask_log_consent() -> void:
+	var dialog := ConfirmationDialog.new()
+	dialog.title = tr(&"LOG_CONSENT_TITLE")
+	dialog.dialog_text = tr(&"LOG_CONSENT_TEXT")
+	dialog.ok_button_text = tr(&"LOG_CONSENT_ALLOW")
+	dialog.cancel_button_text = tr(&"LOG_CONSENT_DECLINE")
+	dialog.dialog_autowrap = true
+	dialog.min_size = Vector2i(560, 0)
+	dialog.theme = new_game_dialog.theme
+	dialog.confirmed.connect(func(): PlayLog.set_consent(true))
+	dialog.canceled.connect(func(): PlayLog.set_consent(false))
+	add_child(dialog)
+	dialog.popup_centered()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F2:
+		get_tree().change_scene_to_file(DEBUG_MENU)

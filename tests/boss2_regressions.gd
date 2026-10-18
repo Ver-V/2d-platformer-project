@@ -29,10 +29,12 @@ func run_checks() -> void:
 	make_arena()
 	await check_scene_setup()
 	await check_flask_rules()
+	await check_flask_ready_sound()
 	await check_status_rules()
 	await check_strike_and_shockwave()
 	await check_phase_2_tint()
 	await check_fight_runs()
+	await check_reward_not_regranted()
 	current_scene = null
 	fixture.queue_free()
 	await process_frame
@@ -90,6 +92,43 @@ func check_scene_setup() -> void:
 	await process_frame
 
 # --- 플라스크 ---
+
+# 대기 중 플라스크: 예고음(flask_ready.wav)이 나고 flask_ready_delay(0.5초) 뒤에 던진다
+func _flask_count() -> int:
+	var n := 0
+	for node in root.find_children("*", "", true, false):
+		var sc = node.get_script()
+		if sc != null and sc.resource_path.ends_with("flask_projectile.gd"):
+			n += 1
+	return n
+
+func check_flask_ready_sound() -> void:
+	var boss = spawn_boss()
+	var p = spawn_player(Vector2(150, FLOOR_Y - 20))
+	p.set_physics_process(false)
+	await process_frame
+	check(boss.action_sfx != null and boss.flask_ready_sound != null and boss.flask_ready_sound.resource_path.ends_with("flask_ready.wav"),
+		"Boss should have the flask-ready sound and a player for it")
+	check(is_equal_approx(boss.flask_ready_delay, 0.5), "Flask should be thrown 0.5s after the ready sound")
+	boss.target = p
+	boss.idle_time = 1.0 # 한 개, step 0.5 → 바로 예고음
+	var before := _flask_count()
+	boss._idle_phase()
+	await process_frame
+	check(boss.action_sfx.playing and boss.action_sfx.stream == boss.flask_ready_sound and _flask_count() == before,
+		"The ready sound should play first, before any flask is thrown")
+	await create_timer(0.3).timeout
+	check(_flask_count() == before, "No flask should be thrown before the 0.5s delay")
+	await create_timer(0.35).timeout
+	check(_flask_count() == before + 1, "The flask should be thrown 0.5s after the ready sound")
+	for n in root.find_children("*", "", true, false):
+		var sc = n.get_script()
+		if sc != null and sc.resource_path.ends_with("flask_projectile.gd"):
+			n.queue_free()
+	boss.queue_free()
+	p.queue_free()
+	await process_frame
+
 func make_flask(kind: int):
 	var f = load(FLASK).instantiate()
 	f.kind = kind
@@ -155,8 +194,8 @@ func check_flask_rules() -> void:
 	player.guard.is_guarding = true
 	player.guard.guard_timer = 0.3 # 퍼펙트 가드 시간 밖
 	guarded.hit_target(player)
-	check(player.hp == 100 - mini(20, player.guard.CHIP_DAMAGE_MAX) and not player.get_status_effects().has(&"poison"),
-		"Guarding a direct flask from the front should take only chip damage and no status")
+	check(player.hp == 100 - player.guard.chip_damage(20) and player.get_status_effects().has(&"poison"),
+		"Guarding a direct flask from the front should take chip damage and still the status")
 	check(guarded.is_queued_for_deletion() and _splash_effects() > 0, "A guarded flask should break with the splash particles")
 	# 퍼펙트 가드: 피해 0, 상태이상 없음, 플라스크는 깨진다
 	fresh(player)
@@ -166,8 +205,9 @@ func check_flask_rules() -> void:
 	player.guard.is_guarding = true
 	player.guard.guard_timer = 0.0
 	perfect.hit_target(player)
-	check(player.hp == 100 and not player.get_status_effects().has(&"bleed") and perfect.is_queued_for_deletion(),
-		"A perfect-guarded flask should deal no damage, no status, and break")
+	var half_bleed = player.get_status_effects().get_effect(&"bleed")
+	check(player.hp == 100 and half_bleed != null and is_equal_approx(half_bleed.buildup, 40.0) and perfect.is_queued_for_deletion(),
+		"A perfect-guarded flask should deal no damage, half the bleed buildup (80 -> 40), and break")
 	player.guard.is_guarding = false
 	# 스플래시: 3타일 안이면 10 + 스플래시 상태이상, 밖이면 없음
 	fresh(player)
@@ -303,3 +343,36 @@ func check_fight_runs() -> void:
 		if "throw_gravity" in n or "max_distance" in n:
 			n.queue_free()
 	await process_frame
+
+# 처치한 보스의 보상은 한 번만: 마시거나 판 뒤 씬을 다시 열어도 되살아나지 않는다 (예전엔 스테이지를 열 때마다 약을 또 줬다).
+# 보상 기록이 없는 옛 세이브는 한 번 채워 주고 기록을 남긴다. 죽은 채로는 플라스크·포션을 마실 수 없다
+func check_reward_not_regranted() -> void:
+	var inv = root.get_node("Inventory")
+	var scene: PackedScene = load("res://Scenes/Entitites/boss_stage_2.tscn")
+	var probe = scene.instantiate()
+	var boss_id: String = str(probe.get_persist_id())
+	var key: String = "boss_reward:" + boss_id
+	var drug_id: String = probe.reward_item.id
+	probe.free()
+	gm().reset_data()
+	gm().defeated_bosses[boss_id] = true
+	gm().add_collected_item(key) # 받아서 이미 마셨다
+	var boss = scene.instantiate()
+	fixture.add_child(boss)
+	await process_frame
+	check(not inv.has_item(drug_id), "A reward already received should not come back when the stage loads again")
+	gm().collected_items.erase(key) # 옛 세이브: 받은 기록이 없다
+	boss = scene.instantiate()
+	fixture.add_child(boss)
+	await process_frame
+	check(inv.has_item(drug_id) and gm().collected_items.has(key), "Old saves get the missing reward once and record it")
+	inv.reset()
+	boss = scene.instantiate()
+	fixture.add_child(boss)
+	await process_frame
+	check(not inv.has_item(drug_id), "The backfilled reward should not be given a second time")
+	# 죽은 상태에서는 회복하지 않는다
+	gm().reset_data()
+	gm().player_current_hp = 0
+	check(not gm().use_flask() and gm().player_current_hp == 0, "Drinking while dead should do nothing")
+	gm().reset_data()

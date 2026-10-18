@@ -31,7 +31,9 @@ func run_checks() -> void:
 	await check_death_animation()
 	await check_boss_stage_unload()
 	await check_boss1_phase2()
+	await check_boss_final_blow()
 	await check_rats()
+	await check_rat_fears_light()
 	# 피격 효과(번쩍임·스파크 타이머, 효과음)가 끝난 뒤 정리해야 이미 지운 노드를 참조하는 에러·누수가 남지 않는다
 	await create_timer(1.0).timeout
 	fixture.queue_free()
@@ -56,6 +58,27 @@ func check_boss_stage_unload() -> void:
 	await process_frame
 	manager.reset_data()
 	print("Boss stage unload: boss music stop is safe while the scene closes")
+
+# 보스 막타: 죽는 순간 시간이 멈췄다가(final_blow_freeze, 실제 시간) 풀린 뒤에 쓰러짐·보상이 이어진다
+func check_boss_final_blow() -> void:
+	var manager = root.get_node("GameManager")
+	manager.reset_data()
+	var boss = load("res://Scenes/Entitites/boss_stage_1.tscn").instantiate()
+	boss.outro_dialogue_file = ""
+	fixture.add_child(boss)
+	await process_frame
+	var died := [false]
+	boss.died.connect(func(_e): died[0] = true)
+	boss.hp = 0
+	boss._on_death()
+	check(is_zero_approx(Engine.time_scale) and boss.current_state == boss.State.DEAD and not died[0],
+		"The final blow should freeze time before the boss goes down")
+	await create_timer(boss.final_blow_freeze + 0.3, true, false, true).timeout
+	check(is_equal_approx(Engine.time_scale, 1.0) and died[0], "After the freeze time should resume and the death continue")
+	boss.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Boss final blow: freeze + zoom, then the death goes on")
 
 # 1스테이지 보스: 체력 50% 미만이면 페이즈 2 (대사, 패턴 1.5배), 4번 패턴은 2갈래 → 3갈래
 func check_boss1_phase2() -> void:
@@ -202,6 +225,58 @@ func check_attack_hitbox() -> void:
 	print("Attack hitbox: grows forward, restores, not shared")
 
 # 좁은 발판 위 순찰: 떨어지지 않고 끝에서 뒤돈다
+const RAT_SCENE := "res://Scenes/Entitites/rat.tscn"
+func spawn_rat(pos: Vector2):
+	var mob = load(RAT_SCENE).instantiate()
+	mob.patrol_idle_enabled = false
+	fixture.add_child(mob)
+	mob.global_position = pos
+	mob.home_position = pos
+	mob.set_active(true)
+	return mob
+
+# 쥐는 켜진 횃불 빛 안으로 들어가지 않고(순찰: 돌아섬, 추격: 가장자리에서 멈춤), 빛 안에 있으면 밖으로 나간다
+func check_rat_fears_light() -> void:
+	check(load(RAT_SCENE).instantiate().fears_light, "Rats should fear light")
+	var floor_body := make_floor(Vector2(0, 0), 900)
+	var torch = load("res://Scenes/System/Torch.tscn").instantiate()
+	torch.position = Vector2(0, 0)
+	fixture.add_child(torch)
+	torch.light()
+	torch._process(10.0) # 다 밝아진 상태
+	var radius: float = torch.get_light_radius()
+	var center: Vector2 = torch.get_light_center()
+
+	# 순찰: 빛 쪽으로 걸어오다 가장자리에서 돌아선다
+	var rat = spawn_rat(Vector2(-radius - 40.0, -10))
+	rat.dir = 1
+	var closest := 1e9
+	for i in 300:
+		await physics_frame
+		closest = minf(closest, rat.global_position.distance_to(center))
+	check(closest >= radius - 2.0, "A patrolling rat should not walk into torch light (closest %.1f, radius %.1f)" % [closest, radius])
+
+	# 빛 안에서 시작하면 밖으로 나간다
+	rat.global_position = Vector2(radius * 0.5, -10)
+	for i in 240:
+		await physics_frame
+	check(rat.global_position.distance_to(center) >= radius - 2.0, "A rat inside the light should leave it")
+	rat.queue_free()
+
+	# 빛이 없으면 그냥 지나간다
+	torch.lit = false
+	var free_rat = spawn_rat(Vector2(-radius - 40.0, -10))
+	free_rat.dir = 1
+	var passed := false
+	for i in 300:
+		await physics_frame
+		passed = passed or free_rat.global_position.distance_to(center) < radius * 0.5
+	check(passed, "Without light the rat should walk through")
+	for n in [free_rat, torch, floor_body]:
+		n.queue_free()
+	await physics_frame
+	print("Rats fear torch light: turn at the edge, leave it, walk through when unlit")
+
 func check_patrol_on_platform() -> void:
 	for kind in MOBS:
 		var floor_body := make_floor(Vector2(0, 0), 160)
@@ -257,14 +332,15 @@ func check_melee_attack() -> void:
 		await physics_frame
 	print("Melee: attacks in range, faces target, stops, ends, chases out of range")
 
-# 스테이지2 쥐: 기본 + 색 변종(보라 독, 빨강 출혈, 하양 거대). 색은 enemy_tint 셰이더, 색 있는 쥐는 변이체가 되지 않는다
+# 스테이지2 쥐: 기본 + 색 변종(보라 독, 빨강 출혈, 하양 거대). 색은 팔레트를 바꾼 시트(sprite_sheet)로 칠하고,
+# 머티리얼은 번쩍임·변이 윤곽선용 enemy_tint 셰이더(tint_strength 0). 색 있는 쥐도 변이체가 된다 (색 유지 + 윤곽선)
 func check_rats() -> void:
 	var expected := {
 		"rat": {"hp": 45, "dmg": 15, "speed": 45.0, "gold": 15, "tinted": false},
-		"rat_purple": {"hp": 60, "dmg": 15, "speed": 45.0, "gold": 20, "tinted": true},
-		"rat_red": {"hp": 60, "dmg": 15, "speed": 45.0, "gold": 20, "tinted": true},
-		"rat_white": {"hp": 150, "dmg": 30, "speed": 35.0, "gold": 50, "tinted": true},
-		"rat_blue": {"hp": 45, "dmg": 10, "speed": 40.0, "gold": 25, "tinted": true},
+		"rat_purple": {"hp": 60, "dmg": 15, "speed": 45.0, "gold": 15, "tinted": true},
+		"rat_red": {"hp": 60, "dmg": 15, "speed": 45.0, "gold": 15, "tinted": true},
+		"rat_white": {"hp": 150, "dmg": 30, "speed": 35.0, "gold": 40, "tinted": true},
+		"rat_blue": {"hp": 45, "dmg": 10, "speed": 40.0, "gold": 20, "tinted": true},
 	}
 	var base_size: Vector2
 	for kind in expected:
@@ -278,7 +354,18 @@ func check_rats() -> void:
 		check(spr.sprite_frames.get_frame_count(&"walk") == 4 and spr.sprite_frames.has_animation(&"idle"), "%s should have walk/idle" % kind)
 		var mat = spr.material
 		var tinted: bool = mat is ShaderMaterial and mat.shader.resource_path == "res://resources/Shaders/enemy_tint.gdshader"
-		check(tinted == e.tinted and mob.mutation_enabled != e.tinted, "%s: tinted rats use the tint shader and never mutate" % kind)
+		check(tinted == e.tinted and mob.mutation_enabled, "%s: tinted rats use the tint shader and can mutate" % kind)
+		var sheet_path := "res://Assets/sprites/ratsprite_%s.png" % kind.trim_prefix("rat_") if e.tinted else ""
+		check((mob.sprite_sheet.resource_path if mob.sprite_sheet else "") == sheet_path
+			and (not tinted or is_zero_approx(float(mat.get_shader_parameter("tint_strength")))),
+			"%s should be colored by its palette sheet, not the tint shader" % kind)
+		if tinted:
+			# 변이하면 몸 색은 그대로, 같은 머티리얼에 윤곽선만 켜진다 (다른 쥐의 머티리얼은 건드리지 않는다)
+			var mutant_mat: ShaderMaterial = MobMutation.make_material(MobMutation.Kind.BLEED, mat)
+			check(mutant_mat != mat and mutant_mat.shader == mat.shader and mutant_mat.get_shader_parameter("tint_color") == mat.get_shader_parameter("tint_color")
+				and mutant_mat.get_shader_parameter("outline_width") > 0.0 and mutant_mat.get_shader_parameter("outline_color") == MobMutation.OUTLINES[MobMutation.Kind.BLEED][0]
+				and mat.get_shader_parameter("outline_width") in [null, 0.0],
+				"%s mutant should keep its tint and add the bleed outline" % kind)
 		# 어둠 속에서 종류를 알 수 있게 눈 색이 몸 색과 맞다 (기본 쥐는 노랑)
 		var eyes = mob.get_node_or_null("GlowEyes")
 		var eye_tex := {"rat": "yelloweye", "rat_purple": "purpleeye", "rat_red": "redeye", "rat_blue": "blueeye", "rat_white": "whiteeye"}[kind] as String
@@ -290,6 +377,17 @@ func check_rats() -> void:
 		elif kind == "rat_white":
 			check(body_size == base_size * 2.0 and spr.scale == Vector2(2, 2) and mob.knockback_resist >= 0.5, "White rat should be twice as big and hard to push")
 		mob.free()
+	# 시트를 바꿔도 쥐끼리 SpriteFrames를 같이 쓰지 않는다 (기본 쥐 그림은 그대로)
+	var plain = load("res://Scenes/Entitites/rat.tscn").instantiate()
+	var colored = load("res://Scenes/Entitites/rat_blue.tscn").instantiate()
+	fixture.add_child(plain)
+	fixture.add_child(colored)
+	var plain_tex := plain.get_node("AnimatedSprite2D").sprite_frames.get_frame_texture(&"walk", 2) as AtlasTexture
+	var colored_tex := colored.get_node("AnimatedSprite2D").sprite_frames.get_frame_texture(&"walk", 2) as AtlasTexture
+	check(plain_tex.atlas.resource_path == "res://Assets/ratsprite.png" and colored_tex.atlas == colored.sprite_sheet
+		and colored_tex.region == plain_tex.region, "Blue rat should swap only the atlas of its own frames")
+	plain.free()
+	colored.free()
 	var purple = load("res://Scenes/Entitites/rat_purple.tscn").instantiate()
 	check(purple.contact_status is PoisonEffect and is_equal_approx(purple.contact_status_chance, 0.35), "Purple rat should poison on contact (35%)")
 	purple.free()

@@ -5,9 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://bte5m8cbukixq" path="res://Scenes/Item/Coin.tscn" id="3_coin"]
 [ext_resource type="Texture2D" uid="uid://dveq466h08bpl" path="res://Assets/sprites/stage2boss/attack1_1.png" id="4_i8wdn"]
 [ext_resource type="Texture2D" uid="uid://o0tf5ll8txai" path="res://Assets/sprites/stage2boss/ready_1.png" id="4_l0f3o"]
-[ext_resource type="Resource" path="res://resources/items/suspicious_drug.tres" id="4_reward"]
-[ext_resource type="Script" path="res://Script/Entity/boss2.gd" id="b2_script"]
-[ext_resource type="PackedScene" path="res://Scenes/Projectile/projectile_flask.tscn" id="b2_flask"]
+[ext_resource type="Resource" uid="uid://1xxeyte8rhon" path="res://resources/items/suspicious_drug.tres" id="4_reward"]
 [ext_resource type="Texture2D" uid="uid://bu8h0gk6k4lvy" path="res://Assets/sprites/stage2boss/ready_2.png" id="5_0dtjn"]
 [ext_resource type="Texture2D" uid="uid://cs6wic85tafu0" path="res://Assets/sprites/stage2boss/attack1_2.png" id="5_45pxd"]
 [ext_resource type="Texture2D" uid="uid://c0makilha5nvu" path="res://Assets/sprites/stage2boss/attack1_3.png" id="6_cmwnu"]
@@ -58,6 +56,8 @@
 [ext_resource type="Texture2D" uid="uid://cmw0m3mmph6mi" path="res://Assets/sprites/stage2boss/walk_6.png" id="53_og48s"]
 [ext_resource type="Texture2D" uid="uid://dy2ckk0ug35cp" path="res://Assets/sprites/stage2boss/walk_7.png" id="54_875lm"]
 [ext_resource type="Texture2D" uid="uid://dfqnh3l384kmp" path="res://Assets/sprites/stage2boss/walk_8.png" id="55_axdau"]
+[ext_resource type="PackedScene" path="res://Scenes/Projectile/projectile_flask.tscn" id="b2_flask"]
+[ext_resource type="Script" uid="uid://n4y4l43b8sjt" path="res://Script/Entity/boss2.gd" id="b2_script"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_boss"]
 animations = [{
@@ -277,13 +277,44 @@ size = Vector2(70, 66)
 size = Vector2(120, 66)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack1"]
-size = Vector2(50, 60)
+size = Vector2(34, 59)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack2"]
-size = Vector2(56, 80)
+size = Vector2(41, 60)
 
 [node name="Boss_stage2" node_paths=PackedStringArray("bgm_player", "boss_sprite") instance=ExtResource("1_boss")]
 script = ExtResource("b2_script")
+idle_time = 2.0
+melee_windup = 0.5
+dash_windup = 0.75
+rush_windup = 0.3
+crash_stun_time = 2.0
+approach_timeout = 5.0
+charge_time = 1.0
+walk_speed = 40.0
+dash_distance = 48.0
+dash_speed = 260.0
+rush_speed = 420.0
+phase2_rush_mult = 1.25
+jump_clearance = 24.0
+shockwave_jump_height = 40.0
+melee_damage = 20
+dash_damage = 20
+rush_damage_mult = 2.0
+hit_frame = 3
+attack_knockback = Vector2(300, -220)
+crash_shake = 10.0
+shockwave_damage = 20
+shockwave_height = 64.0
+shockwave_speed = 260.0
+shockwave_shake = 6.0
+flasks_per_idle = 1
+flask_flight_time = 0.9
+platform_chase_time = 3.0
+platform_min_height = 24.0
+platform_jump_reach = 80.0
+rage_amount = 0.6
+rage_fade_time = 0.6
 bgm_player = NodePath("BGMPlayer")
 boss_sprite = NodePath("AnimatedSprite2D")
 reward_item = ExtResource("4_reward")
@@ -309,6 +340,7 @@ mutation_enabled = false
 [node name="AnimatedSprite2D" parent="." index="0"]
 sprite_frames = SubResource("SpriteFrames_boss")
 animation = &"idle"
+frame_progress = 0.07444737
 
 [node name="CollisionShape2D" parent="." index="1"]
 position = Vector2(-7.5, 9)
@@ -333,57 +365,56 @@ bus = &"SFX"
 
 [node name="ShooterComponent" parent="." index="8" instance=ExtResource("2_shooter")]
 projectile_scene = ExtResource("b2_flask")
-parry_interval = 3
 
-[node name="Facing" type="Node2D" parent="."]
+[node name="Facing" type="Node2D" parent="." index="10"]
 
-[node name="MeleeRange" type="Area2D" parent="Facing"]
+[node name="MeleeRange" type="Area2D" parent="Facing" index="0"]
 collision_layer = 0
 collision_mask = 2
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/MeleeRange"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/MeleeRange" index="0"]
 position = Vector2(45, 9)
 shape = SubResource("RectangleShape2D_melee_range")
 debug_color = Color(0.2, 0.8, 0.3, 0.25)
 
-[node name="DashRange" type="Area2D" parent="Facing"]
+[node name="DashRange" type="Area2D" parent="Facing" index="1"]
 collision_layer = 0
 collision_mask = 2
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/DashRange"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/DashRange" index="0"]
 position = Vector2(125, 9)
 shape = SubResource("RectangleShape2D_dash_range")
 debug_color = Color(0.2, 0.5, 0.9, 0.2)
 
-[node name="Attack1Hitbox" type="Area2D" parent="Facing"]
+[node name="Attack1Hitbox" type="Area2D" parent="Facing" index="2"]
 collision_layer = 0
 collision_mask = 256
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/Attack1Hitbox"]
-position = Vector2(40, 9)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/Attack1Hitbox" index="0"]
+position = Vector2(32, 9.5)
 shape = SubResource("RectangleShape2D_attack1")
 debug_color = Color(0.95, 0.2, 0.2, 0.3)
 
-[node name="Attack2Hitbox" type="Area2D" parent="Facing"]
+[node name="Attack2Hitbox" type="Area2D" parent="Facing" index="3"]
 collision_layer = 0
 collision_mask = 256
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/Attack2Hitbox"]
-position = Vector2(48, 0)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Facing/Attack2Hitbox" index="0"]
+position = Vector2(40.5, 10)
 shape = SubResource("RectangleShape2D_attack2")
 debug_color = Color(0.95, 0.5, 0.1, 0.3)
 
-[node name="EyeGlint" type="Node2D" parent="Facing"]
+[node name="EyeGlint" type="Node2D" parent="Facing" index="4"]
 position = Vector2(8, -14)
 
-[node name="Scientist" type="Node2D" parent="Facing"]
+[node name="Scientist" type="Node2D" parent="Facing" index="5"]
 position = Vector2(-10, -40)
 
-[node name="Sprite2D" type="Sprite2D" parent="Facing/Scientist"]
+[node name="Sprite2D" type="Sprite2D" parent="Facing/Scientist" index="0"]
 
-[node name="ThrowPoint" type="Marker2D" parent="Facing/Scientist"]
+[node name="ThrowPoint" type="Marker2D" parent="Facing/Scientist" index="1"]
 position = Vector2(0, -8)

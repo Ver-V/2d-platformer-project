@@ -6,7 +6,7 @@ class_name BleedEffect
 
 @export var buildup_per_hit: float = 35.0
 @export var threshold: float = 100.0
-@export var decay_per_sec: float = 10.0
+@export var decay_per_sec: float = 5.0
 @export_range(0.0, 1.0) var burst_ratio: float = 0.2   # 터질 때 최대 HP 비율 피해
 @export_range(0.0, 1.0) var boss_burst_ratio: float = 0.1 # 보스("bosses" 그룹)가 터질 때는 이 비율 (체력이 커서 같은 비율이면 너무 세다)
 @export var burst_min_damage: int = 10
@@ -16,6 +16,7 @@ class_name BleedEffect
 var buildup: float = 0.0
 
 func _init() -> void:
+	tutorial_key = &"TUTORIAL_STATUS_BLEED"
 	id = &"bleed"
 	popup_key = &""
 	popup_color = Color(0.85, 0.05, 0.1)
@@ -29,6 +30,9 @@ func _on_applied() -> void:
 func _on_reapplied(incoming: StatusEffect) -> void:
 	var amount: float = incoming.buildup_per_hit if incoming is BleedEffect else buildup_per_hit
 	_add(amount)
+
+func _scale_strength(factor: float) -> void:
+	buildup_per_hit *= factor
 
 func _on_process(delta: float) -> void:
 	buildup = maxf(0.0, buildup - decay_per_sec * delta)
@@ -61,4 +65,4 @@ func _add(amount: float) -> void:
 	if buildup >= threshold:
 		buildup = 0.0
 		_popup(burst_popup_key, popup_color)
-		host.apply_status_damage(get_burst_damage())
+		host.apply_status_damage(get_burst_damage(), id)

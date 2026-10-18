@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Script/System/wool_bounce.gd" id="1_wool"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wool"]
+size = Vector2(32, 16)
+
+[node name="WoolBounce" type="StaticBody2D"]
+collision_mask = 0
+script = ExtResource("1_wool")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_wool")

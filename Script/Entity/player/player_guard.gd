@@ -8,8 +8,8 @@ class_name PlayerGuard
 @export_range(0.0, 1.0) var move_speed_ratio: float = 0.2 # 가드 중 이동속도 배율
 
 const PERFECT_GUARD_WINDOW: float = 0.2 # 퍼펙트 가드 판정 시간
+const PERFECT_GUARD_STATUS_MULT: float = 0.5 # 퍼펙트 가드로 막은 투사체의 상태이상은 이만큼만 받는다 (일반 가드는 그대로)
 const PERFECT_GUARD_INVULN: float = 0.1  # 퍼펙트 가드 뒤 무적 (길면 뒤따르는 연발 투사체까지 공짜로 흡수한다)
-const CHIP_DAMAGE_MAX: int = 5          # 일반 가드로 막은 투사체가 주는 최대 피해
 const COOLDOWN_TIME: float = 1.0        # 가드 재사용 대기 시간 (퍼펙트 가드에 성공한 가드는 대기 없음)
 
 var is_guarding: bool = false
@@ -65,19 +65,34 @@ func can_block(hit: HitData) -> bool:
 	return hit.knockback.x * player.attack_pivot.scale.x < 0
 
 # can_block이 true일 때만 부른다. 튜토리얼의 피해량 0인 투사체도 가드 성공과 소멸을 처리한다.
+# 가드는 피해만 줄이고 상태이상은 막지 못한다: 일반 가드는 그대로, 퍼펙트 가드는 절반(PERFECT_GUARD_STATUS_MULT)만 받는다
 func block(hit: HitData) -> HitData.Result:
 	if guard_timer <= PERFECT_GUARD_WINDOW:
 		_perfect_guard()
+		_apply_statuses(hit, PERFECT_GUARD_STATUS_MULT)
 		return HitData.Result.PERFECT_GUARD
 	player.show_popup(tr(&"COMBAT_GUARD"), Color.GRAY)
 	player.sfx_player.play_guard()
 	var chip := hit.duplicate_hit()
-	chip.amount = mini(hit.amount, CHIP_DAMAGE_MAX)
+	chip.amount = chip_damage(hit.amount)
 	if chip.amount <= 0:
+		_apply_statuses(hit, 1.0)
 		return HitData.Result.GUARDED # 연습용 탄환은 피해 없이 소모한다
-	# 깎인 피해는 들어가지만 상태이상은 막는다
+	# 깎인 피해 먼저 (맞으면 잠에서 깬다), 그다음 상태이상
 	var chip_result := player.take_damage_only(chip)
+	if chip_result == HitData.Result.HIT:
+		_apply_statuses(hit, 1.0)
 	return HitData.Result.GUARDED if chip_result == HitData.Result.HIT else chip_result
+
+func _apply_statuses(hit: HitData, factor: float) -> void:
+	if player.hp <= 0:
+		return
+	for effect in hit.status_effects:
+		player.apply_status_effect(effect if is_equal_approx(factor, 1.0) else effect.scaled(factor))
+
+# 일반 가드로 막은 투사체 피해: 원래 피해에서 GameManager.guard_reduction(기본 10, 소모품으로 증가)을 뺀다
+func chip_damage(amount: int) -> int:
+	return maxi(0, amount - GameManager.guard_reduction)
 
 func _perfect_guard() -> void:
 	perfect_guarded = true

@@ -8,9 +8,8 @@
 	  "choices": [
 		{
 		  "text": "Ground Floor",
-		  "next": "Ground Floor",
-		  "condition": { "type": "boss_defeated", "value": "non_existent_boss" },
-		  "fail_text": "This feature is locked in the demo."
+		  "scene_path": "res://Scenes/Stage/Stage_Surface.tscn",
+		  "next": "Ground Floor"
 		},
 		{
 		  "text": "B1",
@@ -100,6 +99,15 @@
 		"text": "Those without permission may not board.",
 		"left_image": "HeroBunny_idle",
 		"speaker": "left"
+	}
+  ],
+  "Ground Floor": [
+	{
+	  "name": "Pink Bunny",
+	  "text": "This is already the ground floor.",
+	  "left_image": "HeroBunny_surprise",
+	  "speaker": "left",
+	  "next" : "start"
 	}
   ],
   "B1": [

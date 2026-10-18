@@ -1,0 +1,36 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://Script/System/wool_wall.gd" id="1_wool"]
+[ext_resource type="Script" uid="uid://bisqnigdscqid" path="res://Script/base/combat/hurtbox.gd" id="2_hurtbox"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_range"]
+size = Vector2(56, 48)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(32, 48)
+
+[node name="WoolWall" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_wool")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -24)
+shape = SubResource("RectangleShape2D_range")
+
+[node name="Body" type="StaticBody2D" parent="."]
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Body"]
+position = Vector2(0, -24)
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 512
+collision_mask = 0
+monitoring = false
+script = ExtResource("2_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -24)
+shape = SubResource("RectangleShape2D_wall")

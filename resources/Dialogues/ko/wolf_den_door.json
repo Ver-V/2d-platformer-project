@@ -1,0 +1,47 @@
+{
+	"without_item": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "분홍 토끼",
+			"text": "벽 틈에 작은 열쇠구멍이 있어... 이런 데 문이 숨어 있었네. 맞는 열쇠가 없어."
+		}
+	],
+	"ask_open": [
+		{
+			"speaker": "left",
+			"left_image": "",
+			"right_image": "",
+			"name": "",
+			"text": "양치기에게 받은 열쇠를 넣어 볼까요?",
+			"choices": [
+				{
+					"text": "예",
+					"event": "door_unlock"
+				},
+				{
+					"text": "아니오"
+				}
+			]
+		}
+	],
+	"key_spent": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "분홍 토끼",
+			"text": "안쪽에 무언가가 있어."
+		}
+	],
+	"key_kept": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "분홍 토끼",
+			"text": "문이 열렸어."
+		}
+	]
+}

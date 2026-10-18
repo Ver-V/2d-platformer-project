@@ -1,0 +1,103 @@
+{
+	"intro": [
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "양치기",
+			"text": "이런, 여행자인가? 혹시 오는 길에 새끼양을 못 봤나?"
+		},
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "분홍 토끼",
+			"text": "새끼양이요? 큰 양들은 잔뜩 봤는데요."
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "양치기",
+			"text": "녀석들이 울음소리에 놀라서 뿔뿔이 흩어져 버렸다네. 네 마리나 되는데..."
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "양치기",
+			"text": "찾아서 데려와 주면 섭섭지 않게 사례하지. 부탁하네."
+		},
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "분홍 토끼",
+			"text": "알겠어요. 보이면 데려올게요!"
+		}
+	],
+	"waiting": [
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "양치기",
+			"text": "아직 돌아오지 않은 녀석들이 있다네. 큰 양들 울음소리를 조심하게, 듣다 보면 잠이 쏟아지니까."
+		}
+	],
+	"thanks": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "분홍 토끼",
+			"text": "여기요, 길 잃은 새끼양을 찾았어요."
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "양치기",
+			"text": "오오, 무사했구나! 고맙네. 약속한 사례일세. 남은 녀석들도 부탁하네."
+		}
+	],
+	"thanks_all": [
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "분홍 토끼",
+			"text": "이게 마지막 새끼양이에요!"
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "양치기",
+			"text": "이제 다 모였구나! 정말 고맙네. 자네 덕분에 오늘 밤은 편히 잘 수 있겠어."
+		},
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_idle",
+			"right_image": "",
+			"name": "양치기",
+			"text": "사례로 이걸 주지. 풀밭에서 주운 열쇠인데... 귀해 보이긴 하지만 어디에 쓰는 건지는 나도 모르겠네."
+		},
+		{
+			"speaker": "left",
+			"left_image": "HeroBunny_surprise",
+			"right_image": "",
+			"name": "분홍 토끼",
+			"text": "어디 쓰는 열쇠일까...?"
+		}
+	],
+	"done": [
+		{
+			"speaker": "right",
+			"left_image": "HeroBunny_smile",
+			"right_image": "",
+			"name": "양치기",
+			"text": "새끼양들이 다 돌아와서 무리가 조용해졌다네. 다시 한번 고맙네, 여행자."
+		}
+	]
+}

@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ymvgdewahhcm" path="res://Scenes/Projectile/projectilefire.tscn" id="1_fire"]
+[ext_resource type="Resource" path="res://resources/status_effects/wolf_sleep_shot.tres" id="2_sleep"]
+
+[node name="SleepShot" instance=ExtResource("1_fire")]
+speed = 420.0
+damage = 5
+status_effects = Array[Resource]([ExtResource("2_sleep")])
+hit_invuln_time = 0.0
+parried_color = Color(0.75, 0.7, 1, 1)
+
+[node name="AnimatedSprite2D" parent="." index="1"]
+self_modulate = Color(0.78, 0.72, 1, 1)
+scale = Vector2(0.5, 0.5)
+
+[node name="CollisionShape2D" parent="." index="2"]
+scale = Vector2(0.5, 0.5)

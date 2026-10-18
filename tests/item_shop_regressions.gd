@@ -17,6 +17,13 @@ func check(condition: bool, message: String) -> void:
 		failures += 1
 		push_error(message)
 
+# 실제 스테이지를 띄운 검사에서는 처음 보는 도움말 창이 떠서 시간을 멈추지 않도록 미리 본 걸로 한다 (도움말 자체는 stage03에서 검사)
+func skip_tutorials(manager) -> void:
+	for row in FileAccess.get_file_as_string("res://resources/i18n/ui.csv").split("
+"):
+		if row.begins_with("TUTORIAL_"):
+			manager.mark_tutorial_seen(row.get_slice(",", 0))
+
 func run_checks() -> void:
 	var manager = root.get_node("GameManager")
 	var saver = root.get_node("SaveManager")
@@ -35,22 +42,96 @@ func run_checks() -> void:
 	await check_inventory_item_info(manager)
 	await check_item_animation(manager)
 	await check_door_lock(manager)
+	await check_chest_lock(manager)
+	await check_chest_reward_reveal(manager)
+	check_menu_texts_translated()
 	await check_minimap_markers(manager)
 	check_chest_key_dialogue()
 	await check_heavy_attack_drug(manager)
 	await check_double_jump_item(manager)
+	await check_stat_consumables(manager)
+	await check_flask_upgrades(manager)
 	check_world_map(manager)
 	await check_shortcut_door(manager)
 	await check_resume_on_quit(manager, saver)
 	await check_door_prompt_on_hud(manager)
 	check_loot_seed(manager, saver)
+	check_stat_potion_pity(manager, saver)
 	check_save_slots(manager, saver)
 	check_inventory_signal(manager)
+	check_item_stacking(manager, saver)
 	check_settings_manager()
 	check_boss_bar_centered()
 	manager.reset_data()
 	print("Item/shop regression checks: ", "PASS" if failures == 0 else "FAIL", " (", failures, " failures)")
 	quit(0 if failures == 0 else 1)
+
+# 상자 스탯 포션: 실패마다 +2.5% (남은 종류끼리 나눔), 세트 안에서 중복 없음, 2세트(10개)가 상한, 저장됨
+func check_stat_potion_pity(manager, saver) -> void:
+	manager.reset_data()
+	var chest_table = load("res://resources/loot/default_chest.tres")
+	var mutant_table = load("res://resources/loot/mutant_chest.tres")
+	check(chest_table.stat_pity and not mutant_table.stat_pity, "Default chest table should use stat pity, the mutant table not")
+	var ids: Array = chest_table.stat_ids()
+	check(ids.size() == 5, "Default chest table should hold 5 stat potions (got %d)" % ids.size())
+	check(not db().get_item_by_id("health_potion").is_stat_potion() and not db().get_item_by_id("flask_shard").is_stat_potion(),
+		"Health potion and flask upgrades are not stat potions")
+
+	# 확률: 처음엔 가중치 그대로, 실패 4번이면 종류마다 +0.5% x 4
+	var base: Dictionary = chest_table.stat_chances(manager.stat_loot)
+	var each0: float = base[ids[0]]
+	check(base.size() == 5 and is_equal_approx(each0, 1.0 / chest_table._total_weight()), "Base stat chance should follow the table weight")
+	var four := {"fails": 4, "taken": [], "drops": 0}
+	check(is_equal_approx(chest_table.stat_chances(four)[ids[0]], each0 + 0.02), "4 misses should add 0.5% x 4 to each type")
+	var one_taken := {"fails": 4, "taken": [ids[0]], "drops": 1}
+	var c: Dictionary = chest_table.stat_chances(one_taken)
+	check(c.size() == 4 and not c.has(ids[0]) and is_equal_approx(c[ids[1]], each0 + 0.1 / 4.0), "A taken type should be skipped and the pity split over the rest")
+
+	# 굴리기: 받은 종류는 안 나오고, 실패가 많으면 반드시 스탯 포션
+	var rng := RandomNumberGenerator.new()
+	var sure := {"fails": 100, "taken": [ids[0]], "drops": 1}
+	var all_stat := true
+	for i in 200:
+		rng.seed = i
+		var e = chest_table.pick_with_stat_pity(rng, sure)
+		all_stat = all_stat and e.item != null and e.item.is_stat_potion() and e.item.id != ids[0]
+	check(all_stat, "With a big pity every pick should be a stat potion of a type not taken yet")
+
+	# 기록: 실패는 +1, 받으면 0으로, 5종을 다 받으면 다음 세트, 10개면 끝
+	manager.record_chest_loot(chest_table, null)
+	manager.record_chest_loot(chest_table, db().get_item_by_id("health_potion"))
+	check(manager.stat_loot.fails == 2, "Chests without a stat potion should count as misses")
+	manager.record_chest_loot(mutant_table, null)
+	check(manager.stat_loot.fails == 2, "Mutant chests should not touch the pity")
+	for id in ids:
+		manager.record_chest_loot(chest_table, db().get_item_by_id(id))
+	check(manager.stat_loot.fails == 0 and manager.stat_loot.drops == 5 and manager.stat_loot.taken.is_empty(), "Taking all 5 types should start the next set")
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data), "Save with stat_loot rejected")
+	for id in ids.slice(0, 2):
+		manager.record_chest_loot(chest_table, db().get_item_by_id(id))
+	var mid: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	manager.reset_data()
+	check(manager.stat_loot.drops == 0 and manager.stat_loot.taken.is_empty(), "New game should reset stat_loot")
+	manager.load_data_from_save(mid)
+	check(manager.stat_loot.drops == 7 and manager.stat_loot.taken.size() == 2, "stat_loot should survive save/load")
+	for id in ids.slice(2):
+		manager.record_chest_loot(chest_table, db().get_item_by_id(id))
+	check(manager.stat_loot.drops == 10 and chest_table.stat_chances(manager.stat_loot).is_empty(), "After 2 sets chests should give no more stat potions")
+	manager.stat_loot.fails = 1000
+	var none_after_cap := true
+	for i in 100:
+		rng.seed = i
+		var e = chest_table.pick_with_stat_pity(rng, manager.stat_loot)
+		none_after_cap = none_after_cap and (e.item == null or not e.item.is_stat_potion())
+	check(none_after_cap, "Capped stat_loot should never roll a stat potion")
+	var bad: Dictionary = data.duplicate(true)
+	bad["stat_loot"] = {"fails": -1, "taken": [], "drops": 0}
+	check(not saver._is_valid_game(bad), "Negative stat_loot fails accepted")
+	bad["stat_loot"] = {"fails": 0, "taken": [3], "drops": 0}
+	check(not saver._is_valid_game(bad), "Non-string stat_loot taken accepted")
+	manager.reset_data()
+	print("Stat potion pity: +2.5%/miss split over remaining types, no repeats in a set, 2 sets max, saved")
 
 # 랜덤 보상 시드: 같은 세이브(시드) + 같은 상자 = 같은 결과, 상자나 시드가 다르면 달라질 수 있음
 func check_loot_seed(manager, saver) -> void:
@@ -104,6 +185,46 @@ func check_loot_seed(manager, saver) -> void:
 	bad["loot_seed"] = "abc"
 	check(not saver._is_valid_game(bad), "Non-number loot_seed accepted")
 	print("Loot seed: same save + same chest = same loot, survives save/load, new per game")
+
+# 체력 포션은 한 칸에 max_stack(10)개까지 겹치고, 쓰면 하나씩 줄고, 개수가 저장된다
+func check_item_stacking(manager, saver) -> void:
+	manager.reset_data()
+	var potion = db().get_item_by_id("health_potion")
+	var lamb = db().get_item_by_id("lost_lamb")
+	check(potion.max_stack == 10 and lamb.max_stack == 1, "Health potion should stack to 10, other items not at all")
+	for i in 10:
+		inv().add_item(potion)
+	check(inv().get_count_at(0) == 10 and inv().inventory[1] == null, "10 potions should share one slot")
+	inv().add_item(potion)
+	check(inv().get_count_at(0) == 10 and inv().inventory[1] == potion and inv().get_count_at(1) == 1, "The 11th potion should start a new slot")
+	check(inv().count_item("health_potion") == 11, "count_item should add up stacked slots")
+	check(inv().remove_item_at(0) == potion and inv().get_count_at(0) == 9 and inv().inventory[0] == potion, "Using a stacked potion should only lower the count")
+	inv().add_item(lamb)
+	inv().add_item(lamb)
+	check(inv().get_count_at(2) == 1 and inv().get_count_at(3) == 1, "Non-stacking items should take one slot each")
+
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data), "Save with stack counts rejected by validator")
+	manager.reset_data()
+	manager.load_data_from_save(data)
+	check(inv().get_count_at(0) == 9 and inv().get_count_at(1) == 1 and inv().get_count_at(2) == 1, "Stack counts should survive save/load")
+	var old: Dictionary = data.duplicate(true)
+	old["inventory"][0].erase("count")
+	manager.load_data_from_save(old)
+	check(inv().get_count_at(0) == 1, "A slot without count (old save) should load as one item")
+	var bad: Dictionary = data.duplicate(true)
+	bad["inventory"][0]["count"] = 0
+	check(not saver._is_valid_game(bad), "Zero stack count accepted")
+
+	# 가방이 가득 차도 겹칠 자리가 있으면 들어간다
+	manager.reset_data()
+	inv().add_item(potion)
+	for i in inv().SLOT_COUNT - 1:
+		inv().add_item(lamb)
+	check(inv().has_room_for(potion) and not inv().has_room_for(lamb), "A full bag should still take a potion that stacks")
+	check(inv().add_item(potion) and inv().get_count_at(0) == 2, "Adding to a stack in a full bag should work")
+	manager.reset_data()
+	print("Item stacking: potions stack to 10, used one at a time, counts saved")
 
 # 인벤토리가 바뀌는 모든 경로에서 inventory_changed가 나가야 UI·시야 등이 따라온다
 func check_inventory_signal(manager) -> void:
@@ -650,9 +771,13 @@ func check_boss_bar_centered() -> void:
 
 # 지름길 문: A는 B를 한 번 쓰기 전엔 잠김. B를 쓰면 A로 이동하며 개방(세이브 기록), 그 뒤로 A→B도 된다.
 # 다른 씬의 짝으로 갈 때는 도착 정보를 남기고, 다음 스테이지가 플레이어를 그 문 앞에 소환한다.
-# 지금 재생 중인 문 소리 (문이 루트에 만들어 둔 AudioStreamPlayer)
-func door_sound_count() -> int:
-	return root.get_children().filter(func(n): return n is AudioStreamPlayer and n.stream != null 		and n.stream.resource_path.ends_with("opendoor_closedoor.wav")).size()
+# 문 소리 (문이 루트에 만들어 둔 AudioStreamPlayer). 재생이 끝나면 스스로 사라지므로
+# 개수 차이가 아니라 기준 시점 뒤에 새로 생긴 것만 센다 (앞 검사의 소리가 도중에 끝나도 어긋나지 않게)
+func door_sounds() -> Array:
+	return root.get_children().filter(func(n): return n is AudioStreamPlayer and n.stream != null 		and n.stream.resource_path.ends_with("opendoor_closedoor.wav"))
+
+func new_door_sound_count(before: Array) -> int:
+	return door_sounds().filter(func(n): return not before.has(n)).size()
 
 func check_shortcut_door(manager) -> void:
 	manager.reset_data()
@@ -671,7 +796,7 @@ func check_shortcut_door(manager) -> void:
 	root.add_child(a)
 	root.add_child(b)
 	player.global_position = a.arrival_position()
-	var sounds_before := door_sound_count() # 헤드리스에선 소리가 끝나지 않아 앞 검사의 문 소리가 남아 있다
+	var sounds_before := door_sounds() # 앞 검사의 문 소리는 세지 않는다
 
 	a._try_use_door(player)
 	await process_frame
@@ -682,13 +807,13 @@ func check_shortcut_door(manager) -> void:
 	await process_frame
 	check(a.is_unlocked() and b.is_unlocked() and manager.collected_items.has("shortcut:test_link"), "Using B should unlock the shortcut and save it")
 	check(player.global_position.is_equal_approx(a.arrival_position()), "Using B should move the player to A")
-	check(door_sound_count() == sounds_before + 1, "Opening and passing through a door at once should play the door sound once")
+	check(new_door_sound_count(sounds_before) == 1, "Opening and passing through a door at once should play the door sound once")
 
 	player.set_meta("key_door_teleport_until", 0)
 	a._try_use_door(player)
 	await process_frame
 	check(player.global_position.is_equal_approx(b.arrival_position()), "After unlocking, A should take the player to B")
-	check(door_sound_count() == sounds_before + 2, "Every trip through a door should play the door sound")
+	check(new_door_sound_count(sounds_before) == 2, "Every trip through a door should play the door sound")
 
 	var a_again = door_scene.instantiate()
 	a_again.link_id = "test_link"
@@ -733,6 +858,7 @@ func check_resume_on_quit(manager, saver) -> void:
 	var stage = load("res://Scenes/Stage/Stage_03.tscn").instantiate()
 	root.add_child(stage)
 	current_scene = stage
+	skip_tutorials(manager)
 	for i in 30:
 		await physics_frame
 	var player = stage.player
@@ -774,6 +900,7 @@ func check_resume_on_quit(manager, saver) -> void:
 	stage = load(manager.get_continue_scene_path()).instantiate()
 	root.add_child(stage)
 	current_scene = stage
+	skip_tutorials(manager)
 	check(stage.player.global_position.is_equal_approx(safe) and stage.player.hp == 37, "Continue should start at the quit position with the same HP")
 	check(manager.resume_scene_path.is_empty(), "The resume point should be used only once")
 	stage.queue_free()
@@ -799,6 +926,7 @@ func check_door_prompt_on_hud(manager) -> void:
 	var stage = load("res://Scenes/Stage/Stage_03.tscn").instantiate()
 	root.add_child(stage)
 	current_scene = stage
+	skip_tutorials(manager)
 	var hud = root.get_node("HUD")
 	var shown := []
 	var on_show := func(msg): shown.append(msg)
@@ -923,6 +1051,7 @@ func check_pickup_log(manager) -> void:
 	var stage = load("res://Scenes/Stage/Stage_03.tscn").instantiate()
 	root.add_child(stage)
 	current_scene = stage
+	skip_tutorials(manager)
 	var hud = root.get_node("HUD")
 	var old_lifetime: float = hud.pickup_lifetime
 	hud.pickup_lifetime = 0.4
@@ -935,6 +1064,7 @@ func check_pickup_log(manager) -> void:
 	chest.loot_table = null
 	chest.reward_gold = 150
 	chest.reward_item = potion
+	chest.reveal_reward_item = false # 획득 목록만 검사 (상자 연출은 check_chest_reward_reveal)
 	stage.get_node("Entities").add_child(chest)
 	chest._on_body_entered(stage.player)
 	chest._on_interact()
@@ -1139,7 +1269,7 @@ func check_minimap_markers(manager) -> void:
 	check(not box.is_in_group("minimap_box") and not box.is_in_group("object"), "Breakable boxes should not show on the minimap")
 	box.queue_free()
 	var colors := [minimap.COLOR_PLAYER, minimap.COLOR_ENEMY, minimap.COLOR_BOSS, minimap.COLOR_NPC, minimap.COLOR_SAVE, minimap.COLOR_ELEVATOR,
-		minimap.COLOR_CHEST, minimap.COLOR_DOOR_CLOSED, minimap.COLOR_DOOR_OPEN]
+		minimap.COLOR_CHEST, minimap.COLOR_DOOR_CLOSED, minimap.COLOR_DOOR_OPEN, minimap.COLOR_DEATH_DROP]
 	# 범례: 지도에 나오는 기호마다 한 줄, en/ko 번역이 있다
 	check(minimap.LEGEND.size() == colors.size() and minimap.LEGEND.all(func(row): return colors.has(row[1])), "Legend should list every minimap marker")
 	for locale in ["en", "ko"]:
@@ -1246,6 +1376,143 @@ func check_double_jump_item(manager) -> void:
 	var bad := data.duplicate(true)
 	bad["double_jump"] = 1
 	check(not saver._is_valid_game(bad), "Invalid double jump flag should fail validation")
+	manager.reset_data()
+
+# 영구 스탯 소모품: 공격 속도, 가드 경감, 호흡량. 쓰면 바로 오르고 세이브에 남는다
+# 플라스크 조각 = 사용 횟수 +1 (바로 채움), 치유의 정수 = 회복량 +5. 둘 다 저장된다
+func check_flask_upgrades(manager) -> void:
+	manager.reset_data()
+	var saver = root.get_node("SaveManager")
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	var shard = db().get_item_by_id("flask_shard")
+	var essence = db().get_item_by_id("health_flask_essence")
+	check(shard != null and essence != null, "Flask upgrade items should be in the database")
+	if shard == null or essence == null:
+		player.queue_free()
+		return
+	check(manager.flask_max_charges == 1 and manager.flask_heal_amount == 30, "New game flask should be 1 use, 30 heal")
+	manager.flask_current_charges = 0
+	shard.use(player)
+	check(manager.flask_max_charges == 2 and manager.flask_current_charges == 1, "Flask shard should add one use and fill it")
+	essence.use(player)
+	check(manager.flask_heal_amount == 35, "Healing essence should add 5 to the flask heal")
+	inv().add_item(db().get_item_by_id("health_flask"))
+	manager.update_hp(10)
+	check(manager.use_flask() and manager.player_current_hp == 45, "Flask should heal the raised amount")
+
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data), "Save with flask upgrades should be valid")
+	manager.reset_data()
+	check(manager.flask_heal_amount == 30, "New game should reset the flask heal")
+	manager.load_data_from_save(data)
+	check(manager.flask_max_charges == 2 and manager.flask_heal_amount == 35, "Flask upgrades should survive save/load")
+	data.erase("flask_heal")
+	manager.load_data_from_save(data)
+	check(manager.flask_heal_amount == 30, "An old save without flask_heal should load the base heal")
+	data["flask_heal"] = -5
+	check(not saver._is_valid_game(data), "Negative flask_heal accepted")
+	player.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Flask upgrades: shard +1 use, essence +5 heal, saved")
+
+# reward_item 상자: 열면 시간 멈춤 + 조작 잠금, 끝나면 아이템이 상자 위로 튀어나오고 주워야 가방에 들어간다.
+# 안 주운 채로 다시 오면 열린 상자 위에 아이템만 다시 있고, 주우면 상자가 사라진다
+func check_chest_reward_reveal(manager) -> void:
+	manager.reset_data()
+	var potion = db().get_item_by_id("health_potion")
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	var holder := Node2D.new()
+	root.add_child(holder)
+	var chest_scene = load("res://Scenes/System/Chest.tscn")
+	var make_chest := func():
+		var c = chest_scene.instantiate()
+		c.persist_id = "test_reveal_chest"
+		c.reward_item = potion
+		c.reward_gold = 50
+		c.position = Vector2(100, 100)
+		holder.add_child(c)
+		return c
+	var chest = make_chest.call()
+	chest._on_body_entered(player)
+	chest._on_interact()
+	await process_frame
+	check(chest._opened and chest.sprite.texture == chest.opened_texture and manager.collected_items.has("chest:test_reveal_chest"),
+		"Reward chest should show opened and be saved opened right away")
+	check(is_zero_approx(Engine.time_scale) and manager.is_menu_open, "Reward chest should freeze time and lock control while revealing")
+	check(manager.gold == 50 and not inv().has_item("health_potion"), "Gold comes at once, the item only when picked up")
+	await create_timer(chest.reveal_freeze_time + 0.9, true, false, true).timeout
+	var item = chest._spawned_item
+	check(is_instance_valid(item) and item.id == "chest_item:test_reveal_chest" and item.item_resource == potion
+		and item.position.is_equal_approx(chest.position + Vector2(0, -chest.item_pop_height)) and item.scale.is_equal_approx(Vector2.ONE * chest.item_scale),
+		"The item should pop out above the chest")
+	check(is_equal_approx(Engine.time_scale, 1.0) and not manager.is_menu_open, "Time and control should come back after the reveal")
+
+	# 안 줍고 다시 오면: 열린 상자 + 아이템만 (연출·골드 없음)
+	var again = make_chest.call()
+	await process_frame
+	check(is_instance_valid(again) and again._opened and is_instance_valid(again._spawned_item) and manager.gold == 50,
+		"An opened chest with its item not taken should come back open with the item")
+	again._spawned_item.free()
+	again.free()
+
+	item._on_body_entered(player)
+	check(inv().has_item("health_potion") and manager.collected_items.has("chest_item:test_reveal_chest"), "Picking the item up should bag and record it")
+	await create_timer(0.5).timeout
+	if is_instance_valid(item):
+		item.queue_free() # 헤드리스에선 효과음 끝 신호가 안 올 수 있다
+	await create_timer(chest.VANISH_DELAY + chest.VANISH_FADE + 0.3).timeout
+	check(not is_instance_valid(chest), "The chest should vanish once its item is taken")
+	var third = make_chest.call()
+	await process_frame
+	check(not is_instance_valid(third) or third.is_queued_for_deletion(), "A chest whose item was taken should not come back")
+	for node in [holder, player]:
+		if is_instance_valid(node):
+			node.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Chest reward reveal: freeze + lock, item pops above the chest, picked up to bag, chest then vanishes")
+
+func check_stat_consumables(manager) -> void:
+	manager.reset_data()
+	var saver = root.get_node("SaveManager")
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	var potion = load("res://Script/Item_UI/ItemData.gd").new() # 클래스 이름으로 부르면 오토로드보다 먼저 컴파일된다
+	potion.type = 1 # CONSUMABLE
+	potion.attack_speed_up = 0.1
+	potion.guard_reduction_up = 5
+	potion.breath_up = 3.0
+	var base_speed: float = player.combat.attack_speed_mult
+	potion.use(player)
+	check(is_equal_approx(player.combat.attack_speed_mult, base_speed + 0.1), "Attack speed consumable should raise attack speed right away")
+	check(manager.guard_reduction == 15 and player.guard.chip_damage(20) == 5, "Guard consumable should raise the guard reduction (10 -> 15)")
+	check(is_equal_approx(manager.breath_bonus, 3.0), "Breath consumable should add breath seconds")
+	var data: Dictionary = JSON.parse_string(JSON.stringify(manager.get_data_for_save()))
+	check(saver._is_valid_game(data), "Save with the new stats should be valid")
+	manager.reset_data()
+	check(is_zero_approx(manager.player_attack_speed_bonus) and manager.guard_reduction == 10 and is_zero_approx(manager.breath_bonus),
+		"New game should reset attack speed, guard reduction and breath")
+	manager.load_data_from_save(data)
+	check(is_equal_approx(manager.player_attack_speed_bonus, 0.1) and manager.guard_reduction == 15 and is_equal_approx(manager.breath_bonus, 3.0),
+		"Attack speed, guard reduction and breath should load back")
+	var old := data.duplicate(true)
+	for key in ["attack_speed", "guard_reduction", "breath_bonus"]:
+		old.erase(key)
+	manager.load_data_from_save(old)
+	check(manager.guard_reduction == 10 and is_zero_approx(manager.breath_bonus) and is_zero_approx(manager.player_attack_speed_bonus),
+		"Old saves without the new stats should use the defaults")
+	for bad_pair in [["attack_speed", -0.1], ["guard_reduction", 2.5], ["guard_reduction", -1], ["breath_bonus", "x"]]:
+		var bad := data.duplicate(true)
+		bad[bad_pair[0]] = bad_pair[1]
+		check(not saver._is_valid_game(bad), "Invalid %s should fail validation" % bad_pair[0])
+	player.queue_free()
+	await process_frame
 	manager.reset_data()
 
 # 수상한 과학자의 약물: 마시면 강공격 해금(안내 팝업 한 번), 세이브에 남는다
@@ -1410,6 +1677,97 @@ func check_door_lock(manager) -> void:
 	await process_frame
 	manager.reset_data()
 	print("Door lock: no-key lock + line, Yes/No question, unlock animation then open, same key same lock, plain doors open")
+
+# 잠긴 상자: 문과 같은 자물쇠 연출. 열쇠가 없으면 "locked" + 대사, 있으면 열쇠를 한 번 쓰고 "unlock" 뒤에 열린다.
+# 가방이 가득 차면 열쇠를 쓰지 않는다. 잠기지 않은 상자에는 자물쇠가 없다
+func check_chest_lock(manager) -> void:
+	manager.reset_data()
+	var dialogue = root.get_node("DialogueManager")
+	var key = db().get_item_by_id("red_lighted_silver_key") # 2회용
+	var old_frames = key.lock_sprite_frames
+	var frames := SpriteFrames.new()
+	var tex := ImageTexture.create_from_image(Image.create(8, 8, false, Image.FORMAT_RGBA8))
+	frames.add_animation(&"locked")
+	frames.add_frame(&"locked", tex)
+	frames.add_animation(&"unlock")
+	frames.set_animation_loop(&"unlock", false)
+	frames.set_animation_speed(&"unlock", 10.0)
+	for i in 3:
+		frames.add_frame(&"unlock", tex) # 0.3초
+	key.lock_sprite_frames = frames
+	var potion = db().get_item_by_id("health_potion")
+
+	var player = load("res://Scenes/Entitites/Player.tscn").instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	var chest = load("res://Scenes/System/Chest.tscn").instantiate()
+	chest.persist_id = "test_locked_chest"
+	chest.locked = true
+	chest.item_key = "red_lighted_silver_key"
+	chest.reward_item = potion
+	chest.reveal_reward_item = false # 자물쇠만 검사 (상자 연출은 check_chest_reward_reveal)
+	root.add_child(chest)
+	chest._on_body_entered(player)
+
+	# 1) 열쇠 없음
+	chest._on_interact()
+	await process_frame
+	check(dialogue.is_dialogue_active and chest.lock_overlay.is_showing() and chest.lock_overlay.sprite.sprite_frames == frames 		and chest.lock_overlay.sprite.animation == &"locked", "Locked chest without key: the key's lock and the no-key line should show")
+	check(not chest._can_interact(), "Locked chest should ignore interact while its lock/line is showing")
+	await _end_dialogue_and_wait(dialogue)
+	check(not chest._opened and not chest.lock_overlay.is_showing() and chest._can_interact(), "No key: chest stays shut and the lock goes away after the line")
+
+	# 2) 열쇠 있음, 가방 가득 → 열쇠를 쓰지 않는다
+	inv().add_item(key)
+	var fillers := 0
+	while inv().add_item(potion):
+		fillers += 1
+	chest._on_interact()
+	await create_timer(0.3).timeout
+	var key_slot: int = inv().find_item("red_lighted_silver_key")
+	check(not chest._opened and inv().get_key_uses_for_slot(key_slot) == 2 and not chest.lock_overlay.is_showing(),
+		"Full bag: the chest should stay locked and the key keep its uses")
+	inv().remove_item_at(inv().find_item("health_potion"))
+
+	# 3) 열쇠 있음 → 열쇠 한 번 쓰고 풀린 뒤 열린다
+	chest._on_interact()
+	await process_frame
+	check(chest.lock_overlay.is_showing() and chest.lock_overlay.sprite.animation == &"unlock" and not chest._opened,
+		"With key: the unlock animation should play before the chest opens")
+	await create_timer(0.7).timeout
+	key_slot = inv().find_item("red_lighted_silver_key")
+	check(chest._opened and not chest.lock_overlay.is_showing() and inv().get_key_uses_for_slot(key_slot) == 1,
+		"After unlocking the chest should open and the key have one use left")
+
+	# 잠기지 않은 상자에는 자물쇠가 없다
+	var plain = load("res://Scenes/System/Chest.tscn").instantiate()
+	plain.persist_id = "test_plain_chest"
+	root.add_child(plain)
+	check(plain.lock_overlay == null, "Unlocked chest should not create a lock overlay")
+
+	key.lock_sprite_frames = old_frames
+	for node in [chest, plain, player]:
+		if is_instance_valid(node):
+			node.queue_free()
+	await process_frame
+	manager.reset_data()
+	print("Chest lock: no-key lock + line, full bag keeps the key, unlock animation then open, key use spent")
+
+# 일시정지 메뉴·HUD의 글자는 번역 키여야 한다 (영어 고정 문구 금지)
+func check_menu_texts_translated() -> void:
+	var old_locale := TranslationServer.get_locale()
+	TranslationServer.set_locale("ko")
+	for path in ["res://Scenes/System/PauseMenu.tscn", "res://Scenes/System/HUD.tscn"]:
+		var state := (load(path) as PackedScene).get_state()
+		for i in state.get_node_count():
+			for j in state.get_node_property_count(i):
+				if state.get_node_property_name(i, j) != &"text":
+					continue
+				var text = state.get_node_property_value(i, j)
+				if not (text is String) or text.strip_edges().is_empty() or text.is_valid_float():
+					continue
+				check(TranslationServer.translate(text) != text, "%s: '%s' should be a translated key" % [path.get_file(), text])
+	TranslationServer.set_locale(old_locale)
 
 # 설정은 SettingsManager가 저장·불러오기 한다 (실제 설정 파일 대신 테스트 경로)
 func check_settings_manager() -> void:

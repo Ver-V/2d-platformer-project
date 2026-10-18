@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://caedfyrwu2oka"]
+
+[ext_resource type="Texture2D" uid="uid://bmfhkce3wvq1k" path="res://Assets/sprites/#2 - Transparent Icons & Drop Shadow.png" id="1_54v1j"]
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="1_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l4yek"]
+atlas = ExtResource("1_54v1j")
+region = Rect2(0, 576, 32, 32)
+
+[resource]
+script = ExtResource("1_script")
+id = "health_flask_essence"
+name = "ITEM_HEALTH_FLASK_ESSENCE_NAME"
+icon = SubResource("AtlasTexture_l4yek")
+price = 1000
+description = "ITEM_HEALTH_FLASK_ESSENCE_DESCRIPTION"
+type = 1
+flask_heal_up = 5
+metadata/_custom_type_script = "uid://djy4vfexvhruh"

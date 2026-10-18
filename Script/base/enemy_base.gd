@@ -50,6 +50,10 @@ signal died(enemy: EnemyBase)
 @export_group("Mutation")
 # 스테이지에 놓인 잡몹은 MobMutation.CHANCE 확률로 변이체가 된다 (보스·분열로 생긴 작은 몹 제외)
 @export var mutation_enabled: bool = true
+# 자기가 쏜 탄이 패링돼 돌아와 쓰러지면 더 떨어뜨리는 금화 (원거리 몹 — 파란 쥐 등. 보스는 금화를 따로 준다)
+@export var reflect_kill_bonus_gold: int = 10
+# 가시 끝에 몸이 부딪히면 바로 쓰러진다 (강공격 넉백 등으로 밀어 넣기). 받침판 쪽은 안전 (플레이어와 같은 방향 규칙). 보스는 해당 없음
+@export var dies_on_spikes: bool = true
 @export var can_split: bool = false # 분열 변이가 나올 수 있는 몹 (슬라임)
 
 @export_group("Patrol Idle")
@@ -95,12 +99,19 @@ var _health_bar_layer: Node2D
 const ABOVE_DARK_Z := RenderingServer.CANVAS_ITEM_Z_MAX
 
 var mutation: MobMutation.Kind = MobMutation.Kind.NONE
+var _killed_by_own_shot: bool = false
+var _zzz: Label = null # 잠든 동안 머리 위 "Zzz..." (처음 잠들 때 만든다)
+var moon_damage_mult: float = 1.0 # 달빛(MoonPhase)으로 오른 피해 배율. 플레이어가 맞을 때 곱한다
 var is_split_minion: bool = false # 분열 변이가 죽으며 낳은 작은 몹: 세이브에 기록 안 함, 방이 비활성화되면 사라짐
 var _was_activated: bool = false
 
 func _ready() -> void:
 	add_to_group("enemies")
-	
+	# 씬에 넣은 셰이더 머티리얼(색 쥐의 틴트 등)은 같은 씬의 모든 인스턴스가 공유한다.
+	# 그대로 두면 한 마리의 디졸브·피격 번쩍임이 전부에게 번지고, 다 녹은 값이 캐시에 남아 부활한 몹까지 투명해진다 (눈만 보임)
+	if sprite and sprite.material is ShaderMaterial and not sprite.material.resource_local_to_scene:
+		sprite.material = sprite.material.duplicate()
+
 	# 레이캐스트 설정 강제화 (낭떠러지 감지용)
 	if floor_ray:
 		floor_ray.enabled = true
@@ -109,7 +120,7 @@ func _ready() -> void:
 		floor_ray.collision_mask = 1 # World 레이어 감지
 		floor_ray.force_raycast_update() # 시작하자마자 바닥 상태 갱신
 		
-	if GameManager.defeated_mobs.has(persist_id):
+	if get_node("/root/GameManager").defeated_mobs.has(persist_id): # 경로로 (테스트가 EnemyBase를 클래스 이름으로 쓴다)
 		queue_free()
 		return
 
@@ -138,6 +149,7 @@ func _ready() -> void:
 	max_hp = max_hp_base
 	hp = max_hp
 	contact_damage = contact_damage_base
+	_apply_moonlight()
 	move_speed = move_speed_base
 	
 	if hitbox:
@@ -225,7 +237,13 @@ func _visible_sprite_top_y() -> float:
 			used_top = used.position.y
 	return _sprite_base_pos.y + (canvas_top + used_top) * absf(_sprite_base_scale.y)
 
+# 도감 종류 = 이 몹의 씬 경로 (Bestiary.KINDS의 씬). 분열로 생긴 작은 몹은 세지 않는다
+func bestiary_kind() -> String:
+	return scene_file_path
+
 func _on_death() -> void:
+	if not is_split_minion:
+		get_node("/root/GameManager").record_kill(bestiary_kind())
 	queue_redraw()
 	_play_death_flip()
 	if mutation != MobMutation.Kind.NONE:
@@ -272,7 +290,13 @@ func _fade_out_and_free() -> void:
 func receive_hit(hit: HitData) -> HitData.Result:
 	if not _active:
 		return HitData.Result.IGNORED
+	# 반사된 자기 탄에 맞았는가 (쓰러지면 spawn_gold가 보너스를 더한다 — 죽음 처리가 이 타격 안에서 일어나므로 먼저 표시)
+	var own := hit.source as Projectile
+	_killed_by_own_shot = own != null and own.is_reflected() and own.shooter == self
 	var result := super.receive_hit(hit)
+	_killed_by_own_shot = false
+	if HitData.landed(result) and not is_in_group("bosses"):
+		_wake_up() # 잠든 몹은 맞으면 깬다 (보스는 정해진 시간 동안 잔다)
 	if HitData.landed(result):
 		queue_redraw()
 		if hit_sound:
@@ -405,6 +429,7 @@ func _process(delta: float) -> void:
 	super._process(delta) 
 	if not _active: return
 	_update_health_bar_light()
+	_update_zzz()
 
 	if contact_damage > 0 and contact_tick > 0.0:
 		var removed_keys := []
@@ -435,6 +460,7 @@ func _physics_process(delta: float) -> void:
 # 넉백을 더해 이동하고, 방 경계 밖으로 나가지 못하게 막는다. (중력은 호출하는 쪽에서 처리)
 func move_in_room(delta: float) -> void:
 	move_with_knockback(delta)
+	_check_spike_kill()
 	
 	# [추가] 방 경계 밖으로 절대 나가지 못하게 강제로 위치 고정 (Hard Clamp)
 	if room_rect.size != Vector2.ZERO:
@@ -446,6 +472,60 @@ func move_in_room(delta: float) -> void:
 		if global_position.x != old_x:
 			if "dir" in self:
 				set("dir", -get("dir"))
+
+# --- 잠 (양의 울음·반사된 잠 탄환 등으로 DrowsyEffect가 가득 찼을 때) ---
+func is_asleep() -> bool:
+	if hp <= 0 or _status_effects == null or not is_instance_valid(_status_effects):
+		return false
+	var drowsy := _status_effects.get_effect(&"drowsy") as DrowsyEffect
+	return drowsy != null and drowsy.is_asleep()
+
+func _wake_up() -> void:
+	if _status_effects == null or not is_instance_valid(_status_effects):
+		return
+	var drowsy := _status_effects.get_effect(&"drowsy") as DrowsyEffect
+	if drowsy != null:
+		drowsy.wake()
+
+# 잠든 동안 머리 위에 Zzz... (어둠 위에 그린다)
+func _update_zzz() -> void:
+	var sleeping := is_asleep()
+	if sleeping and _zzz == null:
+		Tutorials.show_once(self, &"TUTORIAL_ENEMY_SLEEP")
+		_zzz = Label.new()
+		_zzz.text = "Zzz..."
+		_zzz.modulate = Color(0.75, 0.75, 0.9)
+		_zzz.add_theme_font_size_override("font_size", 10)
+		_zzz.z_as_relative = false
+		_zzz.z_index = ABOVE_DARK_Z
+		add_child(_zzz)
+	if _zzz != null:
+		_zzz.visible = sleeping
+		if sleeping:
+			_zzz.position = _get_health_bar_center() + Vector2(-12, -14)
+
+# 이번 이동에서 가시 끝에 부딪혔으면 즉사 (무적시간과 상관없이 — 맞아서 밀려난 직후라 무적인 경우가 대부분)
+func _check_spike_kill() -> void:
+	if not dies_on_spikes or hp <= 0 or is_in_group("bosses"):
+		return
+	for i in get_slide_collision_count():
+		var col := get_slide_collision(i)
+		if spike_kills(col.get_collider(), col.get_position(), col.get_normal()):
+			apply_status_damage(hp, &"spikes")
+			Tutorials.show_once(self, &"TUTORIAL_SPIKE_KILL")
+			return
+
+# collider의 point에 가시 타일이 있고, 부딪힌 면(normal: 타일에서 몸 쪽)이 가시 끝 쪽이면 true
+static func spike_kills(collider: Object, point: Vector2, normal: Vector2) -> bool:
+	var layer := collider as TileMapLayer
+	if layer == null or layer.tile_set == null or layer.tile_set.get_custom_data_layer_by_name("damage") == -1:
+		return false
+	var cell := layer.local_to_map(layer.to_local(point - normal * 2.0))
+	var data := layer.get_cell_tile_data(cell)
+	if data == null or int(data.get_custom_data("damage")) <= 0:
+		return false
+	var dir := HazardSensor.spike_direction(layer, cell, data)
+	return dir == Vector2.ZERO or normal.dot(dir) > 0.5
 
 # 사망 애니메이션 이름: dead → died 순서로 있는 것. 없으면 &""
 func death_animation(anim_sprite: AnimatedSprite2D = null) -> StringName:
@@ -468,7 +548,10 @@ func spawn_gold():
 
 # 변이체는 MobMutation.REWARD_MULT배
 func reward_gold() -> int:
-	return drop_gold_amount * (MobMutation.REWARD_MULT if mutation != MobMutation.Kind.NONE else 1)
+	var gold := drop_gold_amount * (int(MoonPhase.current(self, "mutant_gold_mult")) if mutation != MobMutation.Kind.NONE else 1)
+	if _killed_by_own_shot:
+		gold += reflect_kill_bonus_gold
+	return gold
 
 # 금액을 금화(1000)·은화(100)·동화(10) 단위로 나눈다. 10 미만 나머지는 버린다. (박스 드롭도 사용)
 static func split_gold_into_coins(total: int) -> Array[int]:
@@ -507,7 +590,7 @@ func _on_hitbox_area_exited(area: Area2D) -> void:
 
 # b: 플레이어의 Hurtbox (테스트 등에서는 몸 노드를 직접 줘도 된다)
 func _apply_contact_damage_once(b: Node) -> void:
-	if not is_instance_valid(b): return
+	if not is_instance_valid(b) or is_asleep(): return
 	var victim: Node = b.receiver if b is Hurtbox else b
 	var dx: float = (victim as Node2D).global_position.x - global_position.x if victim is Node2D else 0.0
 	var k_dir := 1.0 if dx >= 0.0 else -1.0
@@ -649,6 +732,19 @@ func play_move_animation(moving: bool) -> void:
 # 변이 (MobMutation)
 # -------------------------------------------------------------------------
 
+# -------------------------------------------------------------------------
+# 달빛 (MoonPhase): 통로가 열려 있으면 위상에 따라 체력·피해가 바뀐다 (보스 포함 모든 적)
+# -------------------------------------------------------------------------
+
+func _apply_moonlight() -> void:
+	var hp_key := "mob_hp"
+	var dmg_key := "mob_damage"
+	moon_damage_mult = float(MoonPhase.current(self, dmg_key))
+	var hp_mult := float(MoonPhase.current(self, hp_key))
+	if not is_equal_approx(hp_mult, 1.0):
+		max_hp = maxi(1, roundi(max_hp_base * hp_mult))
+		hp = max_hp
+
 func _can_mutate() -> bool:
 	if not mutation_enabled or is_split_minion or is_in_group("bosses") or hp <= 0 or not is_inside_tree():
 		return false
@@ -661,13 +757,13 @@ func _roll_mutation() -> void:
 		return
 	var gm := get_node("/root/GameManager")
 	var rng: RandomNumberGenerator = gm.make_loot_rng(MobMutation.seed_key(get_persist_id(), gm.mutation_epoch))
-	apply_mutation(MobMutation.roll(rng, can_split))
+	apply_mutation(MobMutation.roll(rng, can_split, float(MoonPhase.current(self, "mutation_chance"))))
 
 func apply_mutation(kind: MobMutation.Kind) -> void:
 	mutation = kind
 	match kind:
 		MobMutation.Kind.TOUGH:
-			max_hp = max_hp_base * MobMutation.TOUGH_HP_MULT
+			max_hp = max_hp * MobMutation.TOUGH_HP_MULT
 			hp = max_hp
 			knockback_resist = 1.0
 		MobMutation.Kind.SWIFT:
@@ -681,14 +777,14 @@ func apply_mutation(kind: MobMutation.Kind) -> void:
 			contact_status = load(MobMutation.BLEED_EFFECT_PATH) # 한 번에 게이지가 가득 차서 바로 터진다
 			contact_status_chance = 1.0
 	if sprite and kind != MobMutation.Kind.NONE:
-		sprite.material = MobMutation.make_material(kind)
+		sprite.material = MobMutation.make_material(kind, sprite.material)
 	queue_redraw()
 
 # 변이체를 잡으면 MobMutation.CHEST_CHANCE 확률로 보상 상자. 다음 리롤(휴식·부활)까지 그 자리에 남는다
 func _try_drop_reward_chest() -> void:
 	var gm := get_node("/root/GameManager")
 	var rng: RandomNumberGenerator = gm.make_loot_rng(MobMutation.chest_key(get_persist_id(), gm.mutation_epoch))
-	if not MobMutation.rolls_chest(rng):
+	if not MobMutation.rolls_chest(rng, float(MoonPhase.current(self, "mutant_chest_chance"))):
 		return
 	var stage := get_tree().current_scene if is_inside_tree() else null
 	if stage == null or not stage.has_method("spawn_mutant_chest"):

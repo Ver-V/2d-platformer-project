@@ -24,7 +24,7 @@ if [ -z "$GODOT" ] || [ ! -f "$GODOT" ]; then
 	exit 1
 fi
 
-TESTS="${TESTS:-tutorial_regressions item_shop_regressions enemy_regressions stage02_regressions status_effect_regressions combat_regressions mutation_regressions boss2_regressions}"
+TESTS="${TESTS:-tutorial_regressions item_shop_regressions enemy_regressions stage02_regressions status_effect_regressions combat_regressions mutation_regressions boss2_regressions play_log_regressions stage03_regressions boss_wolf_regressions moon_regressions debug_menu_regressions progression_regressions}"
 FILTER="$1"
 FAILED=""
 LOG="$(mktemp)"

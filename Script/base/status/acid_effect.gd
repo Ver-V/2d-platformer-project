@@ -5,6 +5,7 @@ class_name AcidEffect
 # 다시 걸리면 지속시간만 처음부터.
 
 func _init() -> void:
+	tutorial_key = &"TUTORIAL_STATUS_ACID"
 	id = &"acid"
 	popup_key = &"STATUS_ACID"
 	popup_color = Color(0.45, 0.9, 0.2)

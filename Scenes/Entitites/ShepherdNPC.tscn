@@ -1,0 +1,57 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://Script/Entity/shepherd_npc.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://ccvylxygt88mc" path="res://resources/items/health_potion.tres" id="2_potion"]
+[ext_resource type="Script" path="res://Script/Item_UI/LootEntry.gd" id="3_entry"]
+[ext_resource type="Resource" path="res://resources/items/old_ornate_key.tres" id="4_key"]
+
+[sub_resource type="Resource" id="Reward_1"]
+script = ExtResource("3_entry")
+gold_amount = 50
+
+[sub_resource type="Resource" id="Reward_2"]
+script = ExtResource("3_entry")
+gold_amount = 50
+
+[sub_resource type="Resource" id="Reward_3"]
+script = ExtResource("3_entry")
+item = ExtResource("2_potion")
+
+[sub_resource type="Resource" id="Reward_4"]
+script = ExtResource("3_entry")
+item = ExtResource("4_key")
+gold_amount = 200
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_talk"]
+radius = 24.0
+
+[node name="ShepherdNPC" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+rewards = Array[ExtResource("3_entry")]([SubResource("Reward_1"), SubResource("Reward_2"), SubResource("Reward_3"), SubResource("Reward_4")])
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -16)
+shape = SubResource("CircleShape2D_talk")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -16)
+
+[node name="Placeholder" type="Node2D" parent="."]
+
+[node name="Staff" type="Polygon2D" parent="Placeholder"]
+color = Color(0.45, 0.32, 0.2, 1)
+polygon = PackedVector2Array(7, 0, 9, 0, 9, -30, 12, -33, 12, -36, 9, -36, 7, -33)
+
+[node name="Robe" type="Polygon2D" parent="Placeholder"]
+color = Color(0.42, 0.52, 0.34, 1)
+polygon = PackedVector2Array(-7, 0, 7, 0, 5, -18, -5, -18)
+
+[node name="Head" type="Polygon2D" parent="Placeholder"]
+color = Color(0.93, 0.8, 0.68, 1)
+polygon = PackedVector2Array(-4, -18, 4, -18, 4, -25, -4, -25)
+
+[node name="Hat" type="Polygon2D" parent="Placeholder"]
+color = Color(0.62, 0.5, 0.3, 1)
+polygon = PackedVector2Array(-7, -24, 7, -24, 4, -27, 3, -30, -3, -30, -4, -27)

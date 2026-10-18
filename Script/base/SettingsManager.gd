@@ -12,6 +12,7 @@ var screenshake_intensity: float = 0.5
 var locale: String = "en"
 var display_mode: int = 0 # 0: 창 모드, 1: 전체 화면, 2: 테두리 없는 창
 var windowed_resolution: Vector2i = Vector2i(1280, 720)
+var log_consent: int = -1 # 로그 수집 동의 (PlayLog.Consent: -1 아직 안 물음, 0 거부, 1 허용)
 
 func _ready() -> void:
 	display_mode = _detect_display_mode()
@@ -33,7 +34,8 @@ func save_settings(path: String = SaveManager.SETTINGS_PATH) -> bool:
 		"resolution_x": windowed_resolution.x,
 		"resolution_y": windowed_resolution.y,
 		"fps_limit": Engine.max_fps,
-		"locale": locale
+		"locale": locale,
+		"log_consent": log_consent
 	}
 	return SaveManager.save_settings(data, path)
 
@@ -59,6 +61,7 @@ func set_audio_volume(bus_name: StringName, value: float) -> void:
 func load_settings(path: String = SaveManager.SETTINGS_PATH) -> void:
 	var data = SaveManager.load_settings(path)
 	set_locale(str(data.get("locale", SaveManager.DEFAULT_LOCALE)))
+	log_consent = clampi(int(data.get("log_consent", -1)), -1, 1)
 	if data.size() == 1 and data.has("locale"):
 		return
 	

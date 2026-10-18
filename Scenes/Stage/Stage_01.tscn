@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=4 uid="uid://dfx7ligqjd22g"]
+[gd_scene load_steps=44 format=4 uid="uid://dfx7ligqjd22g"]
 
 [ext_resource type="Script" uid="uid://dpf823xoj52u5" path="res://Script/base/stage_base.gd" id="1_pgns6"]
 [ext_resource type="PackedScene" uid="uid://qfh6su8aeoy7" path="res://Scenes/Entitites/Player.tscn" id="2_v4g68"]
@@ -22,13 +22,15 @@
 [ext_resource type="PackedScene" uid="uid://cssceudukavu" path="res://Scenes/Entitites/boss_stage_1.tscn" id="15_v4g68"]
 [ext_resource type="PackedScene" uid="uid://cepa2x7wfxccs" path="res://Scenes/Entitites/MerchantNPC.tscn" id="15_vqt1q"]
 [ext_resource type="Texture2D" uid="uid://bo8gqr0jkgec3" path="res://Assets/door_closed.png" id="16_4n2r4"]
+[ext_resource type="Resource" uid="uid://0asx8ywd8gsi" path="res://resources/items/Attack_increase_potion.tres" id="16_vqaea"]
 [ext_resource type="AudioStream" uid="uid://bjb33qep6eamb" path="res://resources/Music/wild-road.mp3" id="16_vrmrq"]
 [ext_resource type="Texture2D" uid="uid://u5ul0lc6v0jy" path="res://Assets/door_open.png" id="17_ae7cf"]
 [ext_resource type="Script" uid="uid://phnb6d4u7i25" path="res://Script/System/elevator_block.gd" id="18_22r6i"]
 [ext_resource type="PackedScene" path="res://Scenes/System/ShortcutDoor.tscn" id="18_ae7cf"]
 [ext_resource type="PackedScene" uid="uid://c0gju76svf4ot" path="res://Scenes/Entitites/Emushroom.tscn" id="18_qsy5d"]
-[ext_resource type="Script" path="res://Script/System/ambient_loop.gd" id="st1_ambient"]
-[ext_resource type="AudioStream" path="res://Assets/sounds/environment/inforest1.wav" id="st1_inforest1"]
+[ext_resource type="PackedScene" uid="uid://bsk7g0n03nub1" path="res://Scenes/System/CrackedWall.tscn" id="29_wskc7"]
+[ext_resource type="Script" uid="uid://dkgavp8rmp4va" path="res://Script/System/ambient_loop.gd" id="st1_ambient"]
+[ext_resource type="AudioStream" uid="uid://2g02pca7suip" path="res://Assets/sounds/environment/inforest1.wav" id="st1_inforest1"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qohnl"]
 texture = ExtResource("5_qsy5d")
@@ -517,7 +519,8 @@ gold_amount = 100
 position = Vector2(665, 54)
 locked = true
 item_key = "red_lighted_silver_key"
-reward_gold = 300
+reward_item = ExtResource("16_vqaea")
+reward_gold = 250
 persist_id = "C-870a4239"
 
 [node name="Chest2" parent="Item" instance=ExtResource("13_an4tw")]
@@ -597,7 +600,6 @@ shape = SubResource("RectangleShape2D_22r6i")
 
 [node name="MerchantNPC" parent="Entities" instance=ExtResource("15_vqt1q")]
 position = Vector2(2617, 910)
-collision_mask = 2
 
 [node name="KeyDoor" parent="Entities" instance=ExtResource("15_udna4")]
 position = Vector2(5065, 503)
@@ -648,6 +650,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -664,6 +669,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -680,6 +688,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -696,6 +707,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -712,6 +726,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -728,6 +745,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -744,6 +764,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -760,6 +783,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -776,6 +802,9 @@ turn_on_wall = true
 turn_on_ledge = true
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 attack_distance = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -795,6 +824,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -814,6 +846,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -833,6 +868,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -851,6 +889,9 @@ turn_on_wall = true
 turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 persist_id = &"M-2510743c"
 
@@ -865,6 +906,9 @@ turn_on_wall = true
 turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 persist_id = &"M-fac95984"
 
@@ -879,6 +923,9 @@ turn_on_wall = true
 turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 persist_id = &"M-8a71bed8"
 
@@ -893,6 +940,9 @@ turn_on_wall = true
 turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 persist_id = &"M-aa1ef367"
 
@@ -907,6 +957,9 @@ turn_on_wall = true
 turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 persist_id = &"M-7a347d78"
 
@@ -921,6 +974,9 @@ turn_on_wall = true
 turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 persist_id = &"M-0f74e1af"
 
@@ -935,6 +991,9 @@ turn_on_wall = true
 turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 persist_id = &"M-fe549587"
 
@@ -949,6 +1008,9 @@ turn_on_wall = true
 turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 persist_id = &"M-9ac320f3"
 
@@ -964,6 +1026,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -983,6 +1048,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -1002,6 +1070,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -1021,6 +1092,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -1040,6 +1114,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -1059,6 +1136,9 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
@@ -1078,12 +1158,19 @@ turn_on_ledge = true
 ledge_check_offset = 14.0
 room_edge_margin = 12.0
 sprite_faces_left = true
+water_move_mult = 0.5
+water_gravity_mult = 0.25
+water_max_fall_speed = 50.0
 detect_radius = 0.0
 attack_vertical_range = 24.0
 attack_animations = Array[StringName]([&"attack"])
 attack_hitbox_grow = 4.0
 persist_id = &"M-f56fbd01"
 max_hp_base = 20
+
+[node name="CrackedWall" parent="Entities" instance=ExtResource("29_wskc7")]
+position = Vector2(1289, 1030)
+persist_id = "W-31eed6a2"
 
 [node name="Boss" type="Node" parent="."]
 
@@ -1106,6 +1193,10 @@ disabled = true
 position = Vector2(3520, 474)
 dialogue_file = "res://resources/Dialogues/en/boss_Stage1_0.json"
 outro_dialogue_file = "res://resources/Dialogues/en/boss_Stage1_1.json"
+phase2_hp_ratio = 0.5
+phase2_shake = 4.0
+speech_offset = Vector2(0, -50)
+speech_duration = 2.5
 
 [node name="BossTeleportPoints" type="Node2D" parent="Boss" groups=["teleport_points_stage1"]]
 position = Vector2(3520, 463)

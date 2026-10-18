@@ -148,6 +148,23 @@ func _valid_seen_map_objects(value: Variant) -> bool:
 				return false
 	return true
 
+# 죽은 자리 금화 더미 {씬 경로: {더미 id: {"x", "y", "gold"}}}
+func _valid_death_drops(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	for scene_path in value:
+		if not scene_path is String or not value[scene_path] is Dictionary:
+			return false
+		for drop_id in value[scene_path]:
+			var drop: Variant = value[scene_path][drop_id]
+			if not drop_id is String or not drop is Dictionary:
+				return false
+			if not _is_number(drop.get("x")) or not _is_number(drop.get("y")) or not _is_integer(drop.get("gold")) or drop.gold <= 0:
+				return false
+			if drop.has("cause") and not drop.cause is String:
+				return false
+	return true
+
 func _valid_mutant_chests(value: Variant) -> bool:
 	if not value is Dictionary:
 		return false
@@ -157,6 +174,21 @@ func _valid_mutant_chests(value: Variant) -> bool:
 		for chest_id in value[scene_path]:
 			var pos: Variant = value[scene_path][chest_id]
 			if not chest_id is String or not pos is Array or pos.size() != 2 or not _is_number(pos[0]) or not _is_number(pos[1]):
+				return false
+	return true
+
+# 상자 스탯 포션 불운 보정 {"fails": int, "taken": [id], "drops": int}
+func _valid_stat_loot(value) -> bool:
+	if not value is Dictionary:
+		return false
+	for key in ["fails", "drops"]:
+		if value.has(key) and (not _is_integer(value[key]) or value[key] < 0):
+			return false
+	if value.has("taken"):
+		if not value.taken is Array:
+			return false
+		for id in value.taken:
+			if not id is String:
 				return false
 	return true
 
@@ -223,7 +255,7 @@ func _is_valid_game(data: Variant) -> bool:
 		return false
 	if data.current_hp <= 0 or data.max_hp < data.current_hp:
 		return false
-	for key in ["gold", "damage", "flask_max", "flask_current"]:
+	for key in ["gold", "damage", "flask_max", "flask_current", "flask_heal", "guard_reduction"]:
 		if data.has(key) and (not _is_integer(data[key]) or data[key] < 0):
 			return false
 	if data.get("flask_current", 1) > data.get("flask_max", 1):
@@ -232,7 +264,11 @@ func _is_valid_game(data: Variant) -> bool:
 		return false
 	if data.has("double_jump") and not data.double_jump is bool:
 		return false
+	if data.has("moon_passage") and not data.moon_passage is bool:
+		return false
 	if data.has("loot_seed") and (not _is_integer(data.loot_seed) or data.loot_seed < 0):
+		return false
+	if data.has("stat_loot") and not _valid_stat_loot(data.stat_loot):
 		return false
 	if data.has("mutation_epoch") and (not _is_integer(data.mutation_epoch) or data.mutation_epoch < 0):
 		return false
@@ -242,31 +278,36 @@ func _is_valid_game(data: Variant) -> bool:
 		return false
 	if data.has("mutant_chests") and not _valid_mutant_chests(data.mutant_chests):
 		return false
+	if data.has("death_drops") and not _valid_death_drops(data.death_drops):
+		return false
 	for key in ["parrydamage", "pos_x", "pos_y"]:
 		if data.has(key) and not _is_number(data[key]):
 			return false
 	if data.get("parrydamage", 1.5) < 0:
 		return false
+	for key in ["attack_speed", "breath_bonus"]:
+		if data.has(key) and (not _is_number(data[key]) or data[key] < 0):
+			return false
 	if data.has("has_checkpoint") and not data.has_checkpoint is bool:
 		return false
 	if data.has("scene_path") and not data.scene_path is String:
 		return false
 	if data.has("stage_title_key") and not data.stage_title_key is String:
 		return false
-	for key in ["defeated_mobs", "triggered_dialogues", "collected_items"]:
+	for key in ["defeated_mobs", "triggered_dialogues", "collected_items", "seen_tutorials"]:
 		if not data.get(key, []) is Array:
 			return false
 		for entry in data.get(key, []):
 			if not _is_text(entry):
 				return false
-	for key in ["defeated_bosses", "talked_bosses", "npc_talk_counts"]:
+	for key in ["defeated_bosses", "talked_bosses", "npc_talk_counts", "quest_progress", "rematch_epochs", "bestiary", "nohit_bosses"]:
 		if not data.get(key, {}) is Dictionary:
 			return false
 		for id in data.get(key, {}):
 			var entry: Variant = data[key][id]
 			if not _is_text(id):
 				return false
-			if key == "npc_talk_counts":
+			if key in ["npc_talk_counts", "quest_progress", "rematch_epochs", "bestiary"]:
 				if not _is_integer(entry) or entry < 0:
 					return false
 			elif not entry is bool:
@@ -279,6 +320,8 @@ func _is_valid_game(data: Variant) -> bool:
 		if not slot is Dictionary or not slot.get("id") is String:
 			return false
 		if slot.has("key_uses") and (not _is_integer(slot.key_uses) or slot.key_uses < 0):
+			return false
+		if slot.has("count") and (not _is_integer(slot["count"]) or slot["count"] < 1):
 			return false
 	# 장비 칸 {"accessories": [id|null], "gems": [id|null]} (없으면 옛 세이브)
 	if data.has("equipment") and not _valid_equipment(data.equipment):

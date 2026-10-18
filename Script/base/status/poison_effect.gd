@@ -8,6 +8,7 @@ class_name PoisonEffect
 @export_range(0.0, 1.0) var warn_below: float = 0.25 # 남은 시간이 이 비율 아래면 게이지 깜빡임
 
 func _init() -> void:
+	tutorial_key = &"TUTORIAL_STATUS_POISON"
 	id = &"poison"
 	popup_key = &"STATUS_POISONED"
 	popup_color = Color.PURPLE
@@ -26,7 +27,7 @@ func reapply(incoming: StatusEffect) -> void:
 	duration = maxf(remaining, incoming.duration)
 
 func _on_tick() -> void:
-	host.apply_status_damage(tick_damage)
+	host.apply_status_damage(tick_damage, id)
 
 func is_bar_warning() -> bool:
 	return get_progress() < warn_below

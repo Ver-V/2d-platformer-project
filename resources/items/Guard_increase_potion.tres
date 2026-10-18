@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://b2c4qkgd2rctg"]
+
+[ext_resource type="SpriteFrames" uid="uid://c3xn62wuny71n" path="res://resources/items/frames/guard_increase_potion_frames.tres" id="1_87hgy"]
+[ext_resource type="Texture2D" uid="uid://cnr4n55wiruhx" path="res://Assets/sprites/potion/guard_increased_potion.png" id="2_87hgy"]
+[ext_resource type="Script" uid="uid://djy4vfexvhruh" path="res://Script/Item_UI/ItemData.gd" id="3_h1lgt"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jqtkm"]
+atlas = ExtResource("2_87hgy")
+region = Rect2(0, 0, 19, 37)
+
+[resource]
+script = ExtResource("3_h1lgt")
+id = "Guard_increase_potion"
+name = "ITEM_GUARD_POTION_NAME"
+icon = SubResource("AtlasTexture_jqtkm")
+price = 1250
+description = "ITEM_GUARD_POTION_DESCRIPTION"
+type = 1
+anim_frames = ExtResource("1_87hgy")
+guard_reduction_up = 2
+stat_potion = true
+metadata/_custom_type_script = "uid://djy4vfexvhruh"

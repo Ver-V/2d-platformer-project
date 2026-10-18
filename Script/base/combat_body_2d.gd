@@ -93,8 +93,11 @@ func can_tick_status_effects() -> bool:
 	return hp > 0
 
 # 상태이상 피해: 무적·가드·넉백·히트스탑을 무시하고 HP만 깎는다.
-func apply_status_damage(amount: int) -> bool:
+var last_status_cause: StringName = &"" # 마지막 상태이상 피해를 준 상태이상 id (사인 기록용)
+
+func apply_status_damage(amount: int, cause: StringName = &"") -> bool:
 	if amount <= 0 or hp <= 0: return false
+	last_status_cause = cause
 	hp = maxi(0, hp - amount)
 	_on_status_damaged(amount)
 	if hp <= 0:
